@@ -97,11 +97,17 @@
   </div>
 
   <script>
-    let streamers = JSON.parse(localStorage.getItem("kick_streamers")) || [
-      "adinross", "oblivionsw", "ac7ionman", "dariusirl", "xenathewitch",
-      "musa_usa", "dewditscam", "floridaboy", "lilskamlive",
-      "chickenandy", "shoovy", "iceposeidon", "shotime"
-    ];
+    let streamers = [];
+
+    async function loadStreamers() {
+      try {
+        const res = await fetch('streamers.json');
+        streamers = await res.json();
+        updateStreamers();
+      } catch (err) {
+        console.error("Failed to load streamers.json", err);
+      }
+    }
 
     function saveStreamers() {
       localStorage.setItem("kick_streamers", JSON.stringify(streamers));
@@ -168,7 +174,7 @@
       document.getElementById("last-updated").textContent = `Last updated: ${now.toLocaleTimeString()}`;
     }
 
-    updateStreamers();
+    loadStreamers();
     setInterval(updateStreamers, 60000); // refresh every minute
   </script>
 </body>
