@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kick Streamers Monitor 1.3</title>
+  <title>Kick Streamers Monitor</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -81,11 +81,34 @@
       border: 1px solid #333;
       border-radius: 8px;
     }
+  #stats {
+      font-size: 14px;
+      margin: 10px 0;
+      color: #0f0;
+    }
+    #refresh-btn {
+      margin-bottom: 15px;
+      padding: 6px 12px;
+      background: #333;
+      color: #eee;
+      border: 1px solid #666;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #refresh-btn:hover {
+      background-color: #444;
+    }
+    .fallback-warning {
+      color: #f66;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <h1>Kick Streamers Live Monitor</h1>
   <div id="last-updated"></div>
+  <div id="stats"></div>
+  <button id="refresh-btn" onclick="updateStreamers()">🔁 Refresh Now</button>
   <div id="streamers"></div>
   <div id="controls">
     <input type="text" id="newStreamer" placeholder="Add new streamer...">
@@ -117,9 +140,8 @@ async function loadStreamers() {
     updateStreamers();
   }
 }
-    }
-
-    function saveStreamers() {
+    
+function saveStreamers() {
       localStorage.setItem("kick_streamers", JSON.stringify(streamers));
     }
 
@@ -181,7 +203,10 @@ async function loadStreamers() {
       }
 
       const now = new Date();
-      document.getElementById("last-updated").textContent = `Last updated: ${now.toLocaleTimeString()}${usingFallback ? ' (fallback list used)' : ''}`;
+      document.getElementById("last-updated").innerHTML = `Last updated: ${now.toLocaleTimeString()} ${usingFallback ? '<span class=\"fallback-warning\">(fallback list used)</span>' : ''}`;
+
+      const onlineCount = streamerData.filter(s => s.live).length;
+      document.getElementById("stats").textContent = `${onlineCount} live / ${streamerData.length} total`;
     }
 
     loadStreamers();
