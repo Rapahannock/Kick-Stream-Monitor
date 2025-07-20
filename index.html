@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kick Streamers Monitor 1.2</title>
+  <title>Kick Streamers Monitor 1.3</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -98,25 +98,25 @@
 
   <script>
     let streamers = [];
+let usingFallback = false;
 
-    async function loadStreamers() {
-      try {
-        const res = await fetch('https://rapahannock.github.io/Kick-Stream-Monitor/streamers.json');
-        streamers = await res.json();
-        updateStreamers();
-      } catch (err) {
-        console.error("Failed to load streamers.json", err);
-        streamers = [
-          "adinross", "oblivionsw", "ac7ionman", "dariusirl", "xenathewitch",
-          "musa_usa", "dewditscam", "floridaboy", "lilskamlive",
-          "chickenandy", "shoovy", "iceposeidon", "shotime"
-        ];
-        updateStreamers();
-      }
-    }
-    } catch (err) {
-        console.error("Failed to load streamers.json", err);
-      }
+async function loadStreamers() {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/rapahannock/Kick-Stream-Monitor/main/streamers.json');
+    streamers = await res.json();
+    usingFallback = false;
+    updateStreamers();
+  } catch (err) {
+    console.error("Failed to load streamers.json", err);
+    streamers = [
+      "adinross", "oblivionsw", "ac7ionman", "dariusirl", "xenathewitch",
+      "musa_usa", "dewditscam", "floridaboy", "lilskamlive",
+      "chickenandy", "shoovy", "iceposeidon", "shotime"
+    ];
+    usingFallback = true;
+    updateStreamers();
+  }
+}
     }
 
     function saveStreamers() {
@@ -181,7 +181,7 @@
       }
 
       const now = new Date();
-      document.getElementById("last-updated").textContent = `Last updated: ${now.toLocaleTimeString()}`;
+      document.getElementById("last-updated").textContent = `Last updated: ${now.toLocaleTimeString()}${usingFallback ? ' (fallback list used)' : ''}`;
     }
 
     loadStreamers();
