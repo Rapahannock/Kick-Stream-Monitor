@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kick Streamers Monitor 1.75</title>
+  <title>Kick Streamers Monitor</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -32,10 +32,11 @@
     }
     .thumbnail-preview {
       width: 100%;
-      aspect-ratio: 16/9;
+      aspect-ratio: 16 / 9;
       object-fit: cover;
       border-radius: 6px;
       margin-top: 8px;
+      border: 1px solid #666;
     }
     .remove-btn {
       color: #f55;
@@ -109,12 +110,30 @@
 
         const msg = await res.text();
         console.log("Add response:", msg);
-        setTimeout(loadStreamers, 1500); // Give Gist a moment to update
+        setTimeout(loadStreamers, 1500);
       } catch (err) {
         console.error("Failed to add streamer:", err);
       }
 
       input.value = "";
+    }
+
+    async function removeStreamer(name) {
+      if (!confirm(`Remove ${name}?`)) return;
+
+      try {
+        const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ remove: name })
+        });
+
+        const msg = await res.text();
+        console.log("Remove response:", msg);
+        setTimeout(loadStreamers, 1500);
+      } catch (err) {
+        console.error("Failed to remove streamer:", err);
+      }
     }
 
     async function fetchStreamerInfo(username) {
@@ -150,7 +169,8 @@
         div.innerHTML = `
           <a href="${s.url}" target="_blank">${s.name}</a>
           <div>${s.live ? `🔴 LIVE - ${s.title} (${s.viewers} viewers)` : `Offline`}</div>
-          ${s.live && s.thumbnail ? `<img class="thumbnail-preview" src="${s.thumbnail}" alt="Preview">` : ""}
+          ${s.live && s.thumbnail ? `<a href="${s.url}" target="_blank"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Preview"></a>` : ""}
+          <div class="remove-btn" onclick="removeStreamer('${s.name}')">❌ Remove</div>
         `;
 
         container.appendChild(div);
