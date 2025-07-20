@@ -1,10 +1,21 @@
 export default async function handler(req, res) {
+  // Allow CORS
+  res.setHeader('Access-Control-Allow-Origin', 'https://rapahannock.github.io');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   let body = '';
 
   try {
     for await (const chunk of req) {
       body += chunk;
     }
+
     const parsed = JSON.parse(body);
     const streamer = parsed.streamer;
 
