@@ -77,6 +77,14 @@
       cursor: pointer;
       font-weight: bold;
     }
+    #qr {
+      margin-top: 30px;
+      text-align: center;
+    }
+    #qr img {
+      border: 1px solid #333;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -86,6 +94,10 @@
   <div id="controls">
     <input type="text" id="newStreamer" placeholder="Add new streamer...">
     <button onclick="addStreamer()">Add</button>
+  </div>
+  <div id="qr">
+    <p>📱 Scan this QR code to open this page on your phone:</p>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Frapahannock.github.io%2FKick-Stream-Monitor%2F" alt="QR Code to Kick Stream Monitor">
   </div>
 
   <script>
