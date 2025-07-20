@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kick Streamers Monitor 1.3</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kick Streamers Monitor 1.7</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -81,6 +81,7 @@
       border: 1px solid #333;
       border-radius: 8px;
     }
+    #stats {
       font-size: 14px;
       margin: 10px 0;
       color: #0f0;
@@ -120,38 +121,62 @@
 
   <script>
     let streamers = [];
-let usingFallback = false;
+    let usingFallback = false;
+    const VERCEL_API_URL = 'https://your-vercel-project.vercel.app/api/update'; // 👈 replace this!
 
-async function loadStreamers() {
-  try {
-    const res = await fetch('https://raw.githubusercontent.com/rapahannock/Kick-Stream-Monitor/main/streamers.json');
-    streamers = await res.json();
-    usingFallback = false;
-    updateStreamers();
-  } catch (err) {
-    console.error("Failed to load streamers.json", err);
-    streamers = [
-      "adinross", "oblivionsw", "ac7ionman", "dariusirl", "xenathewitch",
-      "musa_usa", "dewditscam", "floridaboy", "lilskamlive",
-      "chickenandy", "shoovy", "iceposeidon", "shotime"
-    ];
-    usingFallback = true;
-    updateStreamers();
-  }
-}
-    
-function saveStreamers() {
+    async function loadStreamers() {
+      try {
+        const res = await fetch('https://raw.githubusercontent.com/rapahannock/Kick-Stream-Monitor/main/streamers.json');
+        streamers = await res.json();
+        usingFallback = false;
+        updateStreamers();
+      } catch (err) {
+        console.error("Failed to load streamers.json", err);
+        streamers = [
+          "adinross", "oblivionsw", "ac7ionman", "dariusirl", "xenathewitch",
+          "musa_usa", "dewditscam", "floridaboy", "lilskamlive",
+          "chickenandy", "shoovy", "iceposeidon", "shotime"
+        ];
+        usingFallback = true;
+        updateStreamers();
+      }
+    }
+
+    function saveStreamers() {
       localStorage.setItem("kick_streamers", JSON.stringify(streamers));
     }
 
-    function addStreamer() {
+    async function addStreamer() {
       const input = document.getElementById("newStreamer");
       const name = input.value.trim().toLowerCase();
-      if (name && !streamers.includes(name)) {
-        streamers.push(name);
-        saveStreamers();
-        updateStreamers();
+      if (!name || streamers.includes(name)) {
+        input.value = "";
+        return;
       }
+
+      try {
+        const response = await fetch(VERCEL_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ streamer: name })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          streamers.push(name);
+          saveStreamers();
+          updateStreamers();
+          console.log(result.message);
+        } else {
+          console.error("Server error:", result.error || result.message);
+          alert("Error: " + (result.error?.message || result.message));
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+        alert("Failed to add streamer.");
+      }
+
       input.value = "";
     }
 
@@ -164,12 +189,10 @@ function saveStreamers() {
     async function fetchStreamerInfo(username) {
       const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
       const data = await res.json();
-  console.log(username, data);
       return {
         name: username,
         live: data.livestream !== null,
         title: data.livestream?.session_title || "Offline",
-        
         viewers: data.livestream?.viewer_count || 0,
         url: `https://kick.com/${username}`,
         thumbnail: data.livestream?.thumbnail?.url || null,
@@ -185,35 +208,30 @@ function saveStreamers() {
       streamerData.sort((a, b) => b.viewers - a.viewers);
 
       for (const info of streamerData) {
-        try {
-          const div = document.createElement("div");
+        const div = document.createElement("div");
         div.className = "streamer" + (info.live ? "" : " offline");
-        
 
         div.innerHTML = `
-            <a href="${info.url}" target="_blank">${info.name}</a>
-            <div class="info">
-              ${info.live ? `LIVE - ${info.title} (${info.viewers} viewers)` : `Offline${info.lastLive ? ' – since ' + new Date(info.lastLive).toLocaleString() : ''}`}
-            </div>
-            ${info.live && info.thumbnail ? `<a href="${info.url}" target="_blank"><img class="thumbnail-preview" src="${info.thumbnail}" alt="Thumbnail"></a>` : ""}
-            <div class="remove-btn" onclick="removeStreamer('${info.name}')">&times;</div>
-          `;
+          <a href="${info.url}" target="_blank">${info.name}</a>
+          <div class="info">
+            ${info.live ? `LIVE - ${info.title} (${info.viewers} viewers)` : `Offline${info.lastLive ? ' – since ' + new Date(info.lastLive).toLocaleString() : ''}`}
+          </div>
+          ${info.live && info.thumbnail ? `<a href="${info.url}" target="_blank"><img class="thumbnail-preview" src="${info.thumbnail}" alt="Thumbnail"></a>` : ""}
+          <div class="remove-btn" onclick="removeStreamer('${info.name}')">&times;</div>
+        `;
 
-          container.appendChild(div);
-        } catch (err) {
-          console.error(`Error displaying ${info.name}:`, err);
-        }
+        container.appendChild(div);
       }
 
       const now = new Date();
-      document.getElementById("last-updated").innerHTML = `Last updated: ${now.toLocaleTimeString()} ${usingFallback ? '<span class=\"fallback-warning\">(fallback list used)</span>' : ''}`;
+      document.getElementById("last-updated").innerHTML = `Last updated: ${now.toLocaleTimeString()} ${usingFallback ? '<span class="fallback-warning">(fallback list used)</span>' : ''}`;
 
       const onlineCount = streamerData.filter(s => s.live).length;
       document.getElementById("stats").textContent = `${onlineCount} live / ${streamerData.length} total`;
     }
 
     loadStreamers();
-    setInterval(updateStreamers, 60000); // refresh every minute
+    setInterval(updateStreamers, 60000);
   </script>
 </body>
 </html>
