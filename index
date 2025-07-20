@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kick Streamers Monitor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #eee;
+      padding: 20px;
+    }
+    .streamer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border: 1px solid #444;
+      border-radius: 6px;
+      background-color: #1a1a1a;
+      font-size: 14px;
+      flex-wrap: wrap;
+    }
+    .offline {
+      opacity: 0.5;
+    }
+    a {
+      color: #4af;
+      text-decoration: none;
+    }
+    .info {
+      flex: 1;
+      margin-left: 12px;
+    }
+    .thumbnail-container {
+      display: none;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .thumbnail-preview {
+      width: 100%;
+      max-width: 480px;
+      border: 2px solid #888;
+      border-radius: 6px;
+    }
+    .thumbnail-small {
+      height: 40px;
+      margin-left: 10px;
+      cursor: pointer;
+      border: 1px solid #666;
+      border-radius: 4px;
+    }
+    #last-updated {
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 10px;
+    }
+    #controls {
+      margin-top: 20px;
+    }
+    #controls input {
+      padding: 5px;
+      font-size: 14px;
+      width: 200px;
+    }
+    #controls button {
+      padding: 5px 10px;
+      margin-left: 5px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .remove-btn {
+      margin-left: 10px;
+      color: #f55;
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Kick Streamers Live Monitor</h1>
+  <div id="last-updated"></div>
+  <div id="streamers"></div>
+  <div id="controls">
+    <input type="text" id="newStreamer" placeholder="Add new streamer...">
+    <button onclick="addStreamer()">Add</button>
+  </div>
+
+  <script>
+    let streamers = JSON.parse(localStorage.getItem("kick_streamers")) || [
+      "adinross", "oblivionsw", "ac7ionman", "dariusirl", "xenathewitch",
+      "musa_usa", "dewditscam", "floridaboy", "lilskamlive",
+      "chickenandy", "shoovy", "iceposeidon", "shotime"
+    ];
+
+    function saveStreamers() {
+      localStorage.setItem("kick_streamers", JSON.stringify(streamers));
+    }
+
+    function addStreamer() {
+      const input = document.getElementById("newStreamer");
+      const name = input.value.trim().toLowerCase();
+      if (name && !streamers.includes(name)) {
+        streamers.push(name);
+        saveStreamers();
+        updateStreamers();
+      }
+      input.value = "";
+    }
+
+    function removeStreamer(name) {
+      streamers = streamers.filter(n => n !== name);
+      saveStreamers();
+      updateStreamers();
+    }
+
+    async function fetchStreamerInfo(username) {
+      const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
+      const data = await res.json();
+      return {
+        name: username,
+        live: data.livestream !== null,
+        title: data.livestream?.session_title || "Offline",
+        viewers: data.livestream?.viewer_count || 0,
+        url: `https://kick.com/${username}`,
+        thumbnail: data.livestream?.thumbnail?.url || null
+      };
+    }
+
+    function hideAllThumbnails() {
+      document.querySelectorAll('.thumbnail-container').forEach(div => {
+        div.style.display = 'none';
+      });
+    }
+
+    async function updateStreamers() {
+      const container = document.getElementById("streamers");
+      container.innerHTML = "";
+
+      const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
+      streamerData.sort((a, b) => b.viewers - a.viewers);
+
+      for (const info of streamerData) {
+        try {
+          const div = document.createElement("div");
+          div.className = "streamer" + (info.live ? "" : " offline");
+
+          const thumbId = `thumb-${info.name}`;
+
+          div.innerHTML = `
+            <a href="${info.url}" target="_blank">${info.name}</a>
+            <div class="info">
+              ${info.live ? `LIVE - ${info.title} (${info.viewers} viewers)` : "Offline"}
+            </div>
+            ${info.live && info.thumbnail ? `<img class="thumbnail-small" src="${info.thumbnail}" alt="Thumbnail" onclick="hideAllThumbnails(); document.getElementById('${thumbId}').style.display = 'block';">` : ""}
+            ${info.live && info.thumbnail ? `<div id="${thumbId}" class="thumbnail-container"><img class="thumbnail-preview" src="${info.thumbnail}" alt="Full Thumbnail"></div>` : ""}
+            <span class="remove-btn" onclick="removeStreamer('${info.name}')">&times;</span>
+          `;
+
+          container.appendChild(div);
+        } catch (err) {
+          console.error(`Error displaying ${info.name}:`, err);
+        }
+      }
+
+      const now = new Date();
+      document.getElementById("last-updated").textContent = `Last updated: ${now.toLocaleTimeString()}`;
+    }
+
+    updateStreamers();
+    setInterval(updateStreamers, 60000); // refresh every minute
+  </script>
+</body>
+</html>
