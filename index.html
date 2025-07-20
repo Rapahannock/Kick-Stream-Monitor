@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kick Streamers Monitor 1.3</title>
+  <title>Kick Streamers Monitor 1.75</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,14 +17,10 @@
       gap: 12px;
     }
     .streamer {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
       padding: 12px;
       border: 1px solid #444;
       border-radius: 6px;
       background-color: #1a1a1a;
-      font-size: 14px;
     }
     .offline {
       opacity: 0.5;
@@ -33,24 +29,20 @@
       color: #4af;
       text-decoration: none;
       font-weight: bold;
-      margin-bottom: 8px;
-    }
-    .info {
-      margin-bottom: 8px;
     }
     .thumbnail-preview {
       width: 100%;
-      aspect-ratio: 16 / 9;
+      aspect-ratio: 16/9;
       object-fit: cover;
-      border: 2px solid #888;
       border-radius: 6px;
-      margin-bottom: 8px;
-      cursor: pointer;
+      margin-top: 8px;
     }
-    #last-updated {
-      font-size: 12px;
-      color: #aaa;
-      margin-bottom: 10px;
+    .remove-btn {
+      color: #f55;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      text-align: right;
     }
     #controls {
       margin-top: 20px;
@@ -66,78 +58,37 @@
       font-size: 14px;
       cursor: pointer;
     }
-    .remove-btn {
-      margin-top: 10px;
-      color: #f55;
-      cursor: pointer;
-      font-weight: bold;
-      text-align: right;
-    }
-    #qr {
-      margin-top: 30px;
-      text-align: center;
-    }
-    #qr img {
-      border: 1px solid #333;
-      border-radius: 8px;
-    }
-    #stats {
-      font-size: 14px;
+    #last-updated {
+      font-size: 12px;
+      color: #aaa;
       margin: 10px 0;
-      color: #0f0;
-    }
-    #refresh-btn {
-      margin-bottom: 15px;
-      padding: 6px 12px;
-      background: #333;
-      color: #eee;
-      border: 1px solid #666;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #refresh-btn:hover {
-      background-color: #444;
-    }
-    .fallback-warning {
-      color: #f66;
-      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>Kick Streamers Live Monitor</h1>
+  <h1>Kick Streamers Monitor</h1>
   <div id="last-updated"></div>
-  <div id="stats"></div>
-  <button id="refresh-btn" onclick="updateStreamers()">🔁 Refresh Now</button>
   <div id="streamers"></div>
+
   <div id="controls">
     <input type="text" id="newStreamer" placeholder="Add new streamer...">
     <button onclick="addStreamer()">Add</button>
-  </div>
-  <div id="qr">
-    <p>📱 Scan this QR code to open this page on your phone:</p>
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Frapahannock.github.io%2FKick-Stream-Monitor%2F" alt="QR Code to Kick Stream Monitor">
+    <button onclick="loadStreamers()">🔁 Refresh</button>
   </div>
 
   <script>
     let streamers = [];
-    let usingFallback = false;
 
     async function loadStreamers() {
       try {
-        const res = await fetch('https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json');
+        const cacheBuster = `?t=${Date.now()}`;
+        const res = await fetch(`https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json${cacheBuster}`);
         streamers = await res.json();
-        usingFallback = false;
-        updateStreamers();
+        renderStreamers();
       } catch (err) {
-        console.error("Failed to load streamers1455.json", err);
-        streamers = [
-          "adinross", "oblivionsw", "ac7ionman", "dariusirl", "xenathewitch",
-          "musa_usa", "dewditscam", "floridaboy", "lilskamlive",
-          "chickenandy", "shoovy", "iceposeidon", "shotime"
-        ];
-        usingFallback = true;
-        updateStreamers();
+        console.error("Failed to load streamers list:", err);
+        streamers = [];
+        renderStreamers();
       }
     }
 
@@ -158,7 +109,7 @@
 
         const msg = await res.text();
         console.log("Add response:", msg);
-        setTimeout(loadStreamers, 1500);
+        setTimeout(loadStreamers, 1500); // Give Gist a moment to update
       } catch (err) {
         console.error("Failed to add streamer:", err);
       }
@@ -166,62 +117,51 @@
       input.value = "";
     }
 
-    function removeStreamer(name) {
-      streamers = streamers.filter(n => n !== name);
-      localStorage.setItem("kick_streamers", JSON.stringify(streamers));
-      updateStreamers(); // only removes locally for now
-    }
-
     async function fetchStreamerInfo(username) {
-      const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
-      const data = await res.json();
-      return {
-        name: username,
-        live: data.livestream !== null,
-        title: data.livestream?.session_title || "Offline",
-        viewers: data.livestream?.viewer_count || 0,
-        url: `https://kick.com/${username}`,
-        thumbnail: data.livestream?.thumbnail?.url || null,
-        lastLive: data.last_live_at || null
-      };
+      try {
+        const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
+        const data = await res.json();
+        return {
+          name: username,
+          live: data.livestream !== null,
+          title: data.livestream?.session_title || "Offline",
+          viewers: data.livestream?.viewer_count || 0,
+          url: `https://kick.com/${username}`,
+          thumbnail: data.livestream?.thumbnail?.url || null,
+          lastLive: data.last_live_at || null
+        };
+      } catch (err) {
+        console.error("Error fetching info for", username, err);
+        return { name: username, live: false, title: "Unavailable", url: "", thumbnail: null };
+      }
     }
 
-    async function updateStreamers() {
+    async function renderStreamers() {
       const container = document.getElementById("streamers");
       container.innerHTML = "";
 
       const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
       streamerData.sort((a, b) => b.viewers - a.viewers);
 
-      for (const info of streamerData) {
-        try {
-          const div = document.createElement("div");
-          div.className = "streamer" + (info.live ? "" : " offline");
+      for (const s of streamerData) {
+        const div = document.createElement("div");
+        div.className = "streamer" + (s.live ? "" : " offline");
 
-          div.innerHTML = `
-            <a href="${info.url}" target="_blank">${info.name}</a>
-            <div class="info">
-              ${info.live ? `LIVE - ${info.title} (${info.viewers} viewers)` : `Offline${info.lastLive ? ' – since ' + new Date(info.lastLive).toLocaleString() : ''}`}
-            </div>
-            ${info.live && info.thumbnail ? `<a href="${info.url}" target="_blank"><img class="thumbnail-preview" src="${info.thumbnail}" alt="Thumbnail"></a>` : ""}
-            <div class="remove-btn" onclick="removeStreamer('${info.name}')">&times;</div>
-          `;
+        div.innerHTML = `
+          <a href="${s.url}" target="_blank">${s.name}</a>
+          <div>${s.live ? `🔴 LIVE - ${s.title} (${s.viewers} viewers)` : `Offline`}</div>
+          ${s.live && s.thumbnail ? `<img class="thumbnail-preview" src="${s.thumbnail}" alt="Preview">` : ""}
+        `;
 
-          container.appendChild(div);
-        } catch (err) {
-          console.error(`Error displaying ${info.name}:`, err);
-        }
+        container.appendChild(div);
       }
 
       const now = new Date();
-      document.getElementById("last-updated").innerHTML = `Last updated: ${now.toLocaleTimeString()} ${usingFallback ? '<span class="fallback-warning">(fallback list used)</span>' : ''}`;
-
-      const onlineCount = streamerData.filter(s => s.live).length;
-      document.getElementById("stats").textContent = `${onlineCount} live / ${streamerData.length} total`;
+      document.getElementById("last-updated").textContent = "Last updated: " + now.toLocaleTimeString();
     }
 
     loadStreamers();
-    setInterval(updateStreamers, 60000); // refresh every minute
+    setInterval(loadStreamers, 60000); // Refresh every minute
   </script>
 </body>
 </html>
