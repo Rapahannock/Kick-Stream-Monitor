@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kick Streamers Monitor</title>
+  <title>Kick Streamers Monitor 1.2</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -64,6 +64,24 @@
       color: #aaa;
       margin: 10px 0;
     }
+    #toast {
+      visibility: hidden;
+      min-width: 200px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      font-size: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      transition: opacity 0.3s ease;
+      opacity: 0;
+    }
   </style>
 </head>
 <body>
@@ -77,8 +95,24 @@
     <button onclick="loadStreamers()">🔁 Refresh</button>
   </div>
 
+  <div id="toast"></div>
+
   <script>
     let streamers = [];
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.innerText = message;
+      toast.style.visibility = "visible";
+      toast.style.opacity = "1";
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => {
+          toast.style.visibility = "hidden";
+        }, 300);
+      }, 3000);
+    }
 
     async function loadStreamers() {
       try {
@@ -109,10 +143,11 @@
         });
 
         const msg = await res.text();
-        console.log("Add response:", msg);
+        showToast(msg);
         setTimeout(loadStreamers, 1500);
       } catch (err) {
         console.error("Failed to add streamer:", err);
+        showToast("Add failed");
       }
 
       input.value = "";
@@ -129,10 +164,11 @@
         });
 
         const msg = await res.text();
-        console.log("Remove response:", msg);
+        showToast(msg);
         setTimeout(loadStreamers, 1500);
       } catch (err) {
         console.error("Failed to remove streamer:", err);
+        showToast("Remove failed");
       }
     }
 
