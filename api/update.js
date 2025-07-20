@@ -1,28 +1,12 @@
 export default async function handler(req, res) {
-  // Allow only POST and add CORS headers
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    return res.status(200).end();
-  }
-
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  let body = '';
 
   try {
-    const body = await new Promise((resolve, reject) => {
-      let data = '';
-      req.on('data', chunk => data += chunk);
-      req.on('end', () => resolve(JSON.parse(data)));
-      req.on('error', reject);
-    });
-
-    const { streamer } = body;
+    for await (const chunk of req) {
+      body += chunk;
+    }
+    const parsed = JSON.parse(body);
+    const streamer = parsed.streamer;
 
     if (!streamer) {
       return res.status(400).json({ error: 'Streamer name required' });
@@ -66,8 +50,9 @@ export default async function handler(req, res) {
     }
 
     res.status(200).json({ message: `${streamer} added successfully` });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error:', err);
+    res.status(500).json({ error: err.message || 'Internal Server Error' });
   }
 }
