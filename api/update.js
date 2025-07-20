@@ -1,16 +1,21 @@
-import { Buffer } from 'node:buffer';
-
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST allowed' });
+  // ✅ CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "https://rapahannock.github.io");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // ✅ Handle preflight request
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
   }
 
+  // ✅ Validate input
   const { streamer } = req.body;
-
-  if (!streamer || typeof streamer !== 'string') {
+  if (!streamer) {
     return res.status(400).json({ error: 'Streamer name required' });
   }
 
+  // ✅ GitHub details
   const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
   const FILE_PATH = 'streamers.json';
   const REPO = 'rapahannock/Kick-Stream-Monitor';
@@ -22,21 +27,20 @@ export default async function handler(req, res) {
   };
 
   try {
-    // Fetch current file
+    // ✅ Fetch current file
     const getResp = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}?ref=${BRANCH}`, { headers });
     const getData = await getResp.json();
+    const content = JSON.parse(Buffer.from(getData.content, 'base64').toString());
 
-    const contentRaw = Buffer.from(getData.content, 'base64').toString('utf-8');
-    const content = JSON.parse(contentRaw);
-
+    // ✅ Avoid duplicates
     if (content.includes(streamer)) {
       return res.status(200).json({ message: 'Streamer already exists.' });
     }
 
+    // ✅ Add and update
     content.push(streamer);
     const updatedContent = Buffer.from(JSON.stringify(content, null, 2)).toString('base64');
 
-    // Push update to GitHub
     const updateResp = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
       method: 'PUT',
       headers,
@@ -53,10 +57,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: err });
     }
 
-    return res.status(200).json({ message: `${streamer} added successfully` });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Unexpected server error' });
+    res.status(200).json({ message: `${streamer} added successfully` });
+  } catch (error) {
+    res.status(500).json({ error: 'Unexpected server error', details: error.message });
   }
 }
