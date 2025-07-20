@@ -11,17 +11,20 @@
       color: #eee;
       padding: 20px;
     }
+    #streamers {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
+    }
     .streamer {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: space-between;
-      margin-bottom: 10px;
-      padding: 8px 12px;
+      padding: 12px;
       border: 1px solid #444;
       border-radius: 6px;
       background-color: #1a1a1a;
       font-size: 14px;
-      flex-wrap: wrap;
     }
     .offline {
       opacity: 0.5;
@@ -29,28 +32,19 @@
     a {
       color: #4af;
       text-decoration: none;
+      font-weight: bold;
+      margin-bottom: 8px;
     }
     .info {
-      flex: 1;
-      margin-left: 12px;
-    }
-    .thumbnail-container {
-      display: none;
-      width: 100%;
-      margin-top: 10px;
+      margin-bottom: 8px;
     }
     .thumbnail-preview {
       width: 100%;
-      max-width: 480px;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
       border: 2px solid #888;
       border-radius: 6px;
-    }
-    .thumbnail-small {
-      height: 40px;
-      margin-left: 10px;
-      cursor: pointer;
-      border: 1px solid #666;
-      border-radius: 4px;
+      margin-bottom: 8px;
     }
     #last-updated {
       font-size: 12px;
@@ -72,10 +66,11 @@
       cursor: pointer;
     }
     .remove-btn {
-      margin-left: 10px;
+      margin-top: 10px;
       color: #f55;
       cursor: pointer;
       font-weight: bold;
+      text-align: right;
     }
     #qr {
       margin-top: 30px;
@@ -141,12 +136,6 @@
       };
     }
 
-    function hideAllThumbnails() {
-      document.querySelectorAll('.thumbnail-container').forEach(div => {
-        div.style.display = 'none';
-      });
-    }
-
     async function updateStreamers() {
       const container = document.getElementById("streamers");
       container.innerHTML = "";
@@ -159,16 +148,13 @@
           const div = document.createElement("div");
           div.className = "streamer" + (info.live ? "" : " offline");
 
-          const thumbId = `thumb-${info.name}`;
-
           div.innerHTML = `
             <a href="${info.url}" target="_blank">${info.name}</a>
             <div class="info">
               ${info.live ? `LIVE - ${info.title} (${info.viewers} viewers)` : "Offline"}
             </div>
-            ${info.live && info.thumbnail ? `<img class="thumbnail-small" src="${info.thumbnail}" alt="Thumbnail" onclick="hideAllThumbnails(); document.getElementById('${thumbId}').style.display = 'block';">` : ""}
-            ${info.live && info.thumbnail ? `<div id="${thumbId}" class="thumbnail-container"><img class="thumbnail-preview" src="${info.thumbnail}" alt="Full Thumbnail"></div>` : ""}
-            <span class="remove-btn" onclick="removeStreamer('${info.name}')">&times;</span>
+            ${info.live && info.thumbnail ? `<img class="thumbnail-preview" src="${info.thumbnail}" alt="Thumbnail">` : ""}
+            <div class="remove-btn" onclick="removeStreamer('${info.name}')">&times;</div>
           `;
 
           container.appendChild(div);
