@@ -45,6 +45,7 @@
       border: 2px solid #888;
       border-radius: 6px;
       margin-bottom: 8px;
+      cursor: pointer;
     }
     #last-updated {
       font-size: 12px;
@@ -153,7 +154,7 @@
             <div class="info">
               ${info.live ? `LIVE - ${info.title} (${info.viewers} viewers)` : "Offline"}
             </div>
-            ${info.live && info.thumbnail ? `<img class="thumbnail-preview" src="${info.thumbnail}" alt="Thumbnail">` : ""}
+            ${info.live && info.thumbnail ? `<a href="${info.url}" target="_blank"><img class="thumbnail-preview" src="${info.thumbnail}" alt="Thumbnail"></a>` : ""}
             <div class="remove-btn" onclick="removeStreamer('${info.name}')">&times;</div>
           `;
 
