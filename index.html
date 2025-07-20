@@ -101,7 +101,7 @@
 
     async function loadStreamers() {
       try {
-        const res = await fetch('streamers.json');
+        const res = await fetch('https://rapahannock.github.io/Kick-Stream-Monitor/streamers.json');
         streamers = await res.json();
         updateStreamers();
       } catch (err) {
