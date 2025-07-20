@@ -106,6 +106,15 @@
         updateStreamers();
       } catch (err) {
         console.error("Failed to load streamers.json", err);
+        streamers = [
+          "adinross", "oblivionsw", "ac7ionman", "dariusirl", "xenathewitch",
+          "musa_usa", "dewditscam", "floridaboy", "lilskamlive",
+          "chickenandy", "shoovy", "iceposeidon", "shotime"
+        ];
+        updateStreamers();
+      }
+    } catch (err) {
+        console.error("Failed to load streamers.json", err);
       }
     }
 
