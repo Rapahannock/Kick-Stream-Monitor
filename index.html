@@ -162,7 +162,18 @@
   <div id="loading-overlay">🔄 Refreshing streamers...</div>
 
   <script>
-    // JavaScript logic in next message...
+    // Injected JS script logic
+    const theme = localStorage.getItem("theme") || "dark";
+    document.body.setAttribute("data-theme", theme);
+
+    function toggleTheme() {
+      const current = document.body.getAttribute("data-theme");
+      const newTheme = current === "dark" ? "light" : "dark";
+      document.body.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    }
+
+    // Load streamer logic will be injected after theme toggle
   </script>
 </body>
 </html>
