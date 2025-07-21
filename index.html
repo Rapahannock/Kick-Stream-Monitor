@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kick Streamers Monitor Pro v1.7</title>
+  <title>Kick Streamers Monitor Pro v1.8</title>
   <style>
     :root {
       --bg: #111;
@@ -108,7 +108,7 @@
   </style>
 </head>
 <body data-theme="dark">
-  <h1>Kick Streamers Monitor Pro <small>v1.7</small></h1>
+  <h1>Kick Streamers Monitor Pro <small>v1.8</small></h1>
   <div id="last-updated"></div>
 
   <div id="filters">
@@ -158,7 +158,7 @@
 
     function filterStreamers(mode) {
       filter = mode;
-      renderStreamers();
+      renderStreamers(); // reloads view after filter change
     }
 
     async function loadStreamers() {
@@ -198,13 +198,13 @@
       const container = document.getElementById("streamers");
       container.innerHTML = "";
 
-      const filteredList = filter === "all" ? streamers :
-        streamers.filter(u => (filter === "live" ? u.live : !u.live));
+      const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
+      const filteredData = filter === "all" ? streamerData :
+        streamerData.filter(s => filter === "live" ? s.live : !s.live);
 
-      const streamerData = await Promise.all(filteredList.map(fetchStreamerInfo));
-      streamerData.sort((a, b) => (b.live - a.live) || (b.viewers - a.viewers));
+      filteredData.sort((a, b) => (b.live - a.live) || (b.viewers - a.viewers));
 
-      for (const s of streamerData) {
+      for (const s of filteredData) {
         const div = document.createElement("div");
         div.className = "streamer" + (s.live ? "" : " offline");
 
