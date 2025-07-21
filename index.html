@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kick Streamers Monitor Pro</title>
+  <title>Kick Streamers Monitor Pro v1.7</title>
   <style>
     :root {
       --bg: #111;
@@ -14,7 +14,6 @@
       --toast-bg: #333;
       --toast-text: #fff;
     }
-
     [data-theme="light"] {
       --bg: #f4f4f4;
       --text: #222;
@@ -24,7 +23,6 @@
       --toast-bg: #ddd;
       --toast-text: #000;
     }
-
     body {
       font-family: Arial, sans-serif;
       background-color: var(--bg);
@@ -32,7 +30,10 @@
       padding: 20px;
       transition: background 0.3s, color 0.3s;
     }
-
+    h1 small {
+      font-size: 0.6em;
+      color: var(--border);
+    }
     #streamers {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -130,6 +131,12 @@
       padding-top: 200px;
       z-index: 999;
     }
+    .sparkline {
+      font-size: 10px;
+      letter-spacing: 1px;
+      margin-top: 4px;
+      color: var(--accent);
+    }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.98); }
@@ -143,7 +150,7 @@
   </style>
 </head>
 <body data-theme="dark">
-  <h1>Kick Streamers Monitor Pro</h1>
+  <h1>Kick Streamers Monitor Pro <small>v1.7</small></h1>
   <div id="last-updated"></div>
   <div id="filters">
     <button onclick="filterStreamers('all')">All</button>
@@ -162,7 +169,6 @@
   <div id="loading-overlay">🔄 Refreshing streamers...</div>
 
   <script>
-    // Injected JS script logic
     const theme = localStorage.getItem("theme") || "dark";
     document.body.setAttribute("data-theme", theme);
 
@@ -173,7 +179,149 @@
       localStorage.setItem("theme", newTheme);
     }
 
-    // Load streamer logic will be injected after theme toggle
+    const streamerDataCache = new Map();
+    const viewerHistory = new Map();
+    let streamers = [];
+    let filter = "all";
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.style.visibility = "visible";
+      toast.style.opacity = 1;
+      setTimeout(() => {
+        toast.style.opacity = 0;
+        toast.style.visibility = "hidden";
+      }, 3000);
+    }
+
+    function filterStreamers(mode) {
+      filter = mode;
+      updateStreamers();
+    }
+
+    function getFilteredStreamers() {
+      if (filter === "live") return streamers.filter(s => s.live);
+      if (filter === "offline") return streamers.filter(s => !s.live);
+      return streamers;
+    }
+
+    function formatViewerCount(count) {
+      return count >= 1000 ? (count / 1000).toFixed(1) + "K" : count;
+    }
+
+    function sparkline(arr) {
+      const bars = "▁▂▃▄▅▆▇█";
+      if (!arr || arr.length === 0) return "";
+      const min = Math.min(...arr);
+      const max = Math.max(...arr);
+      const range = max - min || 1;
+      return arr.map(v => bars[Math.floor(((v - min) / range) * (bars.length - 1))]).join('');
+    }
+
+    function updateStreamers() {
+      const container = document.getElementById("streamers");
+      container.innerHTML = "";
+
+      const now = Date.now();
+      const filtered = getFilteredStreamers();
+
+      filtered
+        .sort((a, b) => (b.live - a.live) || (b.viewers - a.viewers))
+        .forEach(s => {
+          const card = document.createElement("div");
+          card.className = "streamer" + (s.live ? "" : " offline");
+
+          const prev = streamerDataCache.get(s.username);
+          if (prev && prev.viewers !== s.viewers) card.classList.add("updated");
+
+          streamerDataCache.set(s.username, s);
+
+          // Viewer history
+          const history = viewerHistory.get(s.username) || [];
+          if (s.live) {
+            if (history.length >= 5) history.shift();
+            history.push(s.viewers);
+            viewerHistory.set(s.username, history);
+          }
+
+          card.innerHTML = `
+            <a href="https://kick.com/${s.username}" target="_blank">${s.name}</a>
+            <div>${s.live ? `🔴 ${formatViewerCount(s.viewers)} viewers` : "⚫ Offline"}</div>
+            ${s.category ? `<div>🎮 ${s.category}</div>` : ""}
+            ${s.live ? `<div class="sparkline">${sparkline(history)}</div>` : ""}
+            ${s.thumbnail ? `<img src="${s.thumbnail}" class="thumbnail-preview" loading="lazy">` : ""}
+            <div class="remove-btn" onclick="removeStreamer('${s.username}')">Remove</div>
+          `;
+          container.appendChild(card);
+        });
+
+      document.getElementById("last-updated").textContent =
+        "Last updated: " + new Date(now).toLocaleTimeString();
+    }
+
+    async function loadStreamers() {
+      const container = document.getElementById("streamers");
+      const overlay = document.getElementById("loading-overlay");
+
+      try {
+        container.classList.remove("loaded");
+        container.classList.add("fade");
+        overlay.style.display = "block";
+
+        const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/");
+        streamers = await res.json();
+        updateStreamers();
+      } catch (err) {
+        showToast("⚠️ Failed to load streamers");
+        console.error(err);
+      } finally {
+        container.classList.add("loaded");
+        container.classList.remove("fade");
+        overlay.style.display = "none";
+      }
+    }
+
+    async function addStreamer() {
+      const input = document.getElementById("newStreamer");
+      const username = input.value.trim().toLowerCase();
+      if (!username) return showToast("Enter a username");
+
+      try {
+        const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+          method: "POST",
+          body: JSON.stringify({ action: "add", username }),
+        });
+
+        if (!res.ok) throw new Error("Failed");
+
+        showToast(`✅ Added @${username}`);
+        input.value = "";
+        loadStreamers();
+      } catch {
+        showToast(`❌ Failed to add @${username}`);
+      }
+    }
+
+    async function removeStreamer(username) {
+      if (!confirm(`Remove @${username}?`)) return;
+
+      try {
+        const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+          method: "POST",
+          body: JSON.stringify({ action: "remove", username }),
+        });
+
+        if (!res.ok) throw new Error("Failed");
+
+        showToast(`🗑️ Removed @${username}`);
+        loadStreamers();
+      } catch {
+        showToast(`❌ Failed to remove @${username}`);
+      }
+    }
+
+    loadStreamers();
   </script>
 </body>
 </html>
