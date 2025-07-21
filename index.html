@@ -2,14 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kick Streamers Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kick Streamers Monitor Pro</title>
   <style>
+    :root {
+      --bg: #111;
+      --text: #eee;
+      --card: #1a1a1a;
+      --border: #444;
+      --accent: #4af;
+      --toast-bg: #333;
+      --toast-text: #fff;
+    }
+
+    [data-theme="light"] {
+      --bg: #f4f4f4;
+      --text: #222;
+      --card: #fff;
+      --border: #ccc;
+      --accent: #06c;
+      --toast-bg: #ddd;
+      --toast-text: #000;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      background-color: #111;
-      color: #eee;
+      background-color: var(--bg);
+      color: var(--text);
       padding: 20px;
+      transition: background 0.3s, color 0.3s;
     }
 
     #streamers {
@@ -20,15 +41,20 @@
     }
     .streamer {
       padding: 12px;
-      border: 1px solid #444;
+      border: 1px solid var(--border);
       border-radius: 6px;
-      background-color: #1a1a1a;
+      background-color: var(--card);
+      position: relative;
+      animation: fadeIn 0.5s ease;
+    }
+    .updated {
+      animation: pulse 1s ease;
     }
     .offline {
       opacity: 0.5;
     }
     a {
-      color: #4af;
+      color: var(--accent);
       text-decoration: none;
       font-weight: bold;
     }
@@ -38,7 +64,7 @@
       object-fit: cover;
       border-radius: 6px;
       margin-top: 8px;
-      border: 1px solid #666;
+      border: 1px solid var(--border);
     }
     .remove-btn {
       color: #f55;
@@ -47,7 +73,7 @@
       margin-top: 10px;
       text-align: right;
     }
-    #controls {
+    #controls, #filters {
       margin-top: 20px;
     }
     #controls input {
@@ -55,7 +81,7 @@
       font-size: 14px;
       width: 200px;
     }
-    #controls button {
+    #controls button, #filters button {
       padding: 5px 10px;
       margin-left: 5px;
       font-size: 14px;
@@ -63,14 +89,14 @@
     }
     #last-updated {
       font-size: 12px;
-      color: #aaa;
+      color: var(--border);
       margin: 10px 0;
     }
     #toast {
       visibility: hidden;
       min-width: 200px;
-      background-color: #333;
-      color: #fff;
+      background-color: var(--toast-bg);
+      color: var(--toast-text);
       text-align: center;
       border-radius: 6px;
       padding: 10px;
@@ -104,13 +130,28 @@
       padding-top: 200px;
       z-index: 999;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0px #4af; }
+      50% { box-shadow: 0 0 8px #4af; }
+      100% { box-shadow: 0 0 0px #4af; }
+    }
   </style>
 </head>
-<body>
-  <h1>Kick Streamers Monitor</h1>
+<body data-theme="dark">
+  <h1>Kick Streamers Monitor Pro</h1>
   <div id="last-updated"></div>
+  <div id="filters">
+    <button onclick="filterStreamers('all')">All</button>
+    <button onclick="filterStreamers('live')">Live</button>
+    <button onclick="filterStreamers('offline')">Offline</button>
+    <button onclick="toggleTheme()">🌗 Toggle Theme</button>
+  </div>
   <div id="streamers" class="loaded"></div>
-
   <div id="controls">
     <input type="text" id="newStreamer" placeholder="Add new streamer...">
     <button onclick="addStreamer()">Add</button>
@@ -121,137 +162,7 @@
   <div id="loading-overlay">🔄 Refreshing streamers...</div>
 
   <script>
-    let streamers = [];
-
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.innerText = message;
-      toast.style.visibility = "visible";
-      toast.style.opacity = "1";
-
-      setTimeout(() => {
-        toast.style.opacity = "0";
-        setTimeout(() => {
-          toast.style.visibility = "hidden";
-        }, 300);
-      }, 3000);
-    }
-
-    async function loadStreamers() {
-      const container = document.getElementById("streamers");
-      const overlay = document.getElementById("loading-overlay");
-
-      try {
-        container.classList.remove("loaded");
-        container.classList.add("fade");
-        overlay.style.display = "block";
-
-        const cacheBuster = `?t=${Date.now()}`;
-        const res = await fetch(`https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json${cacheBuster}`);
-        streamers = await res.json();
-        await renderStreamers();
-      } catch (err) {
-        console.error("Failed to load streamers list:", err);
-        streamers = [];
-        await renderStreamers();
-      } finally {
-        container.classList.remove("fade");
-        container.classList.add("loaded");
-        overlay.style.display = "none";
-      }
-    }
-
-    async function addStreamer() {
-      const input = document.getElementById("newStreamer");
-      const name = input.value.trim().toLowerCase();
-      if (!name || streamers.includes(name)) {
-        input.value = "";
-        return;
-      }
-
-      try {
-        const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ streamer: name })
-        });
-
-        const msg = await res.text();
-        showToast(msg);
-        setTimeout(loadStreamers, 1500);
-      } catch (err) {
-        console.error("Failed to add streamer:", err);
-        showToast("Add failed");
-      }
-
-      input.value = "";
-    }
-
-    async function removeStreamer(name) {
-      if (!confirm(`Remove ${name}?`)) return;
-
-      try {
-        const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ remove: name })
-        });
-
-        const msg = await res.text();
-        showToast(msg);
-        setTimeout(loadStreamers, 1500);
-      } catch (err) {
-        console.error("Failed to remove streamer:", err);
-        showToast("Remove failed");
-      }
-    }
-
-    async function fetchStreamerInfo(username) {
-      try {
-        const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
-        const data = await res.json();
-        return {
-          name: username,
-          live: data.livestream !== null,
-          title: data.livestream?.session_title || "Offline",
-          viewers: data.livestream?.viewer_count || 0,
-          url: `https://kick.com/${username}`,
-          thumbnail: data.livestream?.thumbnail?.url || null,
-          lastLive: data.last_live_at || null
-        };
-      } catch (err) {
-        console.error("Error fetching info for", username, err);
-        return { name: username, live: false, title: "Unavailable", url: "", thumbnail: null };
-      }
-    }
-
-    async function renderStreamers() {
-      const container = document.getElementById("streamers");
-      container.innerHTML = "";
-
-      const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
-      streamerData.sort((a, b) => b.viewers - a.viewers);
-
-      for (const s of streamerData) {
-        const div = document.createElement("div");
-        div.className = "streamer" + (s.live ? "" : " offline");
-
-        div.innerHTML = `
-          <a href="${s.url}" target="_blank">${s.name}</a>
-          <div>${s.live ? `🔴 LIVE - ${s.title} (${s.viewers} viewers)` : `Offline`}</div>
-          ${s.live && s.thumbnail ? `<a href="${s.url}" target="_blank"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Preview"></a>` : ""}
-          <div class="remove-btn" onclick="removeStreamer('${s.name}')">❌ Remove</div>
-        `;
-
-        container.appendChild(div);
-      }
-
-      const now = new Date();
-      document.getElementById("last-updated").textContent = "Last updated: " + now.toLocaleTimeString();
-    }
-
-    loadStreamers();
-    setInterval(loadStreamers, 60000); // Refresh every minute
+    // JavaScript logic in next message...
   </script>
 </body>
 </html>
