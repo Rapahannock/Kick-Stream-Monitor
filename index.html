@@ -162,8 +162,7 @@
     const theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     document.body.setAttribute("data-theme", theme);
 
-    const removalPINHash = "dc88fc8e2202395eddd99b49a941ecf4"; // MD5 for '02134'
-
+    
     function toggleTheme() {
       const current = document.body.getAttribute("data-theme");
       const newTheme = current === "dark" ? "light" : "dark";
@@ -309,14 +308,14 @@
     }
 
     async function removeStreamer(name) {
-      const pin = prompt("Enter PIN to remove streamer:");
-      const padded = String(pin).padStart(5, "0");
-      const hash = md5(padded);
-      console.log("Entered PIN:", pin, "| Padded:", padded, "| Hashed:", hash);
-      if (hash !== removalPINHash) {
-        showToast("❌ Incorrect PIN");
-        return;
-      }
+  const removalPINHash = "7943abdca7ab48521e3ed32d7dab245b"; 
+  const pin = prompt("Enter PIN to remove streamer:");
+  const padded = String(pin).padStart(5, "0");
+  const hash = md5(padded);
+  if (hash !== removalPINHash) {
+    showToast("❌ Incorrect PIN");
+    return;
+  }
 
       try {
         const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
