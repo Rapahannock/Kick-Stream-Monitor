@@ -157,9 +157,12 @@
 
   <div id="toast"></div>
 
-  <script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
     const theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     document.body.setAttribute("data-theme", theme);
+
+    const removalPINHash = "dc88fc8e2202395eddd99b49a941ecf4"; // MD5 for '02134'
 
     function toggleTheme() {
       const current = document.body.getAttribute("data-theme");
@@ -306,7 +309,14 @@
     }
 
     async function removeStreamer(name) {
-      if (!confirm(`Remove ${name}?`)) return;
+      const pin = prompt("Enter PIN to remove streamer:");
+      const padded = String(pin).padStart(5, "0");
+      const hash = md5(padded);
+      console.log("Entered PIN:", pin, "| Padded:", padded, "| Hashed:", hash);
+      if (hash !== removalPINHash) {
+        showToast("❌ Incorrect PIN");
+        return;
+      }
 
       try {
         const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
@@ -325,14 +335,19 @@
     }
 
     loadStreamers();
-    setInterval(() => {
-      countdown--;
-      if (countdown <= 0) {
-        loadStreamers();
-        countdown = 60;
-      }
-      document.getElementById("refresh-countdown").textContent = `⏳ Refreshing in ${countdown}s`;
-    }, 1000);
-  </script>
+    // Basic MD5 hash function
+function md5(str) {
+  return CryptoJS.MD5(str).toString();
+}
+
+setInterval(() => {
+  countdown--;
+  if (countdown <= 0) {
+    loadStreamers();
+    countdown = 60;
+  }
+  document.getElementById("refresh-countdown").textContent = `⏳ Refreshing in ${countdown}s`;
+}, 1000);
+</script>
 </body>
 </html>
