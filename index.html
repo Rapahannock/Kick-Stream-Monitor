@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kick Streamers Monitor Pro v2.3</title>
+  <title>Kick Streamers Monitor Pro v2.5</title>
   <style>
     :root {
       --bg: #111;
@@ -74,7 +74,7 @@
       margin-top: 10px;
       text-align: right;
     }
-    #controls, #filters {
+    #controls, #filters, #sort-options {
       margin-top: 20px;
     }
     #controls input {
@@ -129,14 +129,32 @@
         width: 100%;
         margin: 5px 0;
       }
+      #floatingAdd {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        z-index: 1000;
+      }
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0px var(--accent); }
+      50% { box-shadow: 0 0 15px var(--accent); }
+      100% { box-shadow: 0 0 0px var(--accent); }
     }
   </style>
 </head>
 <body data-theme="dark">
-  <h1>Kick Streamers Monitor Pro <small>v2.3</small></h1>
+  <h1>Kick Streamers Monitor Pro <small>v2.5</small></h1>
   <div id="last-updated"></div>
   <div id="refresh-countdown"></div>
-
   <div id="filters">
     <button onclick="filterStreamers('all')">All</button>
     <button onclick="filterStreamers('live')">Live</button>
@@ -146,199 +164,240 @@
     <button onclick="document.getElementById('importFile').click()">📥 Import</button>
     <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importStreamers(event)">
   </div>
-
+  <div id="sort-options">
+    <label>Sort by:</label>
+    <select onchange="changeSort(this.value)">
+      <option value="status">Live Status</option>
+      <option value="viewers">Viewer Count</option>
+      <option value="name">Name</option>
+      <option value="category">Category</option>
+    </select>
+  </div>
   <div id="streamers"></div>
-
   <div id="controls">
     <input type="text" id="newStreamer" placeholder="Add new streamer...">
     <button onclick="addStreamer()">Add</button>
     <button onclick="loadStreamers()">🔁 Refresh</button>
   </div>
-
+  <button id="floatingAdd" onclick="document.getElementById('newStreamer').focus()">+</button>
   <div id="toast"></div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script>
-    const theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    document.body.setAttribute("data-theme", theme);
+const theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+document.body.setAttribute("data-theme", theme);
 
-    
-    function toggleTheme() {
-      const current = document.body.getAttribute("data-theme");
-      const newTheme = current === "dark" ? "light" : "dark";
-      document.body.setAttribute("data-theme", newTheme);
-      localStorage.setItem("theme", newTheme);
-    }
+let streamers = [];
+let filter = localStorage.getItem("streamerFilter") || "all";
+let countdown = 60;
+let lastLiveStates = {};
+let sortMode = "status";
 
-    let streamers = [];
-    let filter = "all";
-    let countdown = 60;
+function toggleTheme() {
+  const current = document.body.getAttribute("data-theme");
+  const newTheme = current === "dark" ? "light" : "dark";
+  document.body.setAttribute("data-theme", newTheme);
+  localStorage.setItem("theme", newTheme);
+}
 
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.innerText = message;
-      toast.style.visibility = "visible";
-      toast.style.opacity = "1";
-      setTimeout(() => {
-        toast.style.opacity = "0";
-        setTimeout(() => {
-          toast.style.visibility = "hidden";
-        }, 300);
-      }, 3000);
-    }
+function autoToggleNightMode() {
+  const hour = new Date().getHours();
+  const preferred = hour >= 19 || hour <= 6 ? "dark" : "light";
+  document.body.setAttribute("data-theme", preferred);
+  localStorage.setItem("theme", preferred);
+}
+if (!localStorage.getItem("theme")) autoToggleNightMode();
 
-    function filterStreamers(mode) {
-      filter = mode;
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.innerText = message;
+  toast.style.visibility = "visible";
+  toast.style.opacity = "1";
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => {
+      toast.style.visibility = "hidden";
+    }, 300);
+  }, 3000);
+}
+
+function filterStreamers(mode) {
+  filter = mode;
+  localStorage.setItem("streamerFilter", mode);
+  renderStreamers();
+}
+
+function changeSort(mode) {
+  sortMode = mode;
+  renderStreamers();
+}
+
+function exportStreamers() {
+  const blob = new Blob([JSON.stringify(streamers, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "streamers_export.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importStreamers(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      streamers = JSON.parse(e.target.result);
       renderStreamers();
+      showToast("✅ Imported streamers list");
+    } catch (err) {
+      console.error("Failed to import streamers:", err);
+      showToast("⚠️ Failed to import");
     }
+  };
+  reader.readAsText(file);
+}
 
-    function exportStreamers() {
-      const blob = new Blob([JSON.stringify(streamers, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "streamers_export.json";
-      a.click();
-      URL.revokeObjectURL(url);
+async function loadStreamers() {
+  try {
+    const cacheBuster = `?t=${Date.now()}`;
+    const res = await fetch(`https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json${cacheBuster}`);
+    streamers = await res.json();
+    renderStreamers();
+  } catch (err) {
+    console.error("Failed to load streamers list:", err);
+    showToast("⚠️ Failed to load streamers");
+    streamers = [];
+    renderStreamers();
+  }
+}
+
+async function fetchStreamerInfo(username) {
+  try {
+    const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
+    const data = await res.json();
+    return {
+      name: username,
+      live: data.livestream !== null,
+      title: data.livestream?.session_title || "Offline",
+      viewers: data.livestream?.viewer_count || 0,
+      url: `https://kick.com/${username}`,
+      category: data.livestream?.category?.name || null,
+      thumbnail: data.livestream?.thumbnail?.url || null
+    };
+  } catch (err) {
+    console.error("Error fetching info for", username, err);
+    return { name: username, live: false, title: "Unavailable", url: "", thumbnail: null };
+  }
+}
+
+function categoryIcon(cat) {
+  if (!cat) return '';
+  const icons = {
+    "Just Chatting": "💬",
+    "Call of Duty": "🎯",
+    "GTA V": "🚗",
+    "Sports": "🏀",
+    "Music": "🎵",
+    "Valorant": "🔫",
+    "Fortnite": "🛡️",
+    "League of Legends": "🧙‍♂️"
+  };
+  return icons[cat] || "🎮";
+}
+
+async function renderStreamers() {
+  const container = document.getElementById("streamers");
+  container.innerHTML = "";
+  const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
+  const filteredData = filter === "all" ? streamerData :
+    streamerData.filter(s => filter === "live" ? s.live : !s.live);
+
+  filteredData.sort((a, b) => {
+    if (sortMode === "viewers") return b.viewers - a.viewers;
+    if (sortMode === "name") return a.name.localeCompare(b.name);
+    if (sortMode === "category") return (a.category || "").localeCompare(b.category || "");
+    return (b.live - a.live) || (b.viewers - a.viewers);
+  });
+
+  if (filteredData.length === 0) {
+    container.innerHTML = "<p>No streamers match this view.</p>";
+    return;
+  }
+
+  for (const s of filteredData) {
+    const div = document.createElement("div");
+    div.className = "streamer" + (s.live ? " live" : " offline");
+    if (s.live && !lastLiveStates[s.name]) {
+      div.style.animation = "pulse 1s ease";
     }
+    div.innerHTML = `
+      <a href="${s.url}" target="_blank">${s.name}</a>
+      <div>${s.live ? `🔴 ${s.title} (${s.viewers} viewers)` : `⚫ Offline`}</div>
+      ${s.category ? `<div>${categoryIcon(s.category)} ${s.category}</div>` : ""}
+      ${s.live && s.thumbnail ? `<a href="${s.url}" target="_blank"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Preview"></a>` : ""}
+      <div class="remove-btn" onclick="removeStreamer('${s.name}')">❌ Remove</div>
+    `;
+    container.appendChild(div);
+    lastLiveStates[s.name] = s.live;
+  }
+  const now = new Date();
+  document.getElementById("last-updated").textContent = "Last updated: " + now.toLocaleTimeString();
+}
 
-    function importStreamers(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        try {
-          streamers = JSON.parse(e.target.result);
-          renderStreamers();
-          showToast("✅ Imported streamers list");
-        } catch (err) {
-          console.error("Failed to import streamers:", err);
-          showToast("⚠️ Failed to import");
-        }
-      };
-      reader.readAsText(file);
-    }
+async function addStreamer() {
+  const input = document.getElementById("newStreamer");
+  const name = input.value.trim().toLowerCase();
+  if (!name) {
+    showToast("⚠️ Enter a streamer name");
+    return;
+  }
+  if (streamers.includes(name)) {
+    showToast("⚠️ Streamer already in list");
+    input.value = "";
+    return;
+  }
+  try {
+    const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ streamer: name })
+    });
+    const msg = await res.text();
+    showToast(msg);
+    setTimeout(loadStreamers, 1500);
+  } catch (err) {
+    console.error("Failed to add streamer:", err);
+    showToast("Add failed");
+  }
+  input.value = "";
+}
 
-    async function loadStreamers() {
-      try {
-        const cacheBuster = `?t=${Date.now()}`;
-        const res = await fetch(`https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json${cacheBuster}`);
-        streamers = await res.json();
-        renderStreamers();
-      } catch (err) {
-        console.error("Failed to load streamers list:", err);
-        showToast("⚠️ Failed to load streamers");
-        streamers = [];
-        renderStreamers();
-      }
-    }
-
-    async function fetchStreamerInfo(username) {
-      try {
-        const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
-        const data = await res.json();
-        return {
-          name: username,
-          live: data.livestream !== null,
-          title: data.livestream?.session_title || "Offline",
-          viewers: data.livestream?.viewer_count || 0,
-          url: `https://kick.com/${username}`,
-          category: data.livestream?.category?.name || null,
-          thumbnail: data.livestream?.thumbnail?.url || null
-        };
-      } catch (err) {
-        console.error("Error fetching info for", username, err);
-        return { name: username, live: false, title: "Unavailable", url: "", thumbnail: null };
-      }
-    }
-
-    async function renderStreamers() {
-      const container = document.getElementById("streamers");
-      container.innerHTML = "";
-
-      const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
-      const filteredData = filter === "all" ? streamerData :
-        streamerData.filter(s => filter === "live" ? s.live : !s.live);
-
-      filteredData.sort((a, b) => (b.live - a.live) || (b.viewers - a.viewers));
-
-      for (const s of filteredData) {
-        const div = document.createElement("div");
-        div.className = "streamer" + (s.live ? " live" : " offline");
-
-        div.innerHTML = `
-          <a href="${s.url}" target="_blank">${s.name}</a>
-          <div>${s.live ? `🔴 ${s.title} (${s.viewers} viewers)` : `⚫ Offline`}</div>
-          ${s.category ? `<div>🎮 ${s.category}</div>` : ""}
-          ${s.live && s.thumbnail ? `<a href="${s.url}" target="_blank"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Preview"></a>` : ""}
-          <div class="remove-btn" onclick="removeStreamer('${s.name}')">❌ Remove</div>
-        `;
-
-        container.appendChild(div);
-      }
-
-      const now = new Date();
-      document.getElementById("last-updated").textContent = "Last updated: " + now.toLocaleTimeString();
-    }
-
-    async function addStreamer() {
-      const input = document.getElementById("newStreamer");
-      const name = input.value.trim().toLowerCase();
-      if (!name || streamers.includes(name)) {
-        input.value = "";
-        return;
-      }
-
-      try {
-        const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ streamer: name })
-        });
-
-        const msg = await res.text();
-        showToast(msg);
-        setTimeout(loadStreamers, 1500);
-      } catch (err) {
-        console.error("Failed to add streamer:", err);
-        showToast("Add failed");
-      }
-
-      input.value = "";
-    }
-
-    async function removeStreamer(name) {
-  const removalPINHash = "7943abdca7ab48521e3ed32d7dab245b"; 
+async function removeStreamer(name) {
+  const removalPINHash = "7943abdca7ab48521e3ed32d7dab245b";
   const pin = prompt("Enter PIN to remove streamer:");
   const padded = String(pin).padStart(5, "0");
-  const hash = md5(padded);
+  const hash = CryptoJS.MD5(padded).toString();
   if (hash !== removalPINHash) {
     showToast("❌ Incorrect PIN");
     return;
   }
-
-      try {
-        const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ remove: name })
-        });
-
-        const msg = await res.text();
-        showToast(msg);
-        setTimeout(loadStreamers, 1500);
-      } catch (err) {
-        console.error("Failed to remove streamer:", err);
-        showToast("Remove failed");
-      }
-    }
-
-    loadStreamers();
-    // Basic MD5 hash function
-function md5(str) {
-  return CryptoJS.MD5(str).toString();
+  try {
+    const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ remove: name })
+    });
+    const msg = await res.text();
+    showToast(msg);
+    setTimeout(loadStreamers, 1500);
+  } catch (err) {
+    console.error("Failed to remove streamer:", err);
+    showToast("Remove failed");
+  }
 }
 
+loadStreamers();
 setInterval(() => {
   countdown--;
   if (countdown <= 0) {
