@@ -214,9 +214,9 @@ let filter = localStorage.getItem("streamerFilter") || "all";
 let countdown = parseInt(localStorage.getItem("refreshInterval") || 60);
 let lastLiveStates = {};
 let sortMode = "status";
-let sortDirection = 1; // 1 for descending, -1 for ascending
+let sortDirection = 1;
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-let cache = {}; // For caching streamer data
+let cache = {};
 
 function toggleTheme() {
   const current = document.body.getAttribute("data-theme");
@@ -284,7 +284,7 @@ function importStreamers(event) {
   reader.onload = e => {
     try {
       const imported = JSON.parse(e.target.result);
-      streamers = [...new Set([...streamers, ...imported])]; // Avoid duplicates
+      streamers = [...new Set([...streamers, ...imported])];
       renderStreamers();
       showToast("✅ Imported streamers list");
     } catch (err) {
@@ -312,7 +312,7 @@ async function loadStreamers() {
 async function fetchStreamerInfo(username) {
   const cacheKey = `streamer_${username}`;
   const cachedData = cache[cacheKey];
-  if (cachedData && Date.now() - cachedData.timestamp < 60000) { // 1 min cache
+  if (cachedData && Date.now() - cachedData.timestamp < 60000) {
     return cachedData.data;
   }
   try {
@@ -325,7 +325,7 @@ async function fetchStreamerInfo(username) {
       title: data.livestream?.session_title || "Offline",
       viewers: data.livestream?.viewer_count || 0,
       url: `https://kick.com/${username}`,
-      category: data.livestream?.categories?.[0]?.name || null, // Updated to handle array
+      category: data.livestream?.categories?.[0]?.name || null,
       thumbnail: data.livestream?.thumbnail?.url || null
     };
     cache[cacheKey] = { data: info, timestamp: Date.now() };
@@ -351,7 +351,6 @@ function categoryIcon(cat) {
     "IRL": "🌍",
     "Poker": "🃏",
     "Slots": "🎰"
-    // Add more as needed
   };
   return icons[cat] || "🎮";
 }
@@ -452,24 +451,24 @@ async function addStreamer() {
 }
 
 async function removeStreamer(name) {
-  const removalPINHash = CryptoJS.SHA256("00000").toString(); // Update this to your hashed PIN (e.g., generate with CryptoJS.SHA256('yourPIN').toString())
-  // WARNING: This is client-side; for production, move to server-side auth to prevent exposure.
   const pin = prompt("Enter PIN to remove streamer:");
-  if (!pin) return;
-  const hash = CryptoJS.SHA256(String(pin).padStart(5, "0")).toString();
-  if (hash !== removalPINHash) {
-    showToast("❌ Incorrect PIN");
+  if (!pin) {
+    showToast("⚠️ PIN required");
     return;
   }
   try {
     const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ remove: name })
+      body: JSON.stringify({ remove: name, pin: String(pin).padStart(5, "0") })
     });
     const msg = await res.text();
-    showToast(msg);
-    setTimeout(loadStreamers, 1500);
+    if (res.ok) {
+      showToast(msg);
+      setTimeout(loadStreamers, 1500);
+    } else {
+      showToast("❌ " + msg);
+    }
   } catch (err) {
     console.error("Failed to remove streamer:", err);
     showToast("Remove failed");
