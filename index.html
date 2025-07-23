@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kick Streamers Monitor Pro v3.0</title>
+  <title>Kick Streamers Monitor Pro v3.3</title>
   <style>
     :root {
       --bg: #111;
@@ -86,19 +86,24 @@
       cursor: pointer;
       font-size: 18px;
     }
-    #controls, #filters, #sort-options, #search-bar {
+    #controls, #filters, #sort-options, #search-bar, #bulk-controls {
       margin-top: 20px;
     }
-    #controls input, #search-input {
+    #controls input, #search-input, #bulk-input {
       padding: 5px;
       font-size: 14px;
       width: 200px;
     }
-    #controls button, #filters button {
+    #controls button, #filters button, #bulk-controls button {
       padding: 5px 10px;
       margin-left: 5px;
       font-size: 14px;
       cursor: pointer;
+    }
+    #bulk-input {
+      width: 300px;
+      height: 60px;
+      resize: none;
     }
     #refresh-slider {
       width: 100px;
@@ -136,11 +141,11 @@
       body {
         padding: 10px;
       }
-      #controls input, #search-input {
+      #controls input, #search-input, #bulk-input {
         width: 100%;
         margin-bottom: 10px;
       }
-      #controls button {
+      #controls button, #bulk-controls button {
         display: block;
         width: 100%;
         margin: 5px 0;
@@ -168,7 +173,7 @@
   </style>
 </head>
 <body data-theme="dark">
-  <h1>Kick Streamers Monitor Pro <small>v3.0</small></h1>
+  <h1>Kick Streamers Monitor Pro <small>v3.3</small></h1>
   <div id="last-updated"></div>
   <div id="refresh-countdown"></div>
   <div id="filters">
@@ -188,6 +193,7 @@
       <option value="viewers">Viewer Count</option>
       <option value="name">Name</option>
       <option value="category">Category</option>
+      <option value="offlineDuration">Offline Duration</option>
     </select>
     <button onclick="toggleSortDirection()" aria-label="Toggle sort direction">↕️</button>
   </div>
@@ -201,6 +207,11 @@
     <button onclick="loadStreamers()" aria-label="Refresh streamers">🔁 Refresh</button>
     <label for="refresh-slider">Refresh interval (s):</label>
     <input type="range" id="refresh-slider" min="30" max="120" value="60" oninput="updateRefreshInterval(this.value)">
+  </div>
+  <div id="bulk-controls">
+    <textarea id="bulk-input" placeholder="Enter streamers to add/remove (comma-separated)"></textarea>
+    <button onclick="bulkAddStreamers()" aria-label="Bulk add streamers">Bulk Add</button>
+    <button onclick="bulkRemoveStreamers()" aria-label="Bulk remove streamers">Bulk Remove</button>
   </div>
   <button id="floatingAdd" onclick="document.getElementById('newStreamer').focus()" aria-label="Focus on add streamer input">+</button>
   <div id="toast" role="alert" aria-live="assertive"></div>
@@ -309,31 +320,64 @@ async function loadStreamers() {
   }
 }
 
-async function fetchStreamerInfo(username) {
+async function fetchStreamerInfo(username, retries = 3, backoff = 1000) {
   const cacheKey = `streamer_${username}`;
   const cachedData = cache[cacheKey];
   if (cachedData && Date.now() - cachedData.timestamp < 60000) {
     return cachedData.data;
   }
-  try {
-    const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
-    if (!res.ok) throw new Error("API error");
-    const data = await res.json();
-    const info = {
-      name: username,
-      live: data.livestream !== null,
-      title: data.livestream?.session_title || "Offline",
-      viewers: data.livestream?.viewer_count || 0,
-      url: `https://kick.com/${username}`,
-      category: data.livestream?.categories?.[0]?.name || null,
-      thumbnail: data.livestream?.thumbnail?.url || null
-    };
-    cache[cacheKey] = { data: info, timestamp: Date.now() };
-    return info;
-  } catch (err) {
-    console.error("Error fetching info for", username, err);
-    return { name: username, live: false, title: "Unavailable", url: "", thumbnail: null };
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
+      if (!res.ok) {
+        if (res.status === 429 && attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, backoff * attempt));
+          continue;
+        }
+        throw new Error(`API error: ${res.status}`);
+      }
+      const data = await res.json();
+      if (!data) {
+        throw new Error("No data returned from API");
+      }
+      const info = {
+        name: username,
+        live: data.livestream !== null,
+        title: data.livestream?.session_title || "Offline",
+        viewers: data.livestream?.viewer_count || 0,
+        url: `https://kick.com/${username}`,
+        category: data.livestream?.categories?.[0]?.name || null,
+        thumbnail: data.livestream?.thumbnail?.url || null
+      };
+      if (info.live) {
+        localStorage.setItem(`lastLive_${username}`, Date.now());
+      }
+      cache[cacheKey] = { data: info, timestamp: Date.now() };
+      return info;
+    } catch (err) {
+      console.error(`Error fetching info for ${username} (attempt ${attempt}):`, err);
+      if (attempt === retries) {
+        return {
+          name: username,
+          live: false,
+          title: "Unavailable",
+          viewers: 0,
+          url: `https://kick.com/${username}`,
+          category: null,
+          thumbnail: null
+        };
+      }
+    }
   }
+}
+
+function getOfflineDuration(username) {
+  const lastLive = localStorage.getItem(`lastLive_${username}`);
+  if (!lastLive) return "Unknown";
+  const diffMs = Date.now() - parseInt(lastLive);
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
 function categoryIcon(cat) {
@@ -360,7 +404,7 @@ async function renderStreamers() {
   container.innerHTML = "";
   const searchQuery = document.getElementById("search-input")?.value.toLowerCase() || "";
   const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
-  let filteredData = streamerData.filter(s => {
+  let filteredData = streamerData.filter(s => s && s.name).filter(s => {
     if (filter === "live") return s.live;
     if (filter === "offline") return !s.live;
     if (filter === "favorites") return favorites.includes(s.name);
@@ -378,6 +422,11 @@ async function renderStreamers() {
     if (sortMode === "name") comparison = a.name.localeCompare(b.name);
     if (sortMode === "category") comparison = (a.category || "").localeCompare(b.category || "");
     if (sortMode === "status") comparison = (b.live - a.live) || (b.viewers - a.viewers);
+    if (sortMode === "offlineDuration") {
+      const aTime = localStorage.getItem(`lastLive_${a.name}`) || 0;
+      const bTime = localStorage.getItem(`lastLive_${b.name}`) || 0;
+      comparison = bTime - aTime;
+    }
     return comparison * sortDirection;
   });
 
@@ -400,7 +449,7 @@ async function renderStreamers() {
     }
     div.innerHTML = `
       <a href="${s.url}" target="_blank" aria-label="View ${s.name}'s stream">${s.name}</a>
-      <div>${s.live ? `🔴 ${s.title} (${s.viewers} viewers)` : `⚫ Offline`}</div>
+      <div>${s.live ? `🔴 ${s.title} (${s.viewers} viewers)` : `⚫ Offline for ${getOfflineDuration(s.name)}`}</div>
       ${s.category ? `<div>${categoryIcon(s.category)} ${s.category}</div>` : ""}
       ${s.live && s.thumbnail ? `<a href="${s.url}" target="_blank"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Stream preview for ${s.name}" loading="lazy"></a>` : ""}
       <div class="favorite-btn" onclick="toggleFavorite('${s.name}')" aria-label="Toggle favorite for ${s.name}">${favorites.includes(s.name) ? '⭐' : '☆'}</div>
@@ -473,6 +522,62 @@ async function removeStreamer(name) {
     console.error("Failed to remove streamer:", err);
     showToast("Remove failed");
   }
+}
+
+async function bulkAddStreamers() {
+  const input = document.getElementById("bulk-input");
+  const names = input.value.split(',').map(name => name.trim().toLowerCase()).filter(name => name);
+  if (!names.length) {
+    showToast("⚠️ Enter at least one streamer name");
+    return;
+  }
+  let added = 0;
+  for (const name of names) {
+    if (streamers.includes(name)) continue;
+    try {
+      const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ streamer: name })
+      });
+      if (res.ok) added++;
+    } catch (err) {
+      console.error(`Failed to add ${name}:`, err);
+    }
+  }
+  showToast(`✅ Added ${added} of ${names.length} streamers`);
+  input.value = "";
+  setTimeout(loadStreamers, 1500);
+}
+
+async function bulkRemoveStreamers() {
+  const input = document.getElementById("bulk-input");
+  const names = input.value.split(',').map(name => name.trim().toLowerCase()).filter(name => name);
+  if (!names.length) {
+    showToast("⚠️ Enter at least one streamer name");
+    return;
+  }
+  const pin = prompt("Enter PIN to remove streamers:");
+  if (!pin) {
+    showToast("⚠️ PIN required");
+    return;
+  }
+  let removed = 0;
+  for (const name of names) {
+    try {
+      const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remove: name, pin: String(pin).padStart(5, "0") })
+      });
+      if (res.ok) removed++;
+    } catch (err) {
+      console.error(`Failed to remove ${name}:`, err);
+    }
+  }
+  showToast(`✅ Removed ${removed} of ${names.length} streamers`);
+  input.value = "";
+  setTimeout(loadStreamers, 1500);
 }
 
 if (Notification.permission !== "granted") {
