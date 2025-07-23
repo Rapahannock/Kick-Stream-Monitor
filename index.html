@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kick Streamers Monitor Pro v2.5</title>
+  <title>Kick Streamers Monitor Pro v3.0</title>
   <style>
     :root {
       --bg: #111;
@@ -40,6 +40,7 @@
       border: 1px solid var(--border);
       border-radius: 6px;
       background-color: var(--card);
+      position: relative;
     }
     .offline {
       opacity: 0.5;
@@ -49,6 +50,9 @@
       outline-offset: -2px;
       box-shadow: 0 0 8px var(--accent);
       transition: box-shadow 0.3s ease;
+    }
+    .favorite {
+      border-left: 4px solid gold;
     }
     a {
       color: var(--accent);
@@ -63,6 +67,7 @@
       margin-top: 8px;
       border: 1px solid var(--border);
       transition: transform 0.2s ease-in-out;
+      loading: lazy;
     }
     .thumbnail-preview:hover {
       transform: scale(1.03);
@@ -74,10 +79,17 @@
       margin-top: 10px;
       text-align: right;
     }
-    #controls, #filters, #sort-options {
+    .favorite-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    #controls, #filters, #sort-options, #search-bar {
       margin-top: 20px;
     }
-    #controls input {
+    #controls input, #search-input {
       padding: 5px;
       font-size: 14px;
       width: 200px;
@@ -87,6 +99,10 @@
       margin-left: 5px;
       font-size: 14px;
       cursor: pointer;
+    }
+    #refresh-slider {
+      width: 100px;
+      margin-left: 10px;
     }
     #last-updated {
       font-size: 12px;
@@ -120,7 +136,7 @@
       body {
         padding: 10px;
       }
-      #controls input {
+      #controls input, #search-input {
         width: 100%;
         margin-bottom: 10px;
       }
@@ -152,35 +168,42 @@
   </style>
 </head>
 <body data-theme="dark">
-  <h1>Kick Streamers Monitor Pro <small>v2.5</small></h1>
+  <h1>Kick Streamers Monitor Pro <small>v3.0</small></h1>
   <div id="last-updated"></div>
   <div id="refresh-countdown"></div>
   <div id="filters">
-    <button onclick="filterStreamers('all')">All</button>
-    <button onclick="filterStreamers('live')">Live</button>
-    <button onclick="filterStreamers('offline')">Offline</button>
-    <button onclick="toggleTheme()">🌗 Toggle Theme</button>
-    <button onclick="exportStreamers()">📤 Export</button>
-    <button onclick="document.getElementById('importFile').click()">📥 Import</button>
+    <button onclick="filterStreamers('all')" aria-label="Show all streamers">All</button>
+    <button onclick="filterStreamers('live')" aria-label="Show live streamers">Live</button>
+    <button onclick="filterStreamers('offline')" aria-label="Show offline streamers">Offline</button>
+    <button onclick="filterStreamers('favorites')" aria-label="Show favorite streamers">Favorites</button>
+    <button onclick="toggleTheme()" aria-label="Toggle light/dark theme">🌗 Toggle Theme</button>
+    <button onclick="exportStreamers()" aria-label="Export streamers list">📤 Export</button>
+    <button onclick="document.getElementById('importFile').click()" aria-label="Import streamers list">📥 Import</button>
     <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importStreamers(event)">
   </div>
   <div id="sort-options">
-    <label>Sort by:</label>
-    <select onchange="changeSort(this.value)">
+    <label for="sort-select">Sort by:</label>
+    <select id="sort-select" onchange="changeSort(this.value)">
       <option value="status">Live Status</option>
       <option value="viewers">Viewer Count</option>
       <option value="name">Name</option>
       <option value="category">Category</option>
     </select>
+    <button onclick="toggleSortDirection()" aria-label="Toggle sort direction">↕️</button>
+  </div>
+  <div id="search-bar">
+    <input type="text" id="search-input" placeholder="Search by name or category..." oninput="renderStreamers()" aria-label="Search streamers">
   </div>
   <div id="streamers"></div>
   <div id="controls">
-    <input type="text" id="newStreamer" placeholder="Add new streamer...">
-    <button onclick="addStreamer()">Add</button>
-    <button onclick="loadStreamers()">🔁 Refresh</button>
+    <input type="text" id="newStreamer" placeholder="Add new streamer..." aria-label="Add new streamer">
+    <button onclick="addStreamer()" aria-label="Add streamer">Add</button>
+    <button onclick="loadStreamers()" aria-label="Refresh streamers">🔁 Refresh</button>
+    <label for="refresh-slider">Refresh interval (s):</label>
+    <input type="range" id="refresh-slider" min="30" max="120" value="60" oninput="updateRefreshInterval(this.value)">
   </div>
-  <button id="floatingAdd" onclick="document.getElementById('newStreamer').focus()">+</button>
-  <div id="toast"></div>
+  <button id="floatingAdd" onclick="document.getElementById('newStreamer').focus()" aria-label="Focus on add streamer input">+</button>
+  <div id="toast" role="alert" aria-live="assertive"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script>
 const theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -188,9 +211,12 @@ document.body.setAttribute("data-theme", theme);
 
 let streamers = [];
 let filter = localStorage.getItem("streamerFilter") || "all";
-let countdown = 60;
+let countdown = parseInt(localStorage.getItem("refreshInterval") || 60);
 let lastLiveStates = {};
 let sortMode = "status";
+let sortDirection = 1; // 1 for descending, -1 for ascending
+let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+let cache = {}; // For caching streamer data
 
 function toggleTheme() {
   const current = document.body.getAttribute("data-theme");
@@ -231,6 +257,16 @@ function changeSort(mode) {
   renderStreamers();
 }
 
+function toggleSortDirection() {
+  sortDirection = -sortDirection;
+  renderStreamers();
+}
+
+function updateRefreshInterval(value) {
+  countdown = parseInt(value);
+  localStorage.setItem("refreshInterval", countdown);
+}
+
 function exportStreamers() {
   const blob = new Blob([JSON.stringify(streamers, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -247,7 +283,8 @@ function importStreamers(event) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      streamers = JSON.parse(e.target.result);
+      const imported = JSON.parse(e.target.result);
+      streamers = [...new Set([...streamers, ...imported])]; // Avoid duplicates
       renderStreamers();
       showToast("✅ Imported streamers list");
     } catch (err) {
@@ -273,18 +310,26 @@ async function loadStreamers() {
 }
 
 async function fetchStreamerInfo(username) {
+  const cacheKey = `streamer_${username}`;
+  const cachedData = cache[cacheKey];
+  if (cachedData && Date.now() - cachedData.timestamp < 60000) { // 1 min cache
+    return cachedData.data;
+  }
   try {
     const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
+    if (!res.ok) throw new Error("API error");
     const data = await res.json();
-    return {
+    const info = {
       name: username,
       live: data.livestream !== null,
       title: data.livestream?.session_title || "Offline",
       viewers: data.livestream?.viewer_count || 0,
       url: `https://kick.com/${username}`,
-      category: data.livestream?.category?.name || null,
+      category: data.livestream?.categories?.[0]?.name || null, // Updated to handle array
       thumbnail: data.livestream?.thumbnail?.url || null
     };
+    cache[cacheKey] = { data: info, timestamp: Date.now() };
+    return info;
   } catch (err) {
     console.error("Error fetching info for", username, err);
     return { name: username, live: false, title: "Unavailable", url: "", thumbnail: null };
@@ -301,7 +346,12 @@ function categoryIcon(cat) {
     "Music": "🎵",
     "Valorant": "🔫",
     "Fortnite": "🛡️",
-    "League of Legends": "🧙‍♂️"
+    "League of Legends": "🧙‍♂️",
+    "Minecraft": "⛏️",
+    "IRL": "🌍",
+    "Poker": "🃏",
+    "Slots": "🎰"
+    // Add more as needed
   };
   return icons[cat] || "🎮";
 }
@@ -309,15 +359,27 @@ function categoryIcon(cat) {
 async function renderStreamers() {
   const container = document.getElementById("streamers");
   container.innerHTML = "";
+  const searchQuery = document.getElementById("search-input")?.value.toLowerCase() || "";
   const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
-  const filteredData = filter === "all" ? streamerData :
-    streamerData.filter(s => filter === "live" ? s.live : !s.live);
+  let filteredData = streamerData.filter(s => {
+    if (filter === "live") return s.live;
+    if (filter === "offline") return !s.live;
+    if (filter === "favorites") return favorites.includes(s.name);
+    return true;
+  });
+  if (searchQuery) {
+    filteredData = filteredData.filter(s => 
+      s.name.toLowerCase().includes(searchQuery) || (s.category || "").toLowerCase().includes(searchQuery)
+    );
+  }
 
   filteredData.sort((a, b) => {
-    if (sortMode === "viewers") return b.viewers - a.viewers;
-    if (sortMode === "name") return a.name.localeCompare(b.name);
-    if (sortMode === "category") return (a.category || "").localeCompare(b.category || "");
-    return (b.live - a.live) || (b.viewers - a.viewers);
+    let comparison = 0;
+    if (sortMode === "viewers") comparison = b.viewers - a.viewers;
+    if (sortMode === "name") comparison = a.name.localeCompare(b.name);
+    if (sortMode === "category") comparison = (a.category || "").localeCompare(b.category || "");
+    if (sortMode === "status") comparison = (b.live - a.live) || (b.viewers - a.viewers);
+    return comparison * sortDirection;
   });
 
   if (filteredData.length === 0) {
@@ -326,23 +388,39 @@ async function renderStreamers() {
   }
 
   for (const s of filteredData) {
+    const wasOffline = lastLiveStates[s.name] === false;
+    lastLiveStates[s.name] = s.live;
+    if (s.live && wasOffline && Notification.permission === "granted" && favorites.includes(s.name)) {
+      new Notification(`${s.name} is now live!`, { body: s.title });
+    }
+
     const div = document.createElement("div");
-    div.className = "streamer" + (s.live ? " live" : " offline");
-    if (s.live && !lastLiveStates[s.name]) {
+    div.className = "streamer" + (s.live ? " live" : " offline") + (favorites.includes(s.name) ? " favorite" : "");
+    if (s.live && wasOffline) {
       div.style.animation = "pulse 1s ease";
     }
     div.innerHTML = `
-      <a href="${s.url}" target="_blank">${s.name}</a>
+      <a href="${s.url}" target="_blank" aria-label="View ${s.name}'s stream">${s.name}</a>
       <div>${s.live ? `🔴 ${s.title} (${s.viewers} viewers)` : `⚫ Offline`}</div>
       ${s.category ? `<div>${categoryIcon(s.category)} ${s.category}</div>` : ""}
-      ${s.live && s.thumbnail ? `<a href="${s.url}" target="_blank"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Preview"></a>` : ""}
+      ${s.live && s.thumbnail ? `<a href="${s.url}" target="_blank"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Stream preview for ${s.name}" loading="lazy"></a>` : ""}
+      <div class="favorite-btn" onclick="toggleFavorite('${s.name}')" aria-label="Toggle favorite for ${s.name}">${favorites.includes(s.name) ? '⭐' : '☆'}</div>
       <div class="remove-btn" onclick="removeStreamer('${s.name}')">❌ Remove</div>
     `;
     container.appendChild(div);
-    lastLiveStates[s.name] = s.live;
   }
   const now = new Date();
   document.getElementById("last-updated").textContent = "Last updated: " + now.toLocaleTimeString();
+}
+
+function toggleFavorite(name) {
+  if (favorites.includes(name)) {
+    favorites = favorites.filter(f => f !== name);
+  } else {
+    favorites.push(name);
+  }
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+  renderStreamers();
 }
 
 async function addStreamer() {
@@ -374,10 +452,11 @@ async function addStreamer() {
 }
 
 async function removeStreamer(name) {
-  const removalPINHash = "7943abdca7ab48521e3ed32d7dab245b";
+  const removalPINHash = CryptoJS.SHA256("00000").toString(); // Update this to your hashed PIN (e.g., generate with CryptoJS.SHA256('yourPIN').toString())
+  // WARNING: This is client-side; for production, move to server-side auth to prevent exposure.
   const pin = prompt("Enter PIN to remove streamer:");
-  const padded = String(pin).padStart(5, "0");
-  const hash = CryptoJS.MD5(padded).toString();
+  if (!pin) return;
+  const hash = CryptoJS.SHA256(String(pin).padStart(5, "0")).toString();
   if (hash !== removalPINHash) {
     showToast("❌ Incorrect PIN");
     return;
@@ -397,12 +476,16 @@ async function removeStreamer(name) {
   }
 }
 
+if (Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
+
 loadStreamers();
 setInterval(() => {
   countdown--;
   if (countdown <= 0) {
     loadStreamers();
-    countdown = 60;
+    countdown = parseInt(localStorage.getItem("refreshInterval") || 60);
   }
   document.getElementById("refresh-countdown").textContent = `⏳ Refreshing in ${countdown}s`;
 }, 1000);
