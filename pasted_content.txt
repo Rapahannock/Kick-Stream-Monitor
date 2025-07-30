@@ -1,0 +1,299 @@
+      showToast("✅ Imported streamers list");
+    } catch (err) {
+      console.error("Failed to import streamers:", err);
+      showToast("⚠️ Failed to import");
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function loadStreamers() {
+  try {
+    const cacheBuster = `?t=${Date.now()}`;
+    const res = await fetch(`https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json${cacheBuster}`);
+    streamers = await res.json();
+    renderStreamers();
+  } catch (err) {
+    console.error("Failed to load streamers list:", err);
+    showToast("⚠️ Failed to load streamers");
+    streamers = [];
+    renderStreamers();
+  }
+}
+
+async function fetchStreamerInfo(username, retries = 3, backoff = 1000) {
+  const cacheKey = `streamer_${username}`;
+  const cachedData = cache[cacheKey];
+  if (cachedData && Date.now() - cachedData.timestamp < 60000) {
+    return cachedData.data;
+  }
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
+      if (!res.ok) {
+        if (res.status === 429 && attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, backoff * attempt));
+          continue;
+        }
+        throw new Error(`API error: ${res.status}`);
+      }
+      const data = await res.json();
+      if (!data) {
+        throw new Error("No data returned from API");
+      }
+      const info = {
+        name: username,
+        live: data.livestream !== null,
+        title: data.livestream?.session_title || "Offline",
+        viewers: data.livestream?.viewer_count || 0,
+        url: `https://kick.com/${username}`,
+        category: data.livestream?.categories?.[0]?.name || null,
+        thumbnail: data.livestream?.thumbnail?.url || null
+      };
+      if (info.live) {
+        localStorage.setItem(`lastLive_${username}`, Date.now());
+      }
+      cache[cacheKey] = { data: info, timestamp: Date.now() };
+      return info;
+    } catch (err) {
+      console.error(`Error fetching info for ${username} (attempt ${attempt}):`, err);
+      if (attempt === retries) {
+        return {
+          name: username,
+          live: false,
+          title: "Unavailable",
+          viewers: 0,
+          url: `https://kick.com/${username}`,
+          category: null,
+          thumbnail: null
+        };
+      }
+    }
+  }
+}
+
+function getOfflineDuration(username) {
+  const lastLive = localStorage.getItem(`lastLive_${username}`);
+  if (!lastLive) return "Unknown";
+  const diffMs = Date.now() - parseInt(lastLive);
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+function categoryIcon(cat) {
+  if (!cat) return '';
+  const icons = {
+    "Just Chatting": "💬",
+    "Call of Duty": "🎯",
+    "GTA V": "🚗",
+    "Sports": "🏀",
+    "Music": "🎵",
+    "Valorant": "🔫",
+    "Fortnite": "🛡️",
+    "League of Legends": "🧙‍♂️",
+    "Minecraft": "⛏️",
+    "IRL": "🌍",
+    "Poker": "🃏",
+    "Slots": "🎰"
+  };
+  return icons[cat] || "🎮";
+}
+
+async function renderStreamers() {
+  const container = document.getElementById("streamers");
+  container.innerHTML = "";
+  const searchQuery = document.getElementById("search-input")?.value.toLowerCase() || "";
+  const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
+  let filteredData = streamerData.filter(s => s && s.name).filter(s => {
+    if (filter === "live") return s.live;
+    if (filter === "offline") return !s.live;
+    if (filter === "favorites") return favorites.includes(s.name);
+    return true;
+  });
+  if (searchQuery) {
+    filteredData = filteredData.filter(s => 
+      s.name.toLowerCase().includes(searchQuery) || (s.category || "").toLowerCase().includes(searchQuery)
+    );
+  }
+
+  filteredData.sort((a, b) => {
+    let comparison = 0;
+    if (sortMode === "viewers") comparison = b.viewers - a.viewers;
+    if (sortMode === "name") comparison = a.name.localeCompare(b.name);
+    if (sortMode === "category") comparison = (a.category || "").localeCompare(b.category || "");
+    if (sortMode === "status") comparison = (b.live - a.live) || (b.viewers - a.viewers);
+    if (sortMode === "offlineDuration") {
+      const aTime = localStorage.getItem(`lastLive_${a.name}`) || 0;
+      const bTime = localStorage.getItem(`lastLive_${b.name}`) || 0;
+      comparison = bTime - aTime;
+    }
+    return comparison * sortDirection;
+  });
+
+  if (filteredData.length === 0) {
+    container.innerHTML = "<p>No streamers match this view.</p>";
+    return;
+  }
+
+  for (const s of filteredData) {
+    const wasOffline = lastLiveStates[s.name] === false;
+    lastLiveStates[s.name] = s.live;
+    if (s.live && wasOffline && Notification.permission === "granted" && favorites.includes(s.name)) {
+      new Notification(`${s.name} is now live!`, { body: s.title });
+    }
+
+    const div = document.createElement("div");
+    div.className = "streamer" + (s.live ? " live" : " offline") + (favorites.includes(s.name) ? " favorite" : "");
+    if (s.live && wasOffline) {
+      div.style.animation = "pulse 1s ease";
+    }
+    div.innerHTML = `
+      <a href="${s.url}" target="_blank" aria-label="View ${s.name}'s stream">${s.name}</a>
+      <div>${s.live ? `🔴 ${s.title} (${s.viewers} viewers)` : `⚫ Offline for ${getOfflineDuration(s.name)}`}</div>
+      ${s.category ? `<div>${categoryIcon(s.category)} ${s.category}</div>` : ""}
+      ${s.live && s.thumbnail ? `<a href="${s.url}" target="_blank"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Stream preview for ${s.name}" loading="lazy"></a>` : ""}
+      <div class="favorite-btn" onclick="toggleFavorite('${s.name}')" aria-label="Toggle favorite for ${s.name}">${favorites.includes(s.name) ? '⭐' : '☆'}</div>
+      <div class="remove-btn" onclick="removeStreamer('${s.name}')">❌ Remove</div>
+    `;
+    container.appendChild(div);
+  }
+  const now = new Date();
+  document.getElementById("last-updated").textContent = "Last updated: " + now.toLocaleTimeString();
+}
+
+function toggleFavorite(name) {
+  if (favorites.includes(name)) {
+    favorites = favorites.filter(f => f !== name);
+  } else {
+    favorites.push(name);
+  }
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+  renderStreamers();
+}
+
+async function addStreamer() {
+  const input = document.getElementById("newStreamer");
+  const name = input.value.trim().toLowerCase();
+  if (!name) {
+    showToast("⚠️ Enter a streamer name");
+    return;
+  }
+  if (streamers.includes(name)) {
+    showToast("⚠️ Streamer already in list");
+    input.value = "";
+    return;
+  }
+  try {
+    const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ streamer: name })
+    });
+    const msg = await res.text();
+    showToast(msg);
+    setTimeout(loadStreamers, 1500);
+  } catch (err) {
+    console.error("Failed to add streamer:", err);
+    showToast("Add failed");
+  }
+  input.value = "";
+}
+
+async function removeStreamer(name) {
+  const pin = prompt("Enter PIN to remove streamer:");
+  if (!pin) {
+    showToast("⚠️ PIN required");
+    return;
+  }
+  try {
+    const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ remove: name, pin: String(pin).padStart(5, "0") })
+    });
+    const msg = await res.text();
+    if (res.ok) {
+      showToast(msg);
+      setTimeout(loadStreamers, 1500);
+    } else {
+      showToast("❌ " + msg);
+    }
+  } catch (err) {
+    console.error("Failed to remove streamer:", err);
+    showToast("Remove failed");
+  }
+}
+
+async function bulkAddStreamers() {
+  const input = document.getElementById("bulk-input");
+  const names = input.value.split(',').map(name => name.trim().toLowerCase()).filter(name => name);
+  if (!names.length) {
+    showToast("⚠️ Enter at least one streamer name");
+    return;
+  }
+  let added = 0;
+  for (const name of names) {
+    if (streamers.includes(name)) continue;
+    try {
+      const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ streamer: name })
+      });
+      if (res.ok) added++;
+    } catch (err) {
+      console.error(`Failed to add ${name}:`, err);
+    }
+  }
+  showToast(`✅ Added ${added} of ${names.length} streamers`);
+  input.value = "";
+  setTimeout(loadStreamers, 1500);
+}
+
+async function bulkRemoveStreamers() {
+  const input = document.getElementById("bulk-input");
+  const names = input.value.split(',').map(name => name.trim().toLowerCase()).filter(name => name);
+  if (!names.length) {
+    showToast("⚠️ Enter at least one streamer name");
+    return;
+  }
+  const pin = prompt("Enter PIN to remove streamers:");
+  if (!pin) {
+    showToast("⚠️ PIN required");
+    return;
+  }
+  let removed = 0;
+  for (const name of names) {
+    try {
+      const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remove: name, pin: String(pin).padStart(5, "0") })
+      });
+      if (res.ok) removed++;
+    } catch (err) {
+      console.error(`Failed to remove ${name}:`, err);
+    }
+  }
+  showToast(`✅ Removed ${removed} of ${names.length} streamers`);
+  input.value = "";
+  setTimeout(loadStreamers, 1500);
+}
+
+if (Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
+
+loadStreamers();
+setInterval(() => {
+  countdown--;
+  if (countdown <= 0) {
+    loadStreamers();
+    countdown = parseInt(localStorage.getItem("refreshInterval") || 60);
+  }
+  document.getElementById("refresh-countdown").textContent = `⏳ Refreshing in ${countdown}s`;
+}, 1000);
+</script>
+</body>
+</html>

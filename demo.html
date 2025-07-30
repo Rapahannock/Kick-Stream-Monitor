@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kick Streamers Monitor Pro v4.0 - Demo</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+    <link rel="stylesheet" href="src/styles/components.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="app-title">
+                        Kick Streamers Monitor Pro 
+                        <span class="version">v4.0</span>
+                    </h1>
+                    <div class="connection-status">
+                        <span class="status-indicator connected"></span>
+                        Connected
+                        <span class="last-updated">Last updated: <span id="last-updated-time">--:--:-- --</span></span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-icon" id="analytics-btn" title="Analytics">📊</button>
+                    <button class="btn btn-icon" id="theme-toggle" title="Toggle Theme">🌗</button>
+                    <button class="btn btn-icon" id="settings-btn" title="Settings">⚙️</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="search-section">
+                <div class="search-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search streamers...">
+                    <button class="search-clear" id="search-clear">✕</button>
+                </div>
+                <div class="add-streamer-container">
+                    <input type="text" id="add-streamer-input" class="add-streamer-input" placeholder="Add streamer...">
+                    <button class="btn btn-primary" id="add-streamer-btn">Add</button>
+                </div>
+            </div>
+
+            <div class="filters-section">
+                <div class="filter-group">
+                    <label class="filter-label">Status:</label>
+                    <div class="filter-buttons" id="status-filter">
+                        <button class="filter-btn active" data-value="all">All</button>
+                        <button class="filter-btn" data-value="live">Live</button>
+                        <button class="filter-btn" data-value="offline">Offline</button>
+                        <button class="filter-btn" data-value="favorites">Favorites</button>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Viewers:</label>
+                    <select class="filter-select" id="viewers-filter">
+                        <option value="all">All</option>
+                        <option value="0-100">0-100</option>
+                        <option value="100-500">100-500</option>
+                        <option value="500-1000">500-1K</option>
+                        <option value="1000-5000">1K-5K</option>
+                        <option value="5000+">5K+</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Category:</label>
+                    <select class="filter-select" id="category-filter">
+                        <option value="all">All Categories</option>
+                        <option value="Just Chatting">Just Chatting</option>
+                        <option value="Call of Duty">Call of Duty</option>
+                        <option value="GTA V">GTA V</option>
+                        <option value="Valorant">Valorant</option>
+                        <option value="Fortnite">Fortnite</option>
+                        <option value="League of Legends">League of Legends</option>
+                        <option value="Minecraft">Minecraft</option>
+                        <option value="IRL">IRL</option>
+                        <option value="Music">Music</option>
+                        <option value="Sports">Sports</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Sort:</label>
+                    <select class="filter-select" id="sort-filter">
+                        <option value="status">Live Status</option>
+                        <option value="viewers">Viewer Count</option>
+                        <option value="name">Name</option>
+                        <option value="category">Category</option>
+                        <option value="duration">Stream Duration</option>
+                        <option value="offline-time">Offline Time</option>
+                    </select>
+                    <button class="btn btn-icon" id="sort-direction">↓</button>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <div class="view-controls">
+                    <button class="btn btn-icon active" id="grid-view" title="Grid View">⊞</button>
+                    <button class="btn btn-icon" id="list-view" title="List View">☰</button>
+                </div>
+                <div class="refresh-controls">
+                    <button class="btn btn-icon" id="refresh-btn" title="Refresh">🔄</button>
+                    <label class="filter-label">Auto-refresh:</label>
+                    <select class="filter-select" id="refresh-interval">
+                        <option value="30">30s</option>
+                        <option value="60">1m</option>
+                        <option value="120">2m</option>
+                        <option value="300">5m</option>
+                        <option value="0">Off</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-label">TOTAL:</div>
+                    <div class="stat-value" id="total-count">12</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">LIVE:</div>
+                    <div class="stat-value" id="live-count">5</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">FAVORITES:</div>
+                    <div class="stat-value" id="favorites-count">3</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">TOTAL VIEWERS:</div>
+                    <div class="stat-value" id="total-viewers">2,847</div>
+                </div>
+            </div>
+
+            <div class="streamers-container" id="streamers-container">
+                <!-- Demo streamers will be populated here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay"></div>
+
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="loading-indicator">
+        <div class="loading-spinner"></div>
+        <div class="loading-message">Loading...</div>
+    </div>
+
+    <script>
+        // Demo data
+        const demoStreamers = [
+            {
+                name: 'xqc',
+                displayName: 'xQc',
+                live: true,
+                title: 'VARIETY GAMING | !gfuel !vpn',
+                viewers: 45672,
+                url: 'https://kick.com/xqc',
+                category: 'Just Chatting',
+                thumbnail: 'https://images.kick.com/video_thumbnails/xqc/thumbnail.jpg',
+                avatar: 'https://files.kick.com/images/user/1/profile_image/conversion/a1b2c3-medium.webp',
+                followers: 892456,
+                isVerified: true,
+                language: 'en',
+                streamStartTime: Date.now() - (3 * 60 * 60 * 1000), // 3 hours ago
+                lastSeen: Date.now(),
+                tags: ['variety', 'gaming', 'react'],
+                mature: false,
+                error: false,
+                lastUpdated: Date.now(),
+                isFavorite: true
+            },
+            {
+                name: 'trainwreck',
+                displayName: 'Trainwreck',
+                live: true,
+                title: 'SLOTS | !twitter !youtube',
+                viewers: 23891,
+                url: 'https://kick.com/trainwreck',
+                category: 'Slots',
+                thumbnail: 'https://images.kick.com/video_thumbnails/trainwreck/thumbnail.jpg',
+                avatar: 'https://files.kick.com/images/user/2/profile_image/conversion/b2c3d4-medium.webp',
+                followers: 567234,
+                isVerified: true,
+                language: 'en',
+                streamStartTime: Date.now() - (1.5 * 60 * 60 * 1000), // 1.5 hours ago
+                lastSeen: Date.now(),
+                tags: ['slots', 'gambling'],
+                mature: true,
+                error: false,
+                lastUpdated: Date.now(),
+                isFavorite: false
+            },
+            {
+                name: 'adin',
+                displayName: 'Adin',
+                live: true,
+                title: 'REACTING TO TIKTOKS WITH CHAT',
+                viewers: 18234,
+                url: 'https://kick.com/adin',
+                category: 'Just Chatting',
+                thumbnail: 'https://images.kick.com/video_thumbnails/adin/thumbnail.jpg',
+                avatar: 'https://files.kick.com/images/user/3/profile_image/conversion/c3d4e5-medium.webp',
+                followers: 445123,
+                isVerified: true,
+                language: 'en',
+                streamStartTime: Date.now() - (45 * 60 * 1000), // 45 minutes ago
+                lastSeen: Date.now(),
+                tags: ['react', 'tiktok'],
+                mature: false,
+                error: false,
+                lastUpdated: Date.now(),
+                isFavorite: true
+            },
+            {
+                name: 'amouranth',
+                displayName: 'Amouranth',
+                live: true,
+                title: 'HOT TUB STREAM | !socials',
+                viewers: 12567,
+                url: 'https://kick.com/amouranth',
+                category: 'Hot Tub',
+                thumbnail: 'https://images.kick.com/video_thumbnails/amouranth/thumbnail.jpg',
+                avatar: 'https://files.kick.com/images/user/4/profile_image/conversion/d4e5f6-medium.webp',
+                followers: 334567,
+                isVerified: true,
+                language: 'en',
+                streamStartTime: Date.now() - (2.2 * 60 * 60 * 1000), // 2.2 hours ago
+                lastSeen: Date.now(),
+                tags: ['hottub', 'asmr'],
+                mature: true,
+                error: false,
+                lastUpdated: Date.now(),
+                isFavorite: false
+            },
+            {
+                name: 'nickmercs',
+                displayName: 'NICKMERCS',
+                live: true,
+                title: 'WARZONE WITH THE BOYS | !scuf',
+                viewers: 8934,
+                url: 'https://kick.com/nickmercs',
+                category: 'Call of Duty',
+                thumbnail: 'https://images.kick.com/video_thumbnails/nickmercs/thumbnail.jpg',
+                avatar: 'https://files.kick.com/images/user/5/profile_image/conversion/e5f6g7-medium.webp',
+                followers: 223445,
+                isVerified: true,
+                language: 'en',
+                streamStartTime: Date.now() - (4.1 * 60 * 60 * 1000), // 4.1 hours ago
+                lastSeen: Date.now(),
+                tags: ['fps', 'warzone'],
+                mature: false,
+                error: false,
+                lastUpdated: Date.now(),
+                isFavorite: true
+            },
+            {
+                name: 'pokimane',
+                displayName: 'Pokimane',
+                live: false,
+                title: 'Offline',
+                viewers: 0,
+                url: 'https://kick.com/pokimane',
+                category: null,
+                thumbnail: null,
+                avatar: 'https://files.kick.com/images/user/6/profile_image/conversion/f6g7h8-medium.webp',
+                followers: 445678,
+                isVerified: true,
+                language: 'en',
+                streamStartTime: null,
+                lastSeen: Date.now() - (6 * 60 * 60 * 1000), // 6 hours ago
+                tags: [],
+                mature: false,
+                error: false,
+                lastUpdated: Date.now(),
+                isFavorite: false
+            },
+            {
+                name: 'shroud',
+                displayName: 'shroud',
+                live: false,
+                title: 'Offline',
+                viewers: 0,
+                url: 'https://kick.com/shroud',
+                category: null,
+                thumbnail: null,
+                avatar: 'https://files.kick.com/images/user/7/profile_image/conversion/g7h8i9-medium.webp',
+                followers: 567890,
+                isVerified: true,
+                language: 'en',
+                streamStartTime: null,
+                lastSeen: Date.now() - (12 * 60 * 60 * 1000), // 12 hours ago
+                tags: [],
+                mature: false,
+                error: false,
+                lastUpdated: Date.now(),
+                isFavorite: false
+            }
+        ];
+
+        // Simple demo functionality
+        function renderStreamers(streamers) {
+            const container = document.getElementById('streamers-container');
+            container.innerHTML = '';
+
+            streamers.forEach(streamer => {
+                const card = document.createElement('div');
+                card.className = `streamer-card ${streamer.live ? 'live' : 'offline'}`;
+                
+                const duration = streamer.live && streamer.streamStartTime ? 
+                    formatDuration(Date.now() - streamer.streamStartTime) : '';
+                
+                card.innerHTML = `
+                    <div class="streamer-header">
+                        <div class="streamer-avatar">
+                            <img src="${streamer.avatar || '/placeholder-avatar.png'}" alt="${streamer.displayName}" loading="lazy">
+                            <div class="status-indicator ${streamer.live ? 'live' : 'offline'}"></div>
+                        </div>
+                        <div class="streamer-info">
+                            <div class="streamer-name">
+                                ${streamer.displayName}
+                                ${streamer.isVerified ? '<span class="verified">✓</span>' : ''}
+                            </div>
+                            <div class="streamer-stats">
+                                ${streamer.live ? `${streamer.viewers.toLocaleString()} viewers` : 'Offline'}
+                                ${duration ? ` • ${duration}` : ''}
+                            </div>
+                        </div>
+                        <div class="streamer-actions">
+                            <button class="btn btn-icon favorite-btn ${streamer.isFavorite ? 'active' : ''}" 
+                                    data-streamer="${streamer.name}" title="Toggle Favorite">
+                                ${streamer.isFavorite ? '★' : '☆'}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    ${streamer.live ? `
+                        <div class="streamer-thumbnail">
+                            <img src="${streamer.thumbnail || '/placeholder-thumbnail.png'}" alt="Stream thumbnail" loading="lazy">
+                            <div class="live-indicator">LIVE</div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="streamer-content">
+                        <div class="stream-title">${streamer.title}</div>
+                        ${streamer.category ? `<div class="stream-category">${streamer.category}</div>` : ''}
+                        ${streamer.tags.length > 0 ? `
+                            <div class="stream-tags">
+                                ${streamer.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                // Add click handler to open stream
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('.favorite-btn')) {
+                        window.open(streamer.url, '_blank');
+                    }
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        function formatDuration(ms) {
+            const hours = Math.floor(ms / (1000 * 60 * 60));
+            const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+        }
+
+        function updateStats(streamers) {
+            const live = streamers.filter(s => s.live);
+            const favorites = streamers.filter(s => s.isFavorite);
+            const totalViewers = live.reduce((sum, s) => sum + s.viewers, 0);
+
+            document.getElementById('total-count').textContent = streamers.length;
+            document.getElementById('live-count').textContent = live.length;
+            document.getElementById('favorites-count').textContent = favorites.length;
+            document.getElementById('total-viewers').textContent = totalViewers.toLocaleString();
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('last-updated-time').textContent = timeString;
+        }
+
+        // Initialize demo
+        document.addEventListener('DOMContentLoaded', () => {
+            renderStreamers(demoStreamers);
+            updateStats(demoStreamers);
+            updateLastUpdated();
+
+            // Add some basic interactivity
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('favorite-btn')) {
+                    e.target.classList.toggle('active');
+                    e.target.textContent = e.target.classList.contains('active') ? '★' : '☆';
+                }
+            });
+
+            // Theme toggle
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+            });
+
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            console.log('Demo initialized with', demoStreamers.length, 'streamers');
+        });
+    </script>
+</body>
+</html>
+
