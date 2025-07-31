@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kick Streamers Monitor Pro v4.0 - Demo</title>
-    <link rel="stylesheet" href="src/styles/main.css">
-    <link rel="stylesheet" href="src/styles/components.css">
+    <meta name="description" content="Demo of the advanced Kick.com streamers monitor with filtering, analytics, and notifications">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#1a1a2e">
 </head>
 <body>
     <div id="app">
@@ -318,7 +324,7 @@
                 card.innerHTML = `
                     <div class="streamer-header">
                         <div class="streamer-avatar">
-                            <img src="${streamer.avatar || '/placeholder-avatar.png'}" alt="${streamer.displayName}" loading="lazy">
+                            <img src="${streamer.avatar || 'https://via.placeholder.com/64x64/333/fff?text=?'}" alt="${streamer.displayName}" loading="lazy">
                             <div class="status-indicator ${streamer.live ? 'live' : 'offline'}"></div>
                         </div>
                         <div class="streamer-info">
@@ -341,7 +347,7 @@
                     
                     ${streamer.live ? `
                         <div class="streamer-thumbnail">
-                            <img src="${streamer.thumbnail || '/placeholder-thumbnail.png'}" alt="Stream thumbnail" loading="lazy">
+                            <img src="${streamer.thumbnail || 'https://via.placeholder.com/320x180/333/fff?text=LIVE'}" alt="Stream thumbnail" loading="lazy">
                             <div class="live-indicator">LIVE</div>
                         </div>
                     ` : ''}
