@@ -1,51 +1,50 @@
-// Kick Streamers Monitor Pro v4.0 - Main Application
-import { FilterManager } from './filterManager.js';
-import { StreamerManager } from './streamerManager.js';
-import { HistoryManager } from './historyManager.js';
-import { NotificationManager } from './notificationManager.js';
-import { StorageManager } from './storageManager.js';
-import { UIManager } from './uiManager.js';
+// Main Application Entry Point
+import { StreamerManager } from './services/streamerManager.js';
+import { FilterManager } from './services/filterManager.js';
+import { HistoryManager } from './services/historyManager.js';
+import { NotificationManager } from './services/notificationManager.js';
+import { UIManager } from './services/uiManager.js';
+import { StorageManager } from './services/storageManager.js';
 
 class KickStreamersApp {
     constructor() {
-        this.version = '4.0';
         this.isInitialized = false;
         this.refreshInterval = null;
-        this.refreshIntervalTime = 60000; // 1 minute default
+        this.refreshCountdown = null;
+        this.countdownTimer = null;
         
-        // Initialize services
+        // Initialize managers
         this.storage = new StorageManager();
-        this.ui = new UIManager();
-        this.filter = new FilterManager();
-        this.streamer = new StreamerManager(this.storage);
-        this.history = new HistoryManager(this.storage);
-        this.notification = new NotificationManager();
+        this.streamerManager = new StreamerManager(this.storage);
+        this.filterManager = new FilterManager();
+        this.historyManager = new HistoryManager(this.storage);
+        this.notificationManager = new NotificationManager();
+        this.uiManager = new UIManager();
         
-        // State
-        this.streamers = [];
-        this.filteredStreamers = [];
-        this.currentView = 'grid';
-        this.isLoading = false;
+        // Bind methods
+        this.handleRefresh = this.handleRefresh.bind(this);
+        this.handleSearch = this.handleSearch.bind(this);
+        this.handleAddStreamer = this.handleAddStreamer.bind(this);
+        this.handleFilterChange = this.handleFilterChange.bind(this);
+        this.handleSortChange = this.handleSortChange.bind(this);
+        this.handleViewChange = this.handleViewChange.bind(this);
+        this.handleThemeToggle = this.handleThemeToggle.bind(this);
         
-        // DOM elements
-        this.elements = {};
+        this.init();
     }
 
     async init() {
         try {
-            console.log('Initializing Kick Streamers Monitor v' + this.version + '...');
+            console.log('Initializing Kick Streamers Monitor v4.0...');
             
-            // Initialize services
-            await this.storage.init();
-            await this.notification.init();
-            await this.history.init();
-            this.ui.init();
-            
-            // Setup DOM elements
-            this.setupDOMElements();
+            // Initialize theme
+            this.initializeTheme();
             
             // Setup event listeners
             this.setupEventListeners();
+            
+            // Initialize managers
+            await this.initializeManagers();
             
             // Load initial data
             await this.loadInitialData();
@@ -53,266 +52,403 @@ class KickStreamersApp {
             // Setup auto-refresh
             this.setupAutoRefresh();
             
-            // Apply saved settings
-            this.applySavedSettings();
-            
+            // Mark as initialized
             this.isInitialized = true;
-            console.log('Application initialized successfully');
             
-            this.ui.showToast('Application loaded successfully!', 'success');
+            console.log('Application initialized successfully');
+            this.uiManager.showToast('Application loaded successfully', 'success');
             
         } catch (error) {
             console.error('Failed to initialize application:', error);
-            this.ui.showToast('Failed to initialize application: ' + error.message, 'error');
+            this.uiManager.showToast('Failed to initialize application', 'error');
+            this.showErrorState(error);
         }
     }
 
-    setupDOMElements() {
-        // Cache DOM elements
-        this.elements = {
-            // Header elements
-            connectionStatus: document.getElementById('connection-status'),
-            connectionText: document.getElementById('connection-text'),
-            lastUpdatedTime: document.getElementById('last-updated-time'),
-            analyticsBtn: document.getElementById('analytics-btn'),
-            themeToggle: document.getElementById('theme-toggle'),
-            settingsBtn: document.getElementById('settings-btn'),
-            
-            // Search elements
-            searchInput: document.getElementById('search-input'),
-            searchClear: document.getElementById('search-clear'),
-            addStreamerInput: document.getElementById('add-streamer-input'),
-            addStreamerBtn: document.getElementById('add-streamer-btn'),
-            
-            // Filter elements
-            statusFilter: document.getElementById('status-filter'),
-            viewersFilter: document.getElementById('viewers-filter'),
-            categoryFilter: document.getElementById('category-filter'),
-            sortFilter: document.getElementById('sort-filter'),
-            sortDirection: document.getElementById('sort-direction'),
-            
-            // Control elements
-            gridView: document.getElementById('grid-view'),
-            listView: document.getElementById('list-view'),
-            refreshBtn: document.getElementById('refresh-btn'),
-            refreshInterval: document.getElementById('refresh-interval'),
-            
-            // Stats elements
-            totalCount: document.getElementById('total-count'),
-            liveCount: document.getElementById('live-count'),
-            favoritesCount: document.getElementById('favorites-count'),
-            totalViewers: document.getElementById('total-viewers'),
-            
-            // Main content
-            streamersContainer: document.getElementById('streamers-container'),
-            loadingState: document.getElementById('loading-state')
-        };
+    async initializeManagers() {
+        // Initialize storage
+        await this.storage.init();
+        
+        // Initialize notification manager
+        await this.notificationManager.init();
+        
+        // Initialize history manager
+        await this.historyManager.init();
+        
+        // Setup manager event listeners
+        this.setupManagerEvents();
     }
 
-    setupEventListeners() {
-        // Search functionality
-        this.elements.searchInput.addEventListener('input', this.debounce((e) => {
-            this.filter.setFilter('search', e.target.value);
-        }, 300));
-        
-        this.elements.searchClear.addEventListener('click', () => {
-            this.elements.searchInput.value = '';
-            this.filter.setFilter('search', '');
-        });
-        
-        // Add streamer functionality
-        this.elements.addStreamerBtn.addEventListener('click', () => {
-            this.addStreamer();
-        });
-        
-        this.elements.addStreamerInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                this.addStreamer();
-            }
-        });
-        
-        // Filter event listeners
-        this.elements.statusFilter.addEventListener('click', (e) => {
-            if (e.target.classList.contains('filter-btn')) {
-                this.setActiveFilterButton(this.elements.statusFilter, e.target);
-                this.filter.setFilter('status', e.target.dataset.value);
-            }
-        });
-        
-        this.elements.viewersFilter.addEventListener('change', (e) => {
-            this.filter.setFilter('viewers', e.target.value);
-        });
-        
-        this.elements.categoryFilter.addEventListener('change', (e) => {
-            this.filter.setFilter('category', e.target.value);
-        });
-        
-        this.elements.sortFilter.addEventListener('change', (e) => {
-            this.filter.setSortBy(e.target.value);
-        });
-        
-        this.elements.sortDirection.addEventListener('click', () => {
-            this.filter.toggleSortDirection();
-            this.updateSortDirectionButton();
-        });
-        
-        // View controls
-        this.elements.gridView.addEventListener('click', () => {
-            this.setView('grid');
-        });
-        
-        this.elements.listView.addEventListener('click', () => {
-            this.setView('list');
-        });
-        
-        // Refresh controls
-        this.elements.refreshBtn.addEventListener('click', () => {
-            this.refreshStreamers();
-        });
-        
-        this.elements.refreshInterval.addEventListener('change', (e) => {
-            this.setRefreshInterval(parseInt(e.target.value));
-        });
-        
-        // Header controls
-        this.elements.themeToggle.addEventListener('click', () => {
-            this.toggleTheme();
-        });
-        
-        this.elements.settingsBtn.addEventListener('click', () => {
-            this.showSettings();
-        });
-        
-        this.elements.analyticsBtn.addEventListener('click', () => {
-            this.showAnalytics();
-        });
-        
-        // Filter manager events
-        this.filter.on('filtersChanged', () => {
-            this.applyFilters();
-        });
-        
+    setupManagerEvents() {
         // Streamer manager events
-        this.streamer.on('streamersLoaded', (streamers) => {
+        this.streamerManager.on('streamersLoaded', (streamers) => {
             this.handleStreamersLoaded(streamers);
         });
         
-        this.streamer.on('streamerUpdated', (streamer) => {
+        this.streamerManager.on('streamerUpdated', (streamer) => {
             this.handleStreamerUpdated(streamer);
         });
         
-        this.streamer.on('error', (error) => {
-            this.handleStreamerError(error);
+        this.streamerManager.on('error', (error) => {
+            this.uiManager.showToast(`Error: ${error.message}`, 'error');
         });
         
-        // Notification manager events
-        this.notification.on('uiNotification', (toast) => {
-            this.ui.showToast(toast.message, toast.type, {
-                title: toast.title,
-                duration: toast.duration,
-                actions: toast.actions
-            });
+        // Filter manager events
+        this.filterManager.on('filtersChanged', (filters) => {
+            this.applyFilters();
+            this.updateStats();
         });
         
         // History manager events
-        this.history.on('historyUpdated', (data) => {
-            console.log('History updated for:', data.streamerName);
+        this.historyManager.on('historyUpdated', (history) => {
+            this.updateAnalytics();
+        });
+        
+        // Notification manager events
+        this.notificationManager.on('notificationSent', (notification) => {
+            console.log('Notification sent:', notification);
+        });
+    }
+
+    setupEventListeners() {
+        // Search
+        const searchInput = document.getElementById('search-input');
+        const clearSearchBtn = document.getElementById('clear-search');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', this.debounce(this.handleSearch, 300));
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.handleSearch();
+                }
+            });
+        }
+        
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                this.handleSearch();
+            });
+        }
+        
+        // Add streamer
+        const addInput = document.getElementById('add-streamer-input');
+        const addBtn = document.getElementById('add-streamer-btn');
+        
+        if (addInput) {
+            addInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.handleAddStreamer();
+                }
+            });
+        }
+        
+        if (addBtn) {
+            addBtn.addEventListener('click', this.handleAddStreamer);
+        }
+        
+        // Filter buttons
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const filter = e.target.dataset.filter;
+                this.handleFilterChange('status', filter);
+            });
+        });
+        
+        // Filter selects
+        const viewerRange = document.getElementById('viewer-range');
+        const categoryFilter = document.getElementById('category-filter');
+        const sortSelect = document.getElementById('sort-select');
+        
+        if (viewerRange) {
+            viewerRange.addEventListener('change', (e) => {
+                this.handleFilterChange('viewers', e.target.value);
+            });
+        }
+        
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', (e) => {
+                this.handleFilterChange('category', e.target.value);
+            });
+        }
+        
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                this.handleSortChange(e.target.value);
+            });
+        }
+        
+        // Sort direction
+        const sortDirection = document.getElementById('sort-direction');
+        if (sortDirection) {
+            sortDirection.addEventListener('click', () => {
+                this.filterManager.toggleSortDirection();
+                this.updateSortDirectionUI();
+            });
+        }
+        
+        // View controls
+        const gridViewBtn = document.getElementById('grid-view');
+        const listViewBtn = document.getElementById('list-view');
+        
+        if (gridViewBtn) {
+            gridViewBtn.addEventListener('click', () => this.handleViewChange('grid'));
+        }
+        
+        if (listViewBtn) {
+            listViewBtn.addEventListener('click', () => this.handleViewChange('list'));
+        }
+        
+        // Refresh controls
+        const refreshBtn = document.getElementById('refresh-btn');
+        const refreshInterval = document.getElementById('refresh-interval');
+        
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', this.handleRefresh);
+        }
+        
+        if (refreshInterval) {
+            refreshInterval.addEventListener('change', (e) => {
+                this.setupAutoRefresh(parseInt(e.target.value));
+            });
+        }
+        
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', this.handleThemeToggle);
+        }
+        
+        // Analytics button
+        const analyticsBtn = document.getElementById('analytics-btn');
+        if (analyticsBtn) {
+            analyticsBtn.addEventListener('click', () => this.showAnalytics());
+        }
+        
+        // Settings button
+        const settingsBtn = document.getElementById('settings-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => this.showSettings());
+        }
+        
+        // Modal close buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-close') || 
+                e.target.classList.contains('modal-overlay')) {
+                this.closeModals();
+            }
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'f':
+                        e.preventDefault();
+                        searchInput?.focus();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        this.handleRefresh();
+                        break;
+                    case 'k':
+                        e.preventDefault();
+                        addInput?.focus();
+                        break;
+                }
+            }
+            
+            if (e.key === 'Escape') {
+                this.closeModals();
+            }
         });
     }
 
     async loadInitialData() {
-        this.setLoading(true);
-        this.updateConnectionStatus('connecting', 'Loading...');
+        this.uiManager.showLoading(true);
         
         try {
-            // Load streamers
-            this.streamers = await this.streamer.loadStreamers();
+            // Load streamers list
+            await this.streamerManager.loadStreamers();
             
-            // Update UI
+            // Load saved filters
+            const savedFilters = this.storage.get('filters', {});
+            this.filterManager.setFilters(savedFilters);
+            
+            // Load saved view mode
+            const savedView = this.storage.get('viewMode', 'grid');
+            this.handleViewChange(savedView);
+            
+            // Load saved refresh interval
+            const savedInterval = this.storage.get('refreshInterval', 60);
+            document.getElementById('refresh-interval').value = savedInterval;
+            this.setupAutoRefresh(savedInterval);
+            
+            // Apply initial filters
             this.applyFilters();
             this.updateStats();
-            this.updateLastUpdated();
-            this.updateConnectionStatus('connected', 'Connected');
             
         } catch (error) {
             console.error('Failed to load initial data:', error);
-            this.updateConnectionStatus('error', 'Connection failed');
-            this.ui.showToast('Failed to load streamers: ' + error.message, 'error');
+            this.uiManager.showToast('Failed to load streamers', 'error');
         } finally {
-            this.setLoading(false);
+            this.uiManager.showLoading(false);
         }
     }
 
-    async refreshStreamers() {
-        if (this.isLoading) return;
+    async handleRefresh() {
+        if (!this.isInitialized) return;
         
-        this.setLoading(true);
-        this.updateConnectionStatus('connecting', 'Refreshing...');
+        const refreshBtn = document.getElementById('refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.classList.add('spinning');
+        }
         
         try {
-            this.streamers = await this.streamer.refreshStreamers();
-            
-            // Update history for all streamers
-            this.streamers.forEach(streamer => {
-                this.history.recordStreamerUpdate(streamer);
-            });
-            
-            this.applyFilters();
-            this.updateStats();
-            this.updateLastUpdated();
-            this.updateConnectionStatus('connected', 'Connected');
-            
+            await this.streamerManager.refreshStreamers();
+            this.updateLastUpdatedTime();
+            this.uiManager.showToast('Streamers refreshed', 'success');
         } catch (error) {
-            console.error('Failed to refresh streamers:', error);
-            this.updateConnectionStatus('error', 'Refresh failed');
-            this.ui.showToast('Failed to refresh streamers: ' + error.message, 'error');
+            console.error('Refresh failed:', error);
+            this.uiManager.showToast('Refresh failed', 'error');
         } finally {
-            this.setLoading(false);
+            if (refreshBtn) {
+                refreshBtn.classList.remove('spinning');
+            }
         }
     }
 
-    async addStreamer() {
-        const streamerName = this.elements.addStreamerInput.value.trim();
+    handleSearch() {
+        const searchInput = document.getElementById('search-input');
+        const query = searchInput?.value.trim() || '';
+        
+        this.filterManager.setFilter('search', query);
+        this.applyFilters();
+        
+        // Update clear button visibility
+        const clearBtn = document.getElementById('clear-search');
+        if (clearBtn) {
+            clearBtn.style.display = query ? 'block' : 'none';
+        }
+    }
+
+    async handleAddStreamer() {
+        const addInput = document.getElementById('add-streamer-input');
+        const streamerName = addInput?.value.trim();
+        
         if (!streamerName) {
-            this.ui.showToast('Please enter a streamer name', 'warning');
+            this.uiManager.showToast('Please enter a streamer name', 'warning');
             return;
         }
         
         try {
-            const streamer = await this.streamer.addStreamer(streamerName);
-            this.elements.addStreamerInput.value = '';
-            this.ui.showToast(`Added ${streamer.displayName} successfully!`, 'success');
-            
+            await this.streamerManager.addStreamer(streamerName);
+            addInput.value = '';
+            this.uiManager.showToast(`Added ${streamerName}`, 'success');
         } catch (error) {
             console.error('Failed to add streamer:', error);
-            this.ui.showToast('Failed to add streamer: ' + error.message, 'error');
+            this.uiManager.showToast(`Failed to add ${streamerName}`, 'error');
+        }
+    }
+
+    handleFilterChange(type, value) {
+        this.filterManager.setFilter(type, value);
+        this.updateFilterUI(type, value);
+        this.applyFilters();
+        this.updateStats();
+        
+        // Save filters
+        this.storage.set('filters', this.filterManager.getFilters());
+    }
+
+    handleSortChange(sortBy) {
+        this.filterManager.setSortBy(sortBy);
+        this.applyFilters();
+        
+        // Save sort preference
+        this.storage.set('sortBy', sortBy);
+    }
+
+    handleViewChange(viewMode) {
+        const gridBtn = document.getElementById('grid-view');
+        const listBtn = document.getElementById('list-view');
+        const streamersGrid = document.getElementById('streamers-grid');
+        
+        // Update button states
+        if (gridBtn && listBtn) {
+            gridBtn.classList.toggle('active', viewMode === 'grid');
+            listBtn.classList.toggle('active', viewMode === 'list');
+        }
+        
+        // Update grid class
+        if (streamersGrid) {
+            streamersGrid.classList.toggle('list-view', viewMode === 'list');
+        }
+        
+        // Save view mode
+        this.storage.set('viewMode', viewMode);
+    }
+
+    handleThemeToggle() {
+        const currentTheme = document.body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.body.setAttribute('data-theme', newTheme);
+        this.storage.set('theme', newTheme);
+        
+        this.uiManager.showToast(`Switched to ${newTheme} theme`, 'info');
+    }
+
+    updateFilterUI(type, value) {
+        if (type === 'status') {
+            // Update filter buttons
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === value);
+            });
+        }
+    }
+
+    updateSortDirectionUI() {
+        const sortBtn = document.getElementById('sort-direction');
+        if (sortBtn) {
+            const isAscending = this.filterManager.getSortDirection() === 'asc';
+            sortBtn.textContent = isAscending ? '↑' : '↓';
+            sortBtn.title = isAscending ? 'Sort descending' : 'Sort ascending';
         }
     }
 
     applyFilters() {
-        this.filteredStreamers = this.filter.applyFilters(this.streamers);
-        this.renderStreamers();
-        this.updateStats();
+        const streamers = this.streamerManager.getStreamers();
+        const filteredStreamers = this.filterManager.applyFilters(streamers);
+        this.renderStreamers(filteredStreamers);
     }
 
-    renderStreamers() {
-        const container = this.elements.streamersContainer;
+    renderStreamers(streamers) {
+        const container = document.getElementById('streamers-grid');
+        const emptyState = document.getElementById('empty-state');
         
-        if (this.filteredStreamers.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">📭</div>
-                    <div class="empty-title">No streamers found</div>
-                    <div class="empty-message">Try adjusting your filters or add some streamers</div>
-                </div>
-            `;
+        if (!container) return;
+        
+        // Clear existing content
+        container.innerHTML = '';
+        
+        if (streamers.length === 0) {
+            if (emptyState) {
+                emptyState.style.display = 'flex';
+            }
             return;
         }
         
-        container.innerHTML = '';
-        container.className = `streamers-container ${this.currentView}-view`;
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
         
-        this.filteredStreamers.forEach(streamer => {
+        // Render streamer cards
+        streamers.forEach(streamer => {
             const card = this.createStreamerCard(streamer);
             container.appendChild(card);
         });
@@ -320,409 +456,236 @@ class KickStreamersApp {
 
     createStreamerCard(streamer) {
         const card = document.createElement('div');
-        card.className = `streamer-card ${streamer.live ? 'live' : 'offline'}`;
-        card.dataset.streamerName = streamer.name;
-        
-        const duration = streamer.live && streamer.streamStartTime ? 
-            this.formatDuration(Date.now() - streamer.streamStartTime) : '';
-        
-        const lastSeen = !streamer.live && streamer.lastSeen ? 
-            this.formatTimeAgo(streamer.lastSeen) : '';
-        
-        card.innerHTML = `
-            <div class="streamer-header">
-                <div class="streamer-avatar">
-                    <img src="${streamer.avatar || this.getPlaceholderAvatar()}" 
-                         alt="${streamer.displayName}" 
-                         loading="lazy"
-                         onerror="this.src='${this.getPlaceholderAvatar()}'">
-                    <div class="status-indicator ${streamer.live ? 'live' : 'offline'}"></div>
-                </div>
-                <div class="streamer-info">
-                    <div class="streamer-name">
-                        ${streamer.displayName}
-                        ${streamer.isVerified ? '<span class="verified" title="Verified">✓</span>' : ''}
-                        ${streamer.error ? '<span class="error" title="Error loading data">⚠️</span>' : ''}
-                    </div>
-                    <div class="streamer-stats">
-                        ${streamer.live ? 
-                            `${streamer.viewers.toLocaleString()} viewers${duration ? ` • ${duration}` : ''}` : 
-                            `Offline${lastSeen ? ` • ${lastSeen}` : ''}`
-                        }
-                    </div>
-                </div>
-                <div class="streamer-actions">
-                    <button class="btn btn-icon favorite-btn ${this.storage.isFavorite(streamer.name) ? 'active' : ''}" 
-                            data-streamer="${streamer.name}" 
-                            title="Toggle Favorite"
-                            aria-label="Toggle favorite for ${streamer.displayName}">
-                        ${this.storage.isFavorite(streamer.name) ? '★' : '☆'}
-                    </button>
-                    <button class="btn btn-icon menu-btn" 
-                            data-streamer="${streamer.name}" 
-                            title="More options"
-                            aria-label="More options for ${streamer.displayName}">
-                        ⋮
-                    </button>
-                </div>
-            </div>
-            
-            ${streamer.live ? `
-                <div class="streamer-thumbnail">
-                    <img src="${streamer.thumbnail || this.getPlaceholderThumbnail()}" 
-                         alt="Stream thumbnail" 
-                         loading="lazy"
-                         onerror="this.src='${this.getPlaceholderThumbnail()}'">
-                    <div class="live-indicator">LIVE</div>
-                    ${streamer.mature ? '<div class="mature-indicator">18+</div>' : ''}
-                </div>
-            ` : ''}
-            
-            <div class="streamer-content">
-                <div class="stream-title" title="${streamer.title}">${streamer.title}</div>
-                ${streamer.category ? `<div class="stream-category">${streamer.category}</div>` : ''}
-                ${streamer.tags && streamer.tags.length > 0 ? `
-                    <div class="stream-tags">
-                        ${streamer.tags.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
-                        ${streamer.tags.length > 3 ? `<span class="tag-more">+${streamer.tags.length - 3}</span>` : ''}
-                    </div>
-                ` : ''}
-            </div>
-        `;
+        card.className = this.getCardClasses(streamer);
+        card.setAttribute('data-streamer', streamer.name);
+        card.innerHTML = this.getCardHTML(streamer);
         
         // Add event listeners
-        this.setupStreamerCardEvents(card, streamer);
+        this.setupCardEventListeners(card, streamer);
         
         return card;
     }
 
-    setupStreamerCardEvents(card, streamer) {
-        // Click to open stream
+    getCardClasses(streamer) {
+        const classes = ['streamer-card'];
+        
+        if (streamer.live) classes.push('live');
+        if (streamer.error) classes.push('error');
+        if (!streamer.live) classes.push('offline');
+        if (this.storage.isFavorite(streamer.name)) classes.push('favorite');
+        
+        return classes.join(' ');
+    }
+
+    getCardHTML(streamer) {
+        const isFavorite = this.storage.isFavorite(streamer.name);
+        const offlineDuration = this.getOfflineDuration(streamer);
+        
+        return `
+            <div class="card-header">
+                <div class="streamer-info">
+                    ${streamer.avatar ? `<img class="avatar" src="${streamer.avatar}" alt="${streamer.displayName}" loading="lazy">` : ''}
+                    <div class="streamer-details">
+                        <h3 class="streamer-name">
+                            <a href="${streamer.url}" target="_blank" rel="noopener">
+                                ${this.escapeHTML(streamer.displayName)}
+                                ${streamer.isVerified ? '<span class="verified">✓</span>' : ''}
+                            </a>
+                        </h3>
+                        <div class="streamer-stats">
+                            ${streamer.followers > 0 ? `<span class="followers">${this.formatNumber(streamer.followers)} followers</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="favorite-btn ${isFavorite ? 'active' : ''}" data-action="toggle-favorite" aria-label="Toggle favorite">
+                        ${isFavorite ? '⭐' : '☆'}
+                    </button>
+                    <button class="menu-btn" data-action="show-menu" aria-label="More options">⋮</button>
+                </div>
+            </div>
+            
+            <div class="card-content">
+                <div class="stream-status">
+                    ${this.getStatusHTML(streamer)}
+                </div>
+                
+                ${streamer.category ? `
+                    <div class="stream-category">
+                        <span class="category-icon">${this.getCategoryIcon(streamer.category)}</span>
+                        <span class="category-name">${this.escapeHTML(streamer.category)}</span>
+                    </div>
+                ` : ''}
+                
+                ${streamer.live && streamer.thumbnail ? `
+                    <div class="thumbnail-container">
+                        <img class="thumbnail" 
+                             src="${streamer.thumbnail}" 
+                             alt="Stream preview" 
+                             loading="lazy"
+                             onclick="window.open('${streamer.url}', '_blank')">
+                        <div class="thumbnail-overlay">
+                            <button class="play-btn" onclick="window.open('${streamer.url}', '_blank')">▶</button>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <div class="card-footer">
+                <div class="last-updated">
+                    Updated: ${new Date().toLocaleTimeString()}
+                </div>
+            </div>
+        `;
+    }
+
+    getStatusHTML(streamer) {
+        if (streamer.error) {
+            return '<span class="status error">⚠️ Unavailable</span>';
+        }
+        
+        if (streamer.live) {
+            return `
+                <span class="status live">🔴 Live</span>
+                <div class="stream-title">${this.escapeHTML(streamer.title)}</div>
+                <span class="viewer-count">${this.formatNumber(streamer.viewers)} viewers</span>
+            `;
+        }
+        
+        return `
+            <span class="status offline">⚫ Offline</span>
+            <span class="offline-duration">${this.getOfflineDuration(streamer)}</span>
+        `;
+    }
+
+    setupCardEventListeners(card, streamer) {
         card.addEventListener('click', (e) => {
-            if (!e.target.closest('.streamer-actions')) {
-                window.open(streamer.url, '_blank');
+            const action = e.target.dataset.action;
+            
+            switch (action) {
+                case 'toggle-favorite':
+                    e.preventDefault();
+                    this.toggleFavorite(streamer.name);
+                    break;
+                case 'show-menu':
+                    e.preventDefault();
+                    this.showContextMenu(e.target, streamer);
+                    break;
             }
-        });
-        
-        // Favorite button
-        const favoriteBtn = card.querySelector('.favorite-btn');
-        favoriteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleFavorite(streamer.name);
-        });
-        
-        // Menu button
-        const menuBtn = card.querySelector('.menu-btn');
-        menuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.showStreamerMenu(e, streamer);
-        });
-        
-        // Context menu
-        card.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            this.showStreamerMenu(e, streamer);
         });
     }
 
     toggleFavorite(streamerName) {
         const isFavorite = this.storage.toggleFavorite(streamerName);
         
-        // Update UI
-        const card = document.querySelector(`[data-streamer-name="${streamerName}"]`);
+        // Update card appearance
+        const card = document.querySelector(`[data-streamer="${streamerName}"]`);
         if (card) {
+            card.classList.toggle('favorite', isFavorite);
+            
             const favoriteBtn = card.querySelector('.favorite-btn');
-            favoriteBtn.classList.toggle('active', isFavorite);
-            favoriteBtn.textContent = isFavorite ? '★' : '☆';
+            if (favoriteBtn) {
+                favoriteBtn.textContent = isFavorite ? '⭐' : '☆';
+                favoriteBtn.classList.toggle('active', isFavorite);
+            }
         }
         
-        // Update stats
         this.updateStats();
-        
-        // Show notification
-        const streamer = this.streamers.find(s => s.name === streamerName);
-        if (streamer) {
-            this.ui.showToast(
-                `${isFavorite ? 'Added' : 'Removed'} ${streamer.displayName} ${isFavorite ? 'to' : 'from'} favorites`,
-                'success'
-            );
-        }
-    }
-
-    showStreamerMenu(event, streamer) {
-        const menuItems = [
-            {
-                label: 'Open Stream',
-                icon: '🔗',
-                action: 'open',
-                callback: () => window.open(streamer.url, '_blank')
-            },
-            {
-                label: this.storage.isFavorite(streamer.name) ? 'Remove from Favorites' : 'Add to Favorites',
-                icon: this.storage.isFavorite(streamer.name) ? '★' : '☆',
-                action: 'favorite',
-                callback: () => this.toggleFavorite(streamer.name)
-            },
-            {
-                label: 'View Analytics',
-                icon: '📊',
-                action: 'analytics',
-                callback: () => this.showStreamerAnalytics(streamer.name)
-            },
-            { separator: true },
-            {
-                label: 'Copy URL',
-                icon: '📋',
-                action: 'copy',
-                callback: () => {
-                    navigator.clipboard.writeText(streamer.url);
-                    this.ui.showToast('URL copied to clipboard', 'success');
-                }
-            },
-            {
-                label: 'Remove Streamer',
-                icon: '🗑️',
-                action: 'remove',
-                danger: true,
-                callback: () => this.confirmRemoveStreamer(streamer.name)
-            }
-        ];
-        
-        this.ui.showContextMenu(event.clientX, event.clientY, menuItems);
-    }
-
-    async confirmRemoveStreamer(streamerName) {
-        const confirmed = await this.ui.showConfirmDialog(
-            `Are you sure you want to remove ${streamerName} from your list?`,
-            {
-                title: 'Remove Streamer',
-                confirmText: 'Remove',
-                cancelText: 'Cancel'
-            }
+        this.uiManager.showToast(
+            `${streamerName} ${isFavorite ? 'added to' : 'removed from'} favorites`,
+            'info'
         );
-        
-        if (confirmed) {
-            try {
-                await this.streamer.removeStreamer(streamerName);
-                this.ui.showToast(`Removed ${streamerName} successfully`, 'success');
-            } catch (error) {
-                this.ui.showToast('Failed to remove streamer: ' + error.message, 'error');
-            }
-        }
     }
 
     updateStats() {
-        const live = this.filteredStreamers.filter(s => s.live);
-        const favorites = this.filteredStreamers.filter(s => this.storage.isFavorite(s.name));
-        const totalViewers = live.reduce((sum, s) => sum + (s.viewers || 0), 0);
+        const streamers = this.streamerManager.getStreamers();
+        const filteredStreamers = this.filterManager.applyFilters(streamers);
+        const favorites = this.storage.getFavorites();
         
-        this.elements.totalCount.textContent = this.filteredStreamers.length;
-        this.elements.liveCount.textContent = live.length;
-        this.elements.favoritesCount.textContent = favorites.length;
-        this.elements.totalViewers.textContent = totalViewers.toLocaleString();
-    }
-
-    updateLastUpdated() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString();
-        this.elements.lastUpdatedTime.textContent = timeString;
-    }
-
-    updateConnectionStatus(status, text) {
-        this.elements.connectionStatus.className = `status-indicator ${status}`;
-        this.elements.connectionText.textContent = text;
-    }
-
-    setLoading(loading) {
-        this.isLoading = loading;
+        const liveCount = streamers.filter(s => s.live).length;
+        const totalViewers = streamers.reduce((sum, s) => sum + (s.viewers || 0), 0);
         
-        if (this.elements.loadingState) {
-            this.elements.loadingState.style.display = loading ? 'flex' : 'none';
+        // Update stat displays
+        this.updateStatElement('total-count', streamers.length);
+        this.updateStatElement('live-count', liveCount);
+        this.updateStatElement('favorites-count', favorites.length);
+        this.updateStatElement('total-viewers', this.formatNumber(totalViewers));
+    }
+
+    updateStatElement(id, value) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
         }
-        
-        this.elements.refreshBtn.disabled = loading;
-        this.elements.refreshBtn.classList.toggle('loading', loading);
     }
 
-    setView(view) {
-        this.currentView = view;
-        
-        // Update buttons
-        this.elements.gridView.classList.toggle('active', view === 'grid');
-        this.elements.listView.classList.toggle('active', view === 'list');
-        
-        // Update container
-        this.elements.streamersContainer.className = `streamers-container ${view}-view`;
-        
-        // Save preference
-        this.storage.setSetting('viewMode', view);
-    }
-
-    setActiveFilterButton(container, activeButton) {
-        container.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active');
-            btn.setAttribute('aria-checked', 'false');
-        });
-        activeButton.classList.add('active');
-        activeButton.setAttribute('aria-checked', 'true');
-    }
-
-    updateSortDirectionButton() {
-        const direction = this.filter.getSortDirection();
-        this.elements.sortDirection.textContent = direction === 'asc' ? '↑' : '↓';
-        this.elements.sortDirection.title = `Sort ${direction === 'asc' ? 'descending' : 'ascending'}`;
-    }
-
-    setupAutoRefresh() {
-        this.setRefreshInterval(this.storage.getSetting('refreshInterval', 60));
-    }
-
-    setRefreshInterval(seconds) {
-        // Clear existing interval
+    setupAutoRefresh(intervalSeconds = 60) {
+        // Clear existing timers
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
+        }
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
         }
         
-        // Set new interval
-        if (seconds > 0) {
-            this.refreshIntervalTime = seconds * 1000;
-            this.refreshInterval = setInterval(() => {
-                this.refreshStreamers();
-            }, this.refreshIntervalTime);
+        if (intervalSeconds === 0) {
+            this.hideRefreshCountdown();
+            return;
         }
         
-        // Update UI
-        this.elements.refreshInterval.value = seconds;
+        this.refreshCountdown = intervalSeconds;
         
-        // Save setting
-        this.storage.setSetting('refreshInterval', seconds);
-    }
-
-    applySavedSettings() {
-        // Apply saved view mode
-        const savedView = this.storage.getSetting('viewMode', 'grid');
-        this.setView(savedView);
+        // Setup refresh interval
+        this.refreshInterval = setInterval(() => {
+            this.handleRefresh();
+            this.refreshCountdown = intervalSeconds;
+        }, intervalSeconds * 1000);
         
-        // Apply saved theme
-        const savedTheme = this.storage.getSetting('theme', 'dark');
-        if (savedTheme === 'light') {
-            document.body.classList.add('light-theme');
-        }
+        // Setup countdown timer
+        this.countdownTimer = setInterval(() => {
+            this.refreshCountdown--;
+            this.updateRefreshCountdown();
+            
+            if (this.refreshCountdown <= 0) {
+                this.refreshCountdown = intervalSeconds;
+            }
+        }, 1000);
         
-        // Apply saved filters
-        const savedFilters = this.storage.getSetting('filters', {});
-        if (Object.keys(savedFilters).length > 0) {
-            this.filter.setFilters(savedFilters);
-            this.updateFilterUI();
-        }
+        this.updateRefreshCountdown();
+        this.storage.set('refreshInterval', intervalSeconds);
     }
 
-    updateFilterUI() {
-        const filters = this.filter.getFilters();
-        
-        // Update status filter
-        const statusBtn = this.elements.statusFilter.querySelector(`[data-value="${filters.status}"]`);
-        if (statusBtn) {
-            this.setActiveFilterButton(this.elements.statusFilter, statusBtn);
-        }
-        
-        // Update other filters
-        this.elements.viewersFilter.value = filters.viewers;
-        this.elements.categoryFilter.value = filters.category;
-        this.elements.searchInput.value = filters.search;
-        
-        // Update sort
-        this.elements.sortFilter.value = this.filter.getSortBy();
-        this.updateSortDirectionButton();
-    }
-
-    toggleTheme() {
-        document.body.classList.toggle('light-theme');
-        const isLight = document.body.classList.contains('light-theme');
-        this.storage.setSetting('theme', isLight ? 'light' : 'dark');
-    }
-
-    showSettings() {
-        // Implementation for settings modal
-        this.ui.showToast('Settings panel coming soon!', 'info');
-    }
-
-    showAnalytics() {
-        // Implementation for analytics modal
-        this.ui.showToast('Analytics dashboard coming soon!', 'info');
-    }
-
-    showStreamerAnalytics(streamerName) {
-        // Implementation for individual streamer analytics
-        this.ui.showToast(`Analytics for ${streamerName} coming soon!`, 'info');
-    }
-
-    // Event handlers
-    handleStreamersLoaded(streamers) {
-        this.streamers = streamers;
-        this.applyFilters();
-        this.updateStats();
-        this.updateLastUpdated();
-    }
-
-    handleStreamerUpdated(streamer) {
-        // Update streamer in list
-        const index = this.streamers.findIndex(s => s.name === streamer.name);
-        if (index !== -1) {
-            this.streamers[index] = streamer;
-            this.applyFilters();
-            this.updateStats();
-        }
-        
-        // Send notification if needed
-        if (streamer.live) {
-            this.notification.sendLiveNotification(streamer);
-        } else {
-            this.notification.sendOfflineNotification(streamer);
+    updateRefreshCountdown() {
+        const countdownElement = document.getElementById('refresh-countdown');
+        if (countdownElement && this.refreshCountdown > 0) {
+            countdownElement.textContent = `⏳ Refreshing in ${this.refreshCountdown}s`;
+            countdownElement.style.display = 'block';
         }
     }
 
-    handleStreamerError(error) {
-        console.error('Streamer error:', error);
-        this.ui.showToast('Error loading streamer data: ' + error.message, 'error');
+    hideRefreshCountdown() {
+        const countdownElement = document.getElementById('refresh-countdown');
+        if (countdownElement) {
+            countdownElement.style.display = 'none';
+        }
+    }
+
+    updateLastUpdatedTime() {
+        const element = document.getElementById('last-updated');
+        if (element) {
+            element.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+    }
+
+    initializeTheme() {
+        const savedTheme = this.storage.get('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        
+        document.body.setAttribute('data-theme', theme);
     }
 
     // Utility methods
-    formatDuration(ms) {
-        const hours = Math.floor(ms / (1000 * 60 * 60));
-        const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-        
-        if (hours > 0) {
-            return `${hours}h ${minutes}m`;
-        }
-        return `${minutes}m`;
-    }
-
-    formatTimeAgo(timestamp) {
-        const now = Date.now();
-        const diff = now - timestamp;
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const days = Math.floor(hours / 24);
-        
-        if (days > 0) {
-            return `${days}d ago`;
-        } else if (hours > 0) {
-            return `${hours}h ago`;
-        } else {
-            const minutes = Math.floor(diff / (1000 * 60));
-            return `${minutes}m ago`;
-        }
-    }
-
-    getPlaceholderAvatar() {
-        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzMzIi8+CjxjaXJjbGUgY3g9IjMyIiBjeT0iMjQiIHI9IjEyIiBmaWxsPSIjNjY2Ii8+CjxwYXRoIGQ9Ik0xNiA1NkMxNiA0OC4yNjggMjMuMjY4IDQyIDMyIDQyUzQ4IDQ4LjI2OCA0OCA1NlYxNkgxNlY1NloiIGZpbGw9IiM2NjYiLz4KPC9zdmc+';
-    }
-
-    getPlaceholderThumbnail() {
-        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjE2MCIgeT0iOTAiIGZpbGw9IiM2NjYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+TElWRTwvdGV4dD4KPC9zdmc+';
-    }
-
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -735,31 +698,170 @@ class KickStreamersApp {
         };
     }
 
-    // Cleanup
-    destroy() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
+    escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    formatNumber(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toString();
+    }
+
+    getCategoryIcon(category) {
+        const icons = {
+            'Just Chatting': '💬',
+            'Call of Duty': '🎯',
+            'GTA V': '🚗',
+            'Sports': '🏀',
+            'Music': '🎵',
+            'Valorant': '🔫',
+            'Fortnite': '🛡️',
+            'League of Legends': '🧙‍♂️',
+            'Minecraft': '⛏️',
+            'IRL': '🌍',
+            'Poker': '🃏',
+            'Slots': '🎰'
+        };
+        return icons[category] || '🎮';
+    }
+
+    getOfflineDuration(streamer) {
+        const lastSeen = this.historyManager.getLastSeen(streamer.name);
+        if (!lastSeen) return 'Unknown';
+        
+        const diffMs = Date.now() - lastSeen;
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (hours > 24) {
+            const days = Math.floor(hours / 24);
+            return `${days}d ago`;
         }
         
-        this.storage.destroy();
-        this.ui.destroy();
-        this.notification.cleanup();
+        return hours > 0 ? `${hours}h ${minutes}m ago` : `${minutes}m ago`;
+    }
+
+    // Event handlers for manager events
+    handleStreamersLoaded(streamers) {
+        this.applyFilters();
+        this.updateStats();
+        this.updateLastUpdatedTime();
+    }
+
+    handleStreamerUpdated(streamer) {
+        // Update history
+        this.historyManager.recordStreamerUpdate(streamer);
+        
+        // Check for live notifications
+        if (streamer.live && this.storage.isFavorite(streamer.name)) {
+            this.notificationManager.sendLiveNotification(streamer);
+        }
+        
+        // Update card if visible
+        const card = document.querySelector(`[data-streamer="${streamer.name}"]`);
+        if (card) {
+            // Update card content without full re-render
+            this.updateStreamerCard(card, streamer);
+        }
+    }
+
+    updateStreamerCard(card, streamer) {
+        // Update classes
+        card.className = this.getCardClasses(streamer);
+        
+        // Update status
+        const statusElement = card.querySelector('.stream-status');
+        if (statusElement) {
+            statusElement.innerHTML = this.getStatusHTML(streamer);
+        }
+        
+        // Update thumbnail
+        const thumbnailContainer = card.querySelector('.thumbnail-container');
+        if (streamer.live && streamer.thumbnail) {
+            if (!thumbnailContainer) {
+                // Add thumbnail if it doesn't exist
+                const cardContent = card.querySelector('.card-content');
+                const categoryElement = cardContent.querySelector('.stream-category');
+                const thumbnailHTML = `
+                    <div class="thumbnail-container">
+                        <img class="thumbnail" 
+                             src="${streamer.thumbnail}" 
+                             alt="Stream preview" 
+                             loading="lazy"
+                             onclick="window.open('${streamer.url}', '_blank')">
+                        <div class="thumbnail-overlay">
+                            <button class="play-btn" onclick="window.open('${streamer.url}', '_blank')">▶</button>
+                        </div>
+                    </div>
+                `;
+                if (categoryElement) {
+                    categoryElement.insertAdjacentHTML('afterend', thumbnailHTML);
+                } else {
+                    cardContent.insertAdjacentHTML('beforeend', thumbnailHTML);
+                }
+            } else {
+                // Update existing thumbnail
+                const img = thumbnailContainer.querySelector('.thumbnail');
+                if (img) {
+                    img.src = streamer.thumbnail;
+                }
+            }
+        } else if (thumbnailContainer) {
+            // Remove thumbnail if streamer is offline
+            thumbnailContainer.remove();
+        }
+        
+        // Update footer timestamp
+        const footer = card.querySelector('.last-updated');
+        if (footer) {
+            footer.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+        }
+    }
+
+    showAnalytics() {
+        // Implementation for analytics modal
+        console.log('Show analytics modal');
+    }
+
+    showSettings() {
+        // Implementation for settings modal
+        console.log('Show settings modal');
+    }
+
+    showContextMenu(target, streamer) {
+        // Implementation for context menu
+        console.log('Show context menu for', streamer.name);
+    }
+
+    closeModals() {
+        const overlay = document.getElementById('modal-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+
+    showErrorState(error) {
+        const container = document.getElementById('streamers-grid');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-state">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Something went wrong</h3>
+                    <p>${error.message}</p>
+                    <button onclick="location.reload()" class="retry-btn">Retry</button>
+                </div>
+            `;
+        }
     }
 }
 
-// Initialize application when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    const app = new KickStreamersApp();
-    app.init();
-    
-    // Make app globally available for debugging
-    window.kickApp = app;
-});
-
-// Handle page unload
-window.addEventListener('beforeunload', () => {
-    if (window.kickApp) {
-        window.kickApp.destroy();
-    }
-});
+// Initialize app when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => new KickStreamersApp());
+} else {
+    new KickStreamersApp();
+}
 

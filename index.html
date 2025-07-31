@@ -3,192 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Monitor your favorite Kick streamers in real-time with advanced filtering and analytics">
+    <meta name="keywords" content="kick, streamers, monitor, live, streaming">
     <title>Kick Streamers Monitor Pro v4.0</title>
-    <meta name="description" content="Advanced Kick.com streamers monitor with filtering, analytics, and notifications">
-    <meta name="keywords" content="kick, streamers, monitor, live, streaming, analytics">
     
-    <!-- CSS -->
-    <link rel="stylesheet" href="main.css">
-    <link rel="stylesheet" href="components.css">
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://kick.com">
+    <link rel="preconnect" href="https://gist.githubusercontent.com">
     
-    <!-- Theme Color -->
-    <meta name="theme-color" content="#1a1a2e">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
     
-    <!-- Open Graph -->
-    <meta property="og:title" content="Kick Streamers Monitor Pro v4.0">
-    <meta property="og:description" content="Advanced Kick.com streamers monitor with filtering, analytics, and notifications">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://rapahannock.github.io/Kick-Stream-Monitor/">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Kick Streamers Monitor Pro v4.0">
-    <meta name="twitter:description" content="Advanced Kick.com streamers monitor with filtering, analytics, and notifications">
+    <!-- Styles -->
+    <link rel="stylesheet" href="../src/styles/main.css">
+    <link rel="stylesheet" href="../src/styles/components.css">
 </head>
-<body>
-    <div id="app">
-        <header class="header">
+<body data-theme="dark">
+    <div id="app" class="app">
+        <!-- Header -->
+        <header class="app-header" role="banner">
             <div class="header-content">
-                <div class="header-left">
-                    <h1 class="app-title">
-                        Kick Streamers Monitor Pro 
-                        <span class="version">v4.0</span>
-                    </h1>
-                    <div class="connection-status">
-                        <span class="status-indicator" id="connection-status"></span>
-                        <span id="connection-text">Connecting...</span>
-                        <span class="last-updated">Last updated: <span id="last-updated-time">--:--:-- --</span></span>
+                <div class="header-title">
+                    <h1>Kick Streamers Monitor Pro <span class="version">v4.0</span></h1>
+                    <div class="status-indicators">
+                        <div id="connection-status" class="status-indicator" aria-label="Connection status">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Connected</span>
+                        </div>
+                        <div id="last-updated" class="last-updated" aria-live="polite"></div>
                     </div>
                 </div>
-                <div class="header-right">
-                    <button class="btn btn-icon" id="analytics-btn" title="Analytics" aria-label="Open Analytics Dashboard">📊</button>
-                    <button class="btn btn-icon" id="theme-toggle" title="Toggle Theme" aria-label="Toggle Dark/Light Theme">🌗</button>
-                    <button class="btn btn-icon" id="settings-btn" title="Settings" aria-label="Open Settings">⚙️</button>
+                <div class="header-controls">
+                    <button id="analytics-btn" class="header-btn" aria-label="View analytics" title="Analytics">
+                        📊
+                    </button>
+                    <button id="theme-toggle" class="header-btn" aria-label="Toggle theme" title="Toggle theme">
+                        🌗
+                    </button>
+                    <button id="settings-btn" class="header-btn" aria-label="Settings" title="Settings">
+                        ⚙️
+                    </button>
                 </div>
             </div>
         </header>
 
-        <main class="main-content">
-            <div class="search-section">
-                <div class="search-container">
-                    <input type="text" id="search-input" class="search-input" placeholder="Search streamers..." aria-label="Search streamers">
-                    <button class="search-clear" id="search-clear" aria-label="Clear search">✕</button>
-                </div>
-                <div class="add-streamer-container">
-                    <input type="text" id="add-streamer-input" class="add-streamer-input" placeholder="Add streamer..." aria-label="Add new streamer">
-                    <button class="btn btn-primary" id="add-streamer-btn">Add</button>
-                </div>
-            </div>
-
-            <div class="filters-section">
-                <div class="filter-group">
-                    <label class="filter-label" for="status-filter">Status:</label>
-                    <div class="filter-buttons" id="status-filter" role="radiogroup" aria-label="Filter by status">
-                        <button class="filter-btn active" data-value="all" role="radio" aria-checked="true">All</button>
-                        <button class="filter-btn" data-value="live" role="radio" aria-checked="false">Live</button>
-                        <button class="filter-btn" data-value="offline" role="radio" aria-checked="false">Offline</button>
-                        <button class="filter-btn" data-value="favorites" role="radio" aria-checked="false">Favorites</button>
+        <!-- Main Content -->
+        <main class="app-main" role="main">
+            <!-- Controls Section -->
+            <section class="controls-section" aria-label="Stream controls">
+                <!-- Search and Add -->
+                <div class="search-add-section">
+                    <div class="search-container">
+                        <input 
+                            type="text" 
+                            id="search-input" 
+                            class="search-input" 
+                            placeholder="Search streamers..." 
+                            aria-label="Search streamers"
+                            autocomplete="off"
+                        >
+                        <button id="clear-search" class="clear-search-btn" aria-label="Clear search" title="Clear search">✕</button>
+                    </div>
+                    <div class="add-container">
+                        <input 
+                            type="text" 
+                            id="add-streamer-input" 
+                            class="add-input" 
+                            placeholder="Add streamer..." 
+                            aria-label="Add new streamer"
+                            autocomplete="off"
+                        >
+                        <button id="add-streamer-btn" class="add-btn" aria-label="Add streamer">Add</button>
                     </div>
                 </div>
 
-                <div class="filter-group">
-                    <label class="filter-label" for="viewers-filter">Viewers:</label>
-                    <select class="filter-select" id="viewers-filter" aria-label="Filter by viewer count">
-                        <option value="all">All</option>
-                        <option value="0-100">0-100</option>
-                        <option value="100-500">100-500</option>
-                        <option value="500-1000">500-1K</option>
-                        <option value="1000-5000">1K-5K</option>
-                        <option value="5000+">5K+</option>
-                    </select>
+                <!-- Advanced Filters -->
+                <div class="filters-section">
+                    <div class="filter-group">
+                        <label class="filter-label">Status:</label>
+                        <div class="filter-buttons" role="group" aria-label="Status filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="live">Live</button>
+                            <button class="filter-btn" data-filter="offline">Offline</button>
+                            <button class="filter-btn" data-filter="favorites">Favorites</button>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Viewers:</label>
+                        <div class="viewer-filter">
+                            <select id="viewer-range" class="filter-select" aria-label="Viewer count range">
+                                <option value="all">All</option>
+                                <option value="0-100">0-100</option>
+                                <option value="100-500">100-500</option>
+                                <option value="500-1000">500-1K</option>
+                                <option value="1000-5000">1K-5K</option>
+                                <option value="5000+">5K+</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Category:</label>
+                        <select id="category-filter" class="filter-select" aria-label="Stream category">
+                            <option value="all">All Categories</option>
+                            <option value="Just Chatting">Just Chatting</option>
+                            <option value="Call of Duty">Call of Duty</option>
+                            <option value="GTA V">GTA V</option>
+                            <option value="Valorant">Valorant</option>
+                            <option value="Fortnite">Fortnite</option>
+                            <option value="League of Legends">League of Legends</option>
+                            <option value="Minecraft">Minecraft</option>
+                            <option value="IRL">IRL</option>
+                            <option value="Music">Music</option>
+                            <option value="Sports">Sports</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Sort:</label>
+                        <select id="sort-select" class="filter-select" aria-label="Sort order">
+                            <option value="status">Live Status</option>
+                            <option value="viewers">Viewer Count</option>
+                            <option value="name">Name</option>
+                            <option value="category">Category</option>
+                            <option value="duration">Stream Duration</option>
+                            <option value="offline-time">Offline Time</option>
+                        </select>
+                        <button id="sort-direction" class="sort-direction-btn" aria-label="Toggle sort direction" title="Toggle sort direction">↓</button>
+                    </div>
                 </div>
 
-                <div class="filter-group">
-                    <label class="filter-label" for="category-filter">Category:</label>
-                    <select class="filter-select" id="category-filter" aria-label="Filter by category">
-                        <option value="all">All Categories</option>
-                        <option value="Just Chatting">Just Chatting</option>
-                        <option value="Call of Duty">Call of Duty</option>
-                        <option value="GTA V">GTA V</option>
-                        <option value="Valorant">Valorant</option>
-                        <option value="Fortnite">Fortnite</option>
-                        <option value="League of Legends">League of Legends</option>
-                        <option value="Minecraft">Minecraft</option>
-                        <option value="IRL">IRL</option>
-                        <option value="Music">Music</option>
-                        <option value="Sports">Sports</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label" for="sort-filter">Sort:</label>
-                    <select class="filter-select" id="sort-filter" aria-label="Sort streamers by">
-                        <option value="status">Live Status</option>
-                        <option value="viewers">Viewer Count</option>
-                        <option value="name">Name</option>
-                        <option value="category">Category</option>
-                        <option value="duration">Stream Duration</option>
-                        <option value="offline-time">Offline Time</option>
-                    </select>
-                    <button class="btn btn-icon" id="sort-direction" title="Toggle sort direction" aria-label="Toggle sort direction">↓</button>
-                </div>
-            </div>
-
-            <div class="controls-section">
+                <!-- View Controls -->
                 <div class="view-controls">
-                    <button class="btn btn-icon active" id="grid-view" title="Grid View" aria-label="Switch to grid view">⊞</button>
-                    <button class="btn btn-icon" id="list-view" title="List View" aria-label="Switch to list view">☰</button>
+                    <div class="view-options">
+                        <button id="grid-view" class="view-btn active" aria-label="Grid view" title="Grid view">⊞</button>
+                        <button id="list-view" class="view-btn" aria-label="List view" title="List view">☰</button>
+                    </div>
+                    <div class="refresh-controls">
+                        <button id="refresh-btn" class="refresh-btn" aria-label="Refresh now" title="Refresh now">🔄</button>
+                        <label for="refresh-interval" class="refresh-label">Auto-refresh:</label>
+                        <select id="refresh-interval" class="refresh-select" aria-label="Auto-refresh interval">
+                            <option value="30">30s</option>
+                            <option value="60" selected>1m</option>
+                            <option value="120">2m</option>
+                            <option value="300">5m</option>
+                            <option value="0">Off</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="refresh-controls">
-                    <button class="btn btn-icon" id="refresh-btn" title="Refresh" aria-label="Refresh streamers data">🔄</button>
-                    <label class="filter-label" for="refresh-interval">Auto-refresh:</label>
-                    <select class="filter-select" id="refresh-interval" aria-label="Auto-refresh interval">
-                        <option value="30">30s</option>
-                        <option value="60">1m</option>
-                        <option value="120">2m</option>
-                        <option value="300">5m</option>
-                        <option value="0">Off</option>
-                    </select>
-                </div>
-            </div>
 
-            <div class="stats-section">
-                <div class="stat-card">
-                    <div class="stat-label">TOTAL:</div>
-                    <div class="stat-value" id="total-count">0</div>
+                <!-- Stats Summary -->
+                <div class="stats-summary" aria-label="Stream statistics">
+                    <div class="stat-item">
+                        <span class="stat-label">Total:</span>
+                        <span id="total-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Live:</span>
+                        <span id="live-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Favorites:</span>
+                        <span id="favorites-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Viewers:</span>
+                        <span id="total-viewers" class="stat-value">0</span>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">LIVE:</div>
-                    <div class="stat-value" id="live-count">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">FAVORITES:</div>
-                    <div class="stat-value" id="favorites-count">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">TOTAL VIEWERS:</div>
-                    <div class="stat-value" id="total-viewers">0</div>
-                </div>
-            </div>
+            </section>
 
-            <div class="streamers-container" id="streamers-container" role="main" aria-label="Streamers list">
-                <div class="loading-state" id="loading-state">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Loading streamers...</div>
+            <!-- Streamers Grid -->
+            <section class="streamers-section" aria-label="Streamers list">
+                <div id="streamers-container" class="streamers-container">
+                    <div id="streamers-grid" class="streamers-grid" role="grid" aria-label="Streamers grid"></div>
+                    <div id="loading-indicator" class="loading-indicator" aria-hidden="true">
+                        <div class="loading-spinner"></div>
+                        <span>Loading streamers...</span>
+                    </div>
+                    <div id="empty-state" class="empty-state" aria-hidden="true">
+                        <div class="empty-icon">📺</div>
+                        <h3>No streamers found</h3>
+                        <p>Try adjusting your filters or add some streamers to get started.</p>
+                    </div>
                 </div>
-            </div>
+            </section>
         </main>
+
+        <!-- Modals and Overlays -->
+        <div id="modal-overlay" class="modal-overlay" aria-hidden="true">
+            <!-- Analytics Modal -->
+            <div id="analytics-modal" class="modal" role="dialog" aria-labelledby="analytics-title" aria-hidden="true">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="analytics-title">Stream Analytics</h2>
+                        <button class="modal-close" aria-label="Close analytics">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="analytics-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Modal -->
+            <div id="settings-modal" class="modal" role="dialog" aria-labelledby="settings-title" aria-hidden="true">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="settings-title">Settings</h2>
+                        <button class="modal-close" aria-label="Close settings">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="settings-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+        <!-- Countdown Display -->
+        <div id="refresh-countdown" class="refresh-countdown" aria-live="polite"></div>
     </div>
 
-    <!-- Toast Container -->
-    <div id="toast-container" class="toast-container" aria-live="polite"></div>
-
-    <!-- Modal Overlay -->
-    <div id="modal-overlay" class="modal-overlay" role="dialog" aria-hidden="true"></div>
-
-    <!-- Loading Indicator -->
-    <div id="loading-indicator" class="loading-indicator" aria-hidden="true">
-        <div class="loading-spinner"></div>
-        <div class="loading-message">Loading...</div>
-    </div>
-
-    <!-- JavaScript -->
-    <script type="module" src="main.js"></script>
-    
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('SW registered: ', registration);
-                    })
-                    .catch(registrationError => {
-                        console.log('SW registration failed: ', registrationError);
-                    });
-            });
-        }
-    </script>
+    <!-- Scripts -->
+    <script type="module" src="../src/main.js"></script>
 </body>
 </html>
 
