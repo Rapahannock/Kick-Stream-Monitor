@@ -828,52 +828,56 @@
             
             /* START: Mobile Grid Styles */
             #streamers.grid-view {
-                /* Create a responsive grid with a minimum card size of ~120px */
-                grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-                gap: 8px;
+                /* Create a 2-column grid on most phones by setting a larger minimum card size */
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 10px;
             }
 
-            /* Adjust card content for the smaller size */
+            /* Adjust card content for the new larger size */
             #streamers.grid-view .streamer {
-                padding: 6px;
-                gap: 4px;
+                padding: 8px;
+                gap: 5px;
             }
             
             #streamers.grid-view .thumbnail-container {
                 margin-top: 0;
             }
 
+            /* Revert header to horizontal layout */
             #streamers.grid-view .streamer-header {
-                /* Stack name and status vertically to save horizontal space */
-                flex-direction: column;
+                flex-direction: row;
                 align-items: flex-start;
-                gap: 2px;
+                gap: 4px;
             }
 
             #streamers.grid-view .streamer-name {
-                font-size: 12px;
-                line-height: 1.2;
+                font-size: 13px;
+                line-height: 1.3;
             }
 
-            /* Hide non-essential text on small cards to keep them clean */
+            /* Hide title and meta, but SHOW the category now that there's space */
             #streamers.grid-view .stream-title,
-            #streamers.grid-view .stream-meta,
-            #streamers.grid-view .stream-category {
+            #streamers.grid-view .stream-meta {
                 display: none;
+            }
+            
+            #streamers.grid-view .stream-category {
+                display: flex; /* Bring back the category */
+                font-size: 11px;
             }
             
             #streamers.grid-view .streamer-status {
                 font-size: 10px;
-                padding: 1px 4px;
+                padding: 2px 5px;
             }
 
-            /* Redesign Action Buttons for Mobile Grid to be always visible */
+            /* Keep action buttons always visible in the top-left on mobile grid */
             #streamers.grid-view .streamer-actions {
-                opacity: 1; /* Always visible */
-                transform: none; /* No slide-in animation */
+                opacity: 1;
+                transform: none;
                 position: absolute;
-                top: 8px;
-                left: 8px; /* Move to top-left to avoid checkbox */
+                top: 12px;
+                left: 12px;
                 bottom: auto;
                 right: auto;
                 background: rgba(26, 26, 26, 0.7);
@@ -884,13 +888,13 @@
                 gap: 2px;
             }
             #streamers.grid-view .action-btn {
-                padding: 1px;
-                font-size: 14px;
-                min-width: 20px;
-                min-height: 20px;
+                padding: 2px;
+                font-size: 16px;
+                min-width: 22px;
+                min-height: 22px;
             }
             #streamers.grid-view .action-btn.favorite {
-                font-size: 14px;
+                font-size: 16px;
             }
              /* END: Mobile Grid Styles */
         }
@@ -2017,16 +2021,6 @@ const App = {
 
         div.innerHTML = `
             ${this.state.selectionMode ? `<input type="checkbox" class="streamer-checkbox" ${isSelected ? 'checked' : ''} aria-label="Select ${s.name}">` : ''}
-            <div class="streamer-actions">
-                <button class="action-btn favorite ${isFavorite ? 'active' : ''}" 
-                        aria-label="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}"
-                        title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
-                    ${isFavorite ? '⭐' : '☆'}
-                </button>
-                <button class="action-btn remove" 
-                        aria-label="Remove streamer from list"
-                        title="Remove streamer">🗑️</button>
-            </div>
             ${s.isLive && s.thumbnail ? this.createThumbnailHTML(s) : ''}
             <div class="streamer-header">
                 <a href="${s.url}" target="_blank" rel="noopener noreferrer" class="streamer-name"
@@ -2047,6 +2041,16 @@ const App = {
                         <span class="offline-time">💤 ${Utils.formatDuration(s.offlineTime)} offline</span>
                     ` : ''}
                 </div>
+            </div>
+            <div class="streamer-actions">
+                <button class="action-btn favorite ${isFavorite ? 'active' : ''}" 
+                        aria-label="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}"
+                        title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+                    ${isFavorite ? '⭐' : '☆'}
+                </button>
+                <button class="action-btn remove" 
+                        aria-label="Remove streamer from list"
+                        title="Remove streamer">🗑️</button>
             </div>
         `;
         return div;
