@@ -826,9 +826,39 @@
                 justify-content: center;
             }
             
+            /* START: Mobile Grid Styles */
             #streamers.grid-view {
-                grid-template-columns: 1fr;
+                /* Create a responsive grid that fits as many columns as possible */
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                gap: 8px;
             }
+
+            /* Adjust card content for the smaller size */
+            #streamers.grid-view .streamer {
+                padding: 6px;
+                gap: 4px;
+            }
+
+            #streamers.grid-view .streamer-name {
+                font-size: 12px;
+                line-height: 1.3;
+            }
+
+            /* Hide less critical info on small cards to avoid clutter */
+            #streamers.grid-view .stream-title,
+            #streamers.grid-view .stream-meta {
+                display: none;
+            }
+            
+            #streamers.grid-view .stream-category {
+                font-size: 10px;
+            }
+            
+            #streamers.grid-view .streamer-status {
+                font-size: 10px;
+                padding: 1px 4px;
+            }
+             /* END: Mobile Grid Styles */
         }
         
         @media (max-width: 480px) {
@@ -2007,7 +2037,7 @@ const App = {
     renderSkeletons() {
         this.elements.container.innerHTML = '';
         const fragment = document.createDocumentFragment();
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 12; i++) { // Increased skeleton count for smaller grid
             const skeletonCard = document.createElement('div');
             skeletonCard.className = 'skeleton-card skeleton';
             skeletonCard.setAttribute('aria-label', 'Loading streamer data');
