@@ -828,22 +828,21 @@
             
             /* START: Mobile Grid Styles */
             #streamers.grid-view {
-                /* Create a 2-column grid on most phones by setting a larger minimum card size */
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                gap: 10px;
+                /* Create a ~2-column grid on phones by setting a larger minimum card size */
+                grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+                gap: 12px;
             }
 
             /* Adjust card content for the new larger size */
             #streamers.grid-view .streamer {
                 padding: 8px;
-                gap: 5px;
+                gap: 6px;
             }
             
             #streamers.grid-view .thumbnail-container {
-                margin-top: 0;
+                margin-top: 4px;
             }
 
-            /* Revert header to horizontal layout */
             #streamers.grid-view .streamer-header {
                 flex-direction: row;
                 align-items: flex-start;
@@ -851,50 +850,46 @@
             }
 
             #streamers.grid-view .streamer-name {
-                font-size: 13px;
+                font-size: 14px;
                 line-height: 1.3;
             }
 
-            /* Hide title and meta, but SHOW the category now that there's space */
+            /* Hide title and meta, but show the category now that there's space */
             #streamers.grid-view .stream-title,
             #streamers.grid-view .stream-meta {
                 display: none;
             }
             
             #streamers.grid-view .stream-category {
-                display: flex; /* Bring back the category */
-                font-size: 11px;
+                display: flex;
+                font-size: 12px;
             }
             
             #streamers.grid-view .streamer-status {
-                font-size: 10px;
+                font-size: 11px;
                 padding: 2px 5px;
             }
 
-            /* Keep action buttons always visible in the top-left on mobile grid */
+            /* Remove absolute positioning for mobile, return buttons to the document flow */
             #streamers.grid-view .streamer-actions {
                 opacity: 1;
                 transform: none;
-                position: absolute;
-                top: 12px;
-                left: 12px;
-                bottom: auto;
-                right: auto;
-                background: rgba(26, 26, 26, 0.7);
-                backdrop-filter: blur(2px);
-                padding: 2px;
-                border-radius: 6px;
-                margin: 0;
-                gap: 2px;
+                position: static;
+                background: transparent;
+                backdrop-filter: none;
+                padding: 0;
+                margin-top: 4px;
+                gap: 4px;
             }
+
             #streamers.grid-view .action-btn {
-                padding: 2px;
+                padding: 4px;
                 font-size: 16px;
-                min-width: 22px;
-                min-height: 22px;
+                min-width: 24px;
+                min-height: 24px;
             }
             #streamers.grid-view .action-btn.favorite {
-                font-size: 16px;
+                font-size: 18px;
             }
              /* END: Mobile Grid Styles */
         }
