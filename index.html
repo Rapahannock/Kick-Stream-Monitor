@@ -1034,11 +1034,11 @@
 
             #streamers.grid-view .streamer-header {
                 flex-direction: row;
-                gap: 8px;
+                gap: 4px;
             }
             
             #streamers.grid-view .streamer-avatar {
-                /* Avatars are now visible on mobile grid */
+                display: none; /* Hide avatar on small grid cards to save space */
             }
 
             #streamers.grid-view .streamer-name {
@@ -1290,7 +1290,1009 @@
 
 
 <script>
-// The full, corrected JavaScript code is now included below.
+// Enhanced Kick Monitor Ultra v4.3 Clean
+// Features: Smarter Polling, Custom Groups, Go-Live Animations, Avatars, Compact View, Multistream
+
+// Utility functions
+const Utils = {
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func.apply(this, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    },
+    
+    throttle(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        }
+    },
+    
+    formatNumber(num) {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'M';
+        } else if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toString();
+    },
+    
+    formatDuration(minutes) {
+        if (minutes < 60) {
+            return `${minutes}m`;
+        }
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hours < 24) {
+            return `${hours}h ${mins}m`;
+        }
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        return `${days}d ${remainingHours}h`;
+    },
+    
+    sanitizeHTML(str) {
+        const temp = document.createElement('div');
+        temp.textContent = str;
+        return temp.innerHTML;
+    },
+    
+    calculateUptime(startTime) {
+        if (!startTime) return 0;
+        const now = new Date();
+        const start = new Date(startTime);
+        return Math.floor((now - start) / (1000 * 60)); // minutes
+    },
+    
+    calculateOfflineTime(lastSeenTime) {
+        if (!lastSeenTime) return 0;
+        const now = new Date();
+        const lastSeen = new Date(lastSeenTime);
+        return Math.floor((now - lastSeen) / (1000 * 60)); // minutes
+    }
+};
+
+// Enhanced cache system
+class CacheManager {
+    constructor(defaultTTL = 60000) {
+        this.cache = new Map();
+        this.defaultTTL = defaultTTL;
+    }
+    
+    set(key, data, ttl = this.defaultTTL) {
+        this.cache.set(key, {
+            data,
+            timestamp: Date.now(),
+            ttl
+        });
+    }
+    
+    get(key) {
+        const item = this.cache.get(key);
+        if (!item) return null;
+        
+        if (Date.now() - item.timestamp > item.ttl) {
+            this.cache.delete(key);
+            return null;
+        }
+        
+        return item.data;
+    }
+    
+    clear() {
+        this.cache.clear();
+    }
+    
+    cleanup() {
+        const now = Date.now();
+        for (const [key, item] of this.cache.entries()) {
+            if (now - item.timestamp > item.ttl) {
+                this.cache.delete(key);
+            }
+        }
+    }
+}
+
+// Enhanced statistics tracking
+class StatsManager {
+    constructor() {
+        this.history = JSON.parse(localStorage.getItem('stream-history') || '{}');
+        this.offlineTracking = JSON.parse(localStorage.getItem('offline-tracking') || '{}');
+        this.startCleanupTimer();
+    }
+    
+    recordSnapshot(streamers) {
+        const timestamp = Date.now();
+        const liveStreamers = streamers.filter(s => s.isLive);
+        const totalViewers = liveStreamers.reduce((sum, s) => sum + (s.viewers || 0), 0);
+        
+        // Track offline times
+        streamers.forEach(s => {
+            if (!s.isLive) {
+                if (!this.offlineTracking[s.name]) {
+                    this.offlineTracking[s.name] = timestamp;
+                }
+            } else {
+                // Remove from offline tracking when they go live
+                delete this.offlineTracking[s.name];
+            }
+        });
+        
+        const snapshot = {
+            timestamp,
+            totalStreamers: streamers.length,
+            liveStreamers: liveStreamers.length,
+            totalViewers,
+            categories: this.getCategoryDistribution(liveStreamers),
+            topStreamer: this.getTopStreamer(liveStreamers)
+        };
+        
+        this.history[timestamp] = snapshot;
+        this.cleanup();
+        localStorage.setItem('stream-history', JSON.stringify(this.history));
+        localStorage.setItem('offline-tracking', JSON.stringify(this.offlineTracking));
+    }
+    
+    getOfflineTime(streamerName) {
+        const offlineStart = this.offlineTracking[streamerName];
+        if (!offlineStart) return 0;
+        return Math.floor((Date.now() - offlineStart) / (1000 * 60)); // minutes
+    }
+    
+    getCategoryDistribution(streamers) {
+        const distribution = {};
+        streamers.forEach(s => {
+            if (s.category) {
+                distribution[s.category] = (distribution[s.category] || 0) + 1;
+            }
+        });
+        return distribution;
+    }
+    
+    getTopStreamer(streamers) {
+        if (streamers.length === 0) return null;
+        return streamers.reduce((top, current) => 
+            (current.viewers || 0) > (top.viewers || 0) ? current : top
+        );
+    }
+    
+    getStats() {
+        const snapshots = Object.values(this.history);
+        if (snapshots.length === 0) return null;
+        
+        const latest = snapshots[snapshots.length - 1];
+        const hourAgo = Date.now() - 3600000;
+        const recentSnapshots = snapshots.filter(s => s.timestamp > hourAgo);
+        
+        return {
+            current: latest,
+            peakViewers: Math.max(...snapshots.map(s => s.totalViewers)),
+            averageLive: recentSnapshots.length > 0 ? 
+                Math.round(recentSnapshots.reduce((sum, s) => sum + s.liveStreamers, 0) / recentSnapshots.length) : 0,
+            topCategory: this.getTopCategory(latest.categories)
+        };
+    }
+    
+    getTopCategory(categories) {
+        if (!categories || Object.keys(categories).length === 0) return null;
+        return Object.entries(categories).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+    }
+    
+    cleanup() {
+        const dayAgo = Date.now() - (24 * 60 * 60 * 1000);
+        this.history = Object.fromEntries(
+            Object.entries(this.history).filter(([ts]) => parseInt(ts) > dayAgo)
+        );
+        
+        // Clean up offline tracking older than 7 days
+        const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        this.offlineTracking = Object.fromEntries(
+            Object.entries(this.offlineTracking).filter(([name, ts]) => ts > weekAgo)
+        );
+    }
+    
+    startCleanupTimer() {
+        setInterval(() => this.cleanup(), 3600000); // Cleanup every hour
+    }
+}
+
+// Main Application
+const App = {
+    // Application State
+    state: {
+        streamers: [],
+        streamerData: new Map(),
+        favorites: [],
+        groups: {},
+        isLoading: true,
+        filter: 'all',
+        sort: 'status',
+        searchQuery: '',
+        lastLiveStates: {},
+        slowPollInterval: null,
+        fastPollInterval: null,
+        slowPollDelay: 600000,
+        fastPollDelay: 120000,
+        connectionStatus: 'connected',
+        viewMode: 'grid',
+        selectionMode: false,
+        selectedStreamers: new Set(),
+        viewerRange: { min: 0, max: 50000 },
+        settingsExpanded: false,
+        lastFocusedElement: null,
+        apiEndpoint: 'https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json',
+        workerEndpoint: 'https://autumn-base-826c.rapahannock.workers.dev/',
+    },
+
+    // Constants
+    PLACEHOLDER_THUMBNAIL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='%23404040'%3E%3Cpath d='M14 0H2C.9 0 0 .9 0 2v5c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm-1.5 5.5l-2.5-3-3.5 4.5-1.5-2-3.5 4.5h11l-1-1z'/%3E%3C/svg%3E",
+
+    // Enhanced components
+    cache: new CacheManager(60000),
+    stats: new StatsManager(),
+    elements: {},
+
+    // Initialization
+    init() {
+        this.cacheElements();
+        this.loadSettings();
+        this.renderGroupsList();
+        this.populateFilterDropdown();
+        this.registerEventListeners();
+        this.setupKeyboardNavigation();
+        this.requestNotificationPermission();
+        this.startPeriodicCleanup();
+        
+        this.fetchStreamerList();
+    },
+
+    cacheElements() {
+        this.elements = {
+            container: document.getElementById('streamers'),
+            searchInput: document.getElementById('search-input'),
+            filterSelect: document.getElementById('filter-select'),
+            sortSelect: document.getElementById('sort-select'),
+            autoRefreshSelect: document.getElementById('auto-refresh-select'),
+            viewerMin: document.getElementById('viewer-min'),
+            viewerMax: document.getElementById('viewer-max'),
+            viewerRangeDisplay: document.getElementById('viewer-range-display'),
+            addInput: document.getElementById('add-input'),
+            addBtn: document.getElementById('add-btn'),
+            refreshBtn: document.getElementById('refresh-btn'),
+            themeBtn: document.getElementById('theme-toggle-btn'),
+            exportBtn: document.getElementById('export-btn'),
+            importFile: document.getElementById('import-file'),
+            lastUpdated: document.getElementById('last-updated'),
+            toast: document.getElementById('toast'),
+            statsContainer: document.getElementById('stats-container'),
+            statusIndicator: document.getElementById('connection-status'),
+            announcements: document.getElementById('status-announcements'),
+            selectModeBtn: document.getElementById('select-mode-btn'),
+            bulkActions: document.getElementById('bulk-actions'),
+            selectionCount: document.getElementById('selection-count'),
+            bulkFavorite: document.getElementById('bulk-favorite'),
+            bulkUnfavorite: document.getElementById('bulk-unfavorite'),
+            bulkAssignGroup: document.getElementById('bulk-assign-group'),
+            bulkWatchBtn: document.getElementById('bulk-watch-btn'),
+            selectAll: document.getElementById('select-all'),
+            clearSelection: document.getElementById('clear-selection'),
+            settingsToggle: document.getElementById('settings-toggle'),
+            settingsPanel: document.getElementById('settings-panel'),
+            // Thumbnail Modal
+            thumbnailModal: document.getElementById('thumbnail-modal'),
+            enlargedThumbnail: document.getElementById('enlarged-thumbnail'),
+            modalCloseBtn: document.getElementById('thumbnail-modal-close'),
+            // Group Management
+            newGroupInput: document.getElementById('new-group-input'),
+            addGroupBtn: document.getElementById('add-group-btn'),
+            groupsList: document.getElementById('groups-list'),
+            // Assign Group Modal
+            assignGroupModal: document.getElementById('assign-group-modal'),
+            assignGroupModalList: document.getElementById('assign-group-modal-list'),
+            assignGroupModalCloseBtn: document.getElementById('assign-group-modal-close'),
+            assignGroupSaveBtn: document.getElementById('assign-group-save-btn'),
+            // Multistream Modal
+            multistreamModal: document.getElementById('multistream-modal'),
+            multistreamGrid: document.getElementById('multistream-grid'),
+            multistreamModalCloseBtn: document.getElementById('multistream-modal-close'),
+        };
+    },
+
+    loadSettings() {
+        const theme = localStorage.getItem("theme") || 
+            (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.body.setAttribute("data-theme", theme);
+
+        this.state.favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+        this.state.groups = JSON.parse(localStorage.getItem("groups") || "{}");
+        this.state.filter = localStorage.getItem("filter") || 'all';
+        this.state.sort = localStorage.getItem("sort") || 'status';
+        this.state.slowPollDelay = parseInt(localStorage.getItem("slowPollDelay") || "600000");
+        this.state.viewMode = localStorage.getItem("viewMode") || 'grid';
+        this.state.viewerRange = JSON.parse(localStorage.getItem("viewerRange") || '{"min":0,"max":50000}');
+        this.state.settingsExpanded = JSON.parse(localStorage.getItem("settingsExpanded") || 'false');
+
+        this.elements.filterSelect.value = this.state.filter;
+        this.elements.sortSelect.value = this.state.sort;
+        this.elements.autoRefreshSelect.value = this.state.slowPollDelay;
+        this.elements.viewerMin.value = this.state.viewerRange.min;
+        this.elements.viewerMax.value = this.state.viewerRange.max;
+        
+        this.updateViewMode(this.state.viewMode);
+        this.updateViewerRangeDisplay();
+        this.updateSettingsPanel(); // This call is now safe
+        this.startAutoRefresh(this.state.slowPollDelay);
+    },
+
+    registerEventListeners() {
+        // Settings toggle
+        this.elements.settingsToggle.addEventListener('click', () => this.toggleSettings());
+        
+        // Debounced search
+        this.elements.searchInput.addEventListener('input', Utils.debounce(e => {
+            this.state.searchQuery = e.target.value.toLowerCase();
+            this.render();
+        }, 300));
+        
+        this.elements.filterSelect.addEventListener('change', e => {
+            this.state.filter = e.target.value;
+            localStorage.setItem("filter", this.state.filter);
+            this.render();
+        });
+        
+        this.elements.sortSelect.addEventListener('change', e => {
+            this.state.sort = e.target.value;
+            localStorage.setItem("sort", this.state.sort);
+            this.render();
+        });
+        
+        this.elements.autoRefreshSelect.addEventListener('change', e => {
+            this.state.slowPollDelay = parseInt(e.target.value);
+            localStorage.setItem("slowPollDelay", this.state.slowPollDelay);
+            this.startAutoRefresh(this.state.slowPollDelay);
+        });
+        
+        // Viewer range controls
+        this.elements.viewerMin.addEventListener('input', Utils.throttle(() => {
+            this.state.viewerRange.min = parseInt(this.elements.viewerMin.value);
+            this.updateViewerRangeDisplay();
+            localStorage.setItem("viewerRange", JSON.stringify(this.state.viewerRange));
+            this.render();
+        }, 100));
+        
+        this.elements.viewerMax.addEventListener('input', Utils.throttle(() => {
+            this.state.viewerRange.max = parseInt(this.elements.viewerMax.value);
+            this.updateViewerRangeDisplay();
+            localStorage.setItem("viewerRange", JSON.stringify(this.state.viewerRange));
+            this.render();
+        }, 100));
+        
+        // View mode controls
+        document.querySelectorAll('.view-toggle[data-view]').forEach(btn => {
+            btn.addEventListener('click', e => this.updateViewMode(e.target.dataset.view));
+        });
+        
+        // Selection mode
+        this.elements.selectModeBtn.addEventListener('click', () => this.toggleSelectionMode());
+        
+        // Bulk actions
+        this.elements.bulkFavorite.addEventListener('click', () => this.bulkToggleFavorite(true));
+        this.elements.bulkUnfavorite.addEventListener('click', () => this.bulkToggleFavorite(false));
+        this.elements.selectAll.addEventListener('click', () => this.selectAllStreamers());
+        this.elements.clearSelection.addEventListener('click', () => this.clearSelection());
+        this.elements.bulkWatchBtn.addEventListener('click', () => this.showMultistreamModal());
+        
+        // Top-level actions
+        this.elements.themeBtn.addEventListener('click', () => this.toggleTheme());
+        this.elements.refreshBtn.addEventListener('click', () => this.performSlowPoll());
+        this.elements.addBtn.addEventListener('click', () => this.addStreamer());
+        this.elements.addInput.addEventListener('keyup', e => { if (e.key === 'Enter') this.addStreamer(); });
+        this.elements.exportBtn.addEventListener('click', () => this.exportList());
+        this.elements.importFile.addEventListener('change', e => this.importList(e));
+
+        // Group Management Listeners
+        this.elements.addGroupBtn.addEventListener('click', () => this.createGroup());
+        this.elements.newGroupInput.addEventListener('keyup', e => { if (e.key === 'Enter') this.createGroup(); });
+        this.elements.groupsList.addEventListener('click', e => {
+            const button = e.target.closest('button');
+            if (!button) return;
+            const groupItem = e.target.closest('.group-item');
+            const groupName = groupItem.dataset.groupName;
+            if (button.classList.contains('delete-group-btn')) this.deleteGroup(groupName);
+        });
+        this.elements.bulkAssignGroup.addEventListener('click', () => this.showGroupModal(Array.from(this.state.selectedStreamers)));
+
+        // Assign Group Modal Listeners
+        this.elements.assignGroupModalCloseBtn.addEventListener('click', () => this.hideGroupModal());
+        this.elements.assignGroupModal.addEventListener('click', e => { if(e.target === this.elements.assignGroupModal) this.hideGroupModal(); });
+
+        // Multistream Modal Listeners
+        this.elements.multistreamModalCloseBtn.addEventListener('click', () => this.hideMultistreamModal());
+
+        // Event Delegation for Card Clicks
+        this.elements.container.addEventListener('click', e => {
+            const checkbox = e.target.closest('.streamer-checkbox');
+            if (checkbox) {
+                const streamerName = checkbox.closest('[data-streamer-name]').dataset.streamerName;
+                this.toggleSelection(streamerName); return;
+            }
+
+            const button = e.target.closest('.action-btn');
+            if (button) {
+                const streamerName = button.closest('[data-streamer-name]').dataset.streamerName;
+                if (button.classList.contains('favorite')) this.toggleFavorite(streamerName);
+                else if (button.classList.contains('remove')) this.removeStreamer(streamerName);
+                else if (button.classList.contains('assign-group')) {
+                    e.preventDefault();
+                    this.showGroupModal([streamerName]);
+                }
+                return;
+            }
+
+            const thumbnail = e.target.closest('.thumbnail-preview');
+            if (thumbnail) {
+                e.preventDefault();
+                const link = thumbnail.closest('a');
+                if (link && link.href) this.showEnlargedThumbnail(thumbnail.src, link.href);
+                return;
+            }
+        });
+
+        // Thumbnail Modal Listeners
+        this.elements.modalCloseBtn.addEventListener('click', () => this.hideEnlargedThumbnail());
+        this.elements.thumbnailModal.addEventListener('click', e => { if (e.target === this.elements.thumbnailModal) this.hideEnlargedThumbnail(); });
+        this.elements.enlargedThumbnail.addEventListener('click', e => {
+            const url = e.target.dataset.kickUrl;
+            if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+                this.hideEnlargedThumbnail();
+            }
+        });
+        
+        window.addEventListener('beforeunload', () => this.stopAutoRefresh());
+    },
+    
+    setupKeyboardNavigation() {
+        document.addEventListener('keydown', e => {
+            const isModalOpen = this.elements.thumbnailModal.style.display === 'flex' 
+                || this.elements.assignGroupModal.style.display === 'flex'
+                || this.elements.multistreamModal.style.display === 'flex';
+                
+            if (e.target.matches('input, select, button, textarea') && e.key !== 'Escape') return;
+
+            switch(e.key.toLowerCase()) {
+                case 'r':
+                    if (!e.ctrlKey && !e.metaKey && !isModalOpen) { e.preventDefault(); this.performSlowPoll(); }
+                    break;
+                case 'f':
+                    if (!e.ctrlKey && !e.metaKey && !isModalOpen) { e.preventDefault(); this.elements.searchInput.focus(); }
+                    break;
+                case 'escape':
+                    if (this.elements.multistreamModal.style.display === 'flex') this.hideMultistreamModal();
+                    else if (this.elements.assignGroupModal.style.display === 'flex') this.hideGroupModal();
+                    else if (this.elements.thumbnailModal.style.display === 'flex') this.hideEnlargedThumbnail();
+                    else if (this.state.selectionMode) this.toggleSelectionMode();
+                    else if (this.state.settingsExpanded) this.toggleSettings();
+                    else this.elements.searchInput.blur();
+                    break;
+            }
+        });
+    },
+    
+    requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+    },
+    
+    startPeriodicCleanup() {
+        setInterval(() => this.cache.cleanup(), 300000);
+    },
+
+    showModal(modalElement) {
+        this.state.lastFocusedElement = document.activeElement;
+        modalElement.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    },
+
+    hideModal(modalElement) {
+        modalElement.style.display = 'none';
+        document.body.style.overflow = '';
+        if (this.state.lastFocusedElement) this.state.lastFocusedElement.focus();
+    },
+
+    showEnlargedThumbnail(imageUrl, kickUrl) {
+        this.showModal(this.elements.thumbnailModal);
+        this.elements.enlargedThumbnail.src = imageUrl;
+        this.elements.enlargedThumbnail.dataset.kickUrl = kickUrl;
+        setTimeout(() => this.elements.modalCloseBtn.focus(), 100);
+    },
+
+    hideEnlargedThumbnail() {
+        this.hideModal(this.elements.thumbnailModal);
+        this.elements.enlargedThumbnail.src = '';
+        this.elements.enlargedThumbnail.removeAttribute('data-kick-url');
+    },
+    
+    toggleSettings() {
+        this.state.settingsExpanded = !this.state.settingsExpanded;
+        localStorage.setItem("settingsExpanded", JSON.stringify(this.state.settingsExpanded));
+        this.updateSettingsPanel();
+    },
+    
+    // START: FIXED FUNCTION
+    updateSettingsPanel() {
+        const panel = this.elements.settingsPanel;
+        const toggle = this.elements.settingsToggle;
+        
+        if (this.state.settingsExpanded) {
+            panel.classList.add('expanded');
+            toggle.setAttribute('aria-expanded', 'true');
+            toggle.innerHTML = '⚙️ Hide Settings';
+        } else {
+            panel.classList.remove('expanded');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.innerHTML = '⚙️ Settings';
+        }
+    },
+    // END: FIXED FUNCTION
+    
+    async fetchStreamerList() {
+        this.setLoadingState(true, 'Loading streamer list...');
+        this.updateConnectionStatus('connecting');
+        try {
+            const res = await fetch(`${this.state.apiEndpoint}?t=${Date.now()}`);
+            if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
+            this.state.streamers = await res.json();
+            this.updateConnectionStatus('connected');
+            this.performSlowPoll();
+        } catch (error) {
+            console.error("Failed to load streamer list:", error);
+            this.updateConnectionStatus('error');
+            this.showToast(`⚠️ Error fetching list: ${error.message}`, 'error');
+            this.setLoadingState(false);
+        }
+    },
+
+    async fetchStreamerData(streamerList) {
+        const fetchPromises = streamerList.map(name => this.fetchApiWithCache(`https://kick.com/api/v1/channels/${name}`, name));
+        const results = await Promise.allSettled(fetchPromises);
+        let successCount = 0;
+        const liveStreamers = [];
+
+        results.forEach((result, index) => {
+            const name = streamerList[index];
+            if (result.status === 'fulfilled' && result.value) {
+                const data = result.value;
+                const isLive = data.livestream !== null;
+                const wasLive = this.state.lastLiveStates[name];
+
+                if (isLive && wasLive === false) {
+                    if (this.state.favorites.includes(name)) this.notifyFavoriteStreamerLive(name, data);
+                    const card = this.elements.container.querySelector(`[data-streamer-name="${name}"]`);
+                    if (card) {
+                        card.classList.add('newly-live');
+                        setTimeout(() => card.classList.remove('newly-live'), 2000);
+                    }
+                }
+                this.state.lastLiveStates[name] = isLive;
+                
+                if (isLive) liveStreamers.push(name);
+                
+                const uptime = isLive ? Utils.calculateUptime(data.livestream?.created_at) : 0;
+                const offlineTime = !isLive ? this.stats.getOfflineTime(name) : 0;
+                
+                this.state.streamerData.set(name, {
+                    name, isLive, uptime, offlineTime,
+                    title: data.livestream?.session_title || "Offline",
+                    viewers: data.livestream?.viewer_count || 0,
+                    category: data.livestream?.categories?.[0]?.name || null,
+                    thumbnail: data.livestream?.thumbnail?.url,
+                    url: `https://kick.com/${name}`,
+                    profilePic: data.user?.profile_pic,
+                });
+                successCount++;
+            } else {
+                console.warn(`Failed to fetch data for ${name}`);
+                const offlineTime = this.stats.getOfflineTime(name);
+                this.state.streamerData.set(name, { name, isLive: false, title: 'Unavailable', viewers: 0, category: null, url: `https://kick.com/${name}`, uptime: 0, offlineTime });
+            }
+        });
+        return { successCount, liveStreamers };
+    },
+
+    async fetchApiWithCache(url, identifier) {
+        const cacheKey = `api-${identifier}`;
+        let data = this.cache.get(cacheKey);
+        if (data) return data;
+        return this.fetchApi(url).then(result => {
+            if (result) this.cache.set(cacheKey, result);
+            return result;
+        });
+    },
+
+    async fetchApi(url) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`API responded with status ${res.status}`);
+        return res.json();
+    },
+
+    render() {
+        if (this.state.isLoading) return this.renderSkeletons();
+        const filtered = this.getFilteredAndSortedData();
+        this.renderStats();
+        this.elements.container.innerHTML = '';
+        if (filtered.length === 0) return this.renderEmptyState();
+
+        const fragment = document.createDocumentFragment();
+        filtered.forEach(streamer => fragment.appendChild(this.createStreamerCard(streamer)));
+        this.elements.container.appendChild(fragment);
+        this.elements.lastUpdated.textContent = `${new Date().toLocaleTimeString()}`;
+        this.updateSelectionUI();
+    },
+    
+    renderStats() {
+        const stats = this.stats.getStats();
+        if (!stats) return this.elements.statsContainer.innerHTML = '';
+        this.elements.statsContainer.innerHTML = `<div class="stats-panel"><h3>📊 Live Statistics</h3><div class="stats-grid"><div class="stat"><span class="stat-value">${stats.current.liveStreamers}</span><span class="stat-label">Live Now</span></div><div class="stat"><span class="stat-value">${Utils.formatNumber(stats.current.totalViewers)}</span><span class="stat-label">Total Viewers</span></div><div class="stat"><span class="stat-value">${Utils.formatNumber(stats.peakViewers)}</span><span class="stat-label">Peak (24h)</span></div><div class="stat"><span class="stat-value">${stats.averageLive}</span><span class="stat-label">Avg Live (1h)</span></div>${stats.topCategory ? `<div class="stat"><span class="stat-value">${stats.topCategory}</span><span class="stat-label">Top Category</span></div>` : ''}</div></div>`;
+    },
+
+    getFilteredAndSortedData() {
+        let data = Array.from(this.state.streamerData.values());
+        // Filtering
+        data = data.filter(s => {
+            const searchMatch = !this.state.searchQuery || s.name.toLowerCase().includes(this.state.searchQuery) || (s.title || '').toLowerCase().includes(this.state.searchQuery) || (s.category || '').toLowerCase().includes(this.state.searchQuery);
+            if (!searchMatch) return false;
+            const viewers = s.viewers || 0;
+            if (viewers < this.state.viewerRange.min || viewers > this.state.viewerRange.max) return false;
+            if (this.state.filter.startsWith('group-')) {
+                const groupName = this.state.filter.replace('group-', '');
+                return this.state.groups[groupName]?.includes(s.name);
+            }
+            switch (this.state.filter) {
+                case 'live': return s.isLive; case 'offline': return !s.isLive; case 'favorites': return this.state.favorites.includes(s.name); default: return true;
+            }
+        });
+        // Sorting
+        return data.sort((a, b) => {
+            switch (this.state.sort) {
+                case 'viewers': return b.viewers - a.viewers; case 'name': return a.name.localeCompare(b.name); case 'category': return (a.category || '').localeCompare(b.category || ''); case 'uptime': return b.uptime - a.uptime; case 'status': default:
+                    if (a.isLive !== b.isLive) return b.isLive - a.isLive; return b.viewers - a.viewers;
+            }
+        });
+    },
+
+    createStreamerCard(s) {
+        const div = document.createElement('div');
+        const isFavorite = this.state.favorites.includes(s.name);
+        const isSelected = this.state.selectedStreamers.has(s.name);
+        div.className = `streamer ${s.isLive ? 'live' : 'offline'} ${isFavorite ? 'favorite' : ''} ${this.state.viewMode}-view ${isSelected ? 'selected' : ''}`;
+        div.dataset.streamerName = s.name;
+        const categoryIcons = {"Just Chatting": "💬", "Slots & Casino": "🎰", "Games & Casino": "🎲", "Call of Duty": "🎯", "Grand Theft Auto V": "🚗", "Sports": "🏀", "Music": "🎵", "Valorant": "🔫", "Fortnite": "🛡️", "League of Legends": "🧙‍♂️", "Minecraft": "⛏️", "IRL": "🌍", "Poker": "🃏"};
+        const icon = categoryIcons[s.category] || '🎮';
+        const avatarHTML = `<img class="streamer-avatar" src="${s.profilePic || ''}" alt="${s.name} avatar" onerror="this.style.display='none'">`;
+        
+        div.innerHTML = `
+            ${this.state.selectionMode ? `<input type="checkbox" class="streamer-checkbox" ${isSelected ? 'checked' : ''} aria-label="Select ${s.name}">` : ''}
+            ${s.isLive && s.thumbnail ? this.createThumbnailHTML(s) : ''}
+            <div class="streamer-header">
+                ${avatarHTML}
+                <a href="${s.url}" target="_blank" rel="noopener noreferrer" class="streamer-name">${Utils.sanitizeHTML(s.name)}</a>
+                <span class="streamer-status"><span class="status-dot"></span>${s.isLive ? `LIVE (${Utils.formatNumber(s.viewers)})` : 'OFFLINE'}</span>
+            </div>
+            <div class="streamer-info">
+                <div class="stream-title">${s.isLive ? Utils.sanitizeHTML(s.title) : 'Currently not streaming'}</div>
+                ${s.category ? `<div class="stream-category">${icon} ${Utils.sanitizeHTML(s.category)}</div>` : ''}
+                <div class="stream-meta">
+                    ${s.isLive && s.uptime > 0 ? `<span class="uptime">⏱️ ${Utils.formatDuration(s.uptime)}</span>` : ''}
+                    ${!s.isLive && s.offlineTime > 0 ? `<span class="offline-time">💤 ${Utils.formatDuration(s.offlineTime)} offline</span>` : ''}
+                </div>
+            </div>
+            <div class="streamer-actions">
+                <button class="action-btn assign-group" title="Assign to Group">📂</button>
+                <button class="action-btn favorite ${isFavorite ? 'active' : ''}" title="${isFavorite ? 'Unfavorite' : 'Favorite'}">${isFavorite ? '⭐' : '☆'}</button>
+                <button class="action-btn remove" title="Remove streamer">🗑️</button>
+            </div>`;
+        return div;
+    },
+    
+    createThumbnailHTML(s) { return `<div class="thumbnail-container"><a href="${s.url}" target="_blank" rel="noopener noreferrer" aria-label="View enlarged thumbnail for ${s.name}"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Stream preview for ${s.name}" loading="lazy" onerror="this.src='${this.PLACEHOLDER_THUMBNAIL}'; this.classList.add('placeholder');"><div class="viewer-overlay">${Utils.formatNumber(s.viewers)}</div></a></div>`; },
+    renderSkeletons() { this.elements.container.innerHTML = Array(12).fill('').map(() => `<div class="skeleton-card skeleton" aria-label="Loading streamer data"><div class="skeleton-line" style="width: 60%;"></div><div class="skeleton-line" style="width: 80%;"></div><div class="skeleton-thumb"></div></div>`).join(''); },
+    renderEmptyState() {
+        const { filter, searchQuery } = this.state;
+        let message, action;
+        if (searchQuery) { message = `No streamers found matching "${searchQuery}"`; action = '<button onclick="App.clearSearch()">Clear search</button>'; } 
+        else if (filter === 'live') { message = 'No streamers are currently live'; action = '<button onclick="App.showAllStreamers()">View all streamers</button>'; } 
+        else if (filter === 'favorites') { message = 'No favorite streamers yet'; action = '<p>Click the ☆ icon on any streamer to add them to favorites</p>'; } 
+        else if (filter.startsWith('group-')) { message = 'This group is empty'; action = '<p>Assign streamers to this group using the 📂 icon on their card.</p>'; } 
+        else { message = 'No streamers in your list'; action = '<p>Add streamers using the settings panel.</p>'; }
+        this.elements.container.innerHTML = `<div class="empty-state"><h3>${message}</h3>${action}</div>`;
+    },
+
+    setLoadingState(isLoading, message = '') {
+        this.state.isLoading = isLoading;
+        this.elements.refreshBtn.disabled = isLoading;
+        this.elements.refreshBtn.textContent = isLoading ? `🔄 ${message || 'Loading...'}` : '🔄 Refresh';
+        if (!isLoading) this.render();
+    },
+    
+    updateConnectionStatus(status) { this.elements.statusIndicator.className = `status-indicator ${status}`; },
+    updateViewMode(mode) {
+        this.state.viewMode = mode;
+        localStorage.setItem("viewMode", mode);
+        document.querySelectorAll('.view-toggle[data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === mode));
+        this.elements.container.className = `${mode}-view`;
+        this.render();
+    },
+    
+    updateViewerRangeDisplay() {
+        const { min, max } = this.state.viewerRange;
+        const maxDisplay = max >= 50000 ? '∞' : Utils.formatNumber(max);
+        this.elements.viewerRangeDisplay.textContent = `${Utils.formatNumber(min)} - ${maxDisplay}`;
+    },
+
+    toggleSelectionMode() {
+        this.state.selectionMode = !this.state.selectionMode;
+        this.state.selectedStreamers.clear();
+        this.elements.selectModeBtn.classList.toggle('active', this.state.selectionMode);
+        this.elements.bulkActions.classList.toggle('visible', this.state.selectionMode);
+        this.render();
+        this.showToast(`Selection mode ${this.state.selectionMode ? 'enabled' : 'disabled'}.`, 'info');
+    },
+    
+    toggleSelection(streamerName) { this.state.selectedStreamers.has(streamerName) ? this.state.selectedStreamers.delete(streamerName) : this.state.selectedStreamers.add(streamerName); this.updateSelectionUI(); this.render(); },
+    selectAllStreamers() { this.getFilteredAndSortedData().forEach(s => this.state.selectedStreamers.add(s.name)); this.updateSelectionUI(); this.render(); },
+    clearSelection() { this.state.selectedStreamers.clear(); this.updateSelectionUI(); this.render(); },
+    
+    updateSelectionUI() {
+        const count = this.state.selectedStreamers.size;
+        this.elements.selectionCount.textContent = `${count} selected`;
+        const liveSelected = Array.from(this.state.selectedStreamers).some(name => this.state.streamerData.get(name)?.isLive);
+        this.elements.bulkWatchBtn.disabled = count === 0 || !liveSelected;
+        this.elements.bulkFavorite.disabled = count === 0;
+        this.elements.bulkUnfavorite.disabled = count === 0;
+        this.elements.bulkAssignGroup.disabled = count === 0;
+    },
+    
+    bulkToggleFavorite(addToFavorites) {
+        let changedCount = 0;
+        this.state.selectedStreamers.forEach(name => {
+            const isFavorite = this.state.favorites.includes(name);
+            if (addToFavorites && !isFavorite) { this.state.favorites.push(name); changedCount++; } 
+            else if (!addToFavorites && isFavorite) { this.state.favorites = this.state.favorites.filter(f => f !== name); changedCount++; }
+        });
+        if (changedCount > 0) { localStorage.setItem("favorites", JSON.stringify(this.state.favorites)); this.render(); const action = addToFavorites ? 'added to' : 'removed from'; this.showToast(`⭐ ${changedCount} streamers ${action} favorites`, 'success'); }
+    },
+
+    async addStreamer() {
+        const name = this.elements.addInput.value.trim().toLowerCase();
+        if (!name) return this.showToast('⚠️ Please enter a streamer name.', 'warning');
+        if (this.state.streamers.includes(name)) return this.showToast('⚠️ Streamer is already in the list.', 'warning');
+        this.setLoadingState(true, 'Adding streamer...');
+        try {
+            const res = await fetch(this.state.workerEndpoint, {method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ streamer: name })});
+            const msg = await res.text();
+            if (!res.ok) throw new Error(msg);
+            this.showToast(`✅ ${msg}`, 'success');
+            this.elements.addInput.value = '';
+            this.cache.clear();
+            setTimeout(() => this.fetchStreamerList(), 1500);
+        } catch (error) { this.showToast(`❌ Add failed: ${error.message}`, 'error'); } 
+        finally { this.setLoadingState(false); }
+    },
+
+    async removeStreamer(name) {
+        if (!confirm(`Are you sure you want to remove ${name}? This requires a PIN.`)) return;
+        const pin = prompt("Enter PIN to remove streamer:");
+        if (!pin) return this.showToast('⚠️ PIN entry cancelled.', 'warning');
+        this.setLoadingState(true, 'Removing streamer...');
+        try {
+            const res = await fetch(this.state.workerEndpoint, {method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ remove: name, pin })});
+            const msg = await res.text();
+            if (!res.ok) throw new Error(msg);
+            this.showToast(`🗑️ ${msg}`, 'success');
+            this.cache.clear();
+            setTimeout(() => this.fetchStreamerList(), 1500);
+        } catch (error) { this.showToast(`❌ Remove failed: ${error.message}`, 'error'); } 
+        finally { this.setLoadingState(false); }
+    },
+
+    toggleFavorite(name) {
+        const favSet = new Set(this.state.favorites);
+        const wasAdded = !favSet.has(name);
+        wasAdded ? favSet.add(name) : favSet.delete(name);
+        this.state.favorites = Array.from(favSet);
+        localStorage.setItem("favorites", JSON.stringify(this.state.favorites));
+        this.render();
+        const message = wasAdded ? `⭐ ${name} added to favorites!` : `☆ ${name} removed from favorites.`;
+        this.showToast(message, 'success');
+        this.announceToScreenReader(message);
+    },
+
+    toggleTheme() {
+        const newTheme = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        document.body.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        this.showToast(`🌗 Switched to ${newTheme} theme`, 'success');
+    },
+    
+    // Auto-refresh Smarter Polling
+    startAutoRefresh(delay) {
+        this.stopAutoRefresh();
+        if (delay > 0) this.state.slowPollInterval = setInterval(() => this.performSlowPoll(), delay);
+    },
+
+    stopAutoRefresh() {
+        if (this.state.slowPollInterval) clearInterval(this.state.slowPollInterval);
+        if (this.state.fastPollInterval) clearInterval(this.state.fastPollInterval);
+        this.state.slowPollInterval = null; this.state.fastPollInterval = null;
+    },
+    
+    async performSlowPoll() {
+        this.setLoadingState(true, 'Updating all streamers...');
+        const { successCount, liveStreamers } = await this.fetchStreamerData(this.state.streamers);
+        this.stats.recordSnapshot(Array.from(this.state.streamerData.values()));
+        this.setLoadingState(false);
+        this.render();
+        this.announceUpdate(successCount, this.state.streamers.length);
+        this.startFastPoll(liveStreamers);
+    },
+
+    startFastPoll(liveStreamers) {
+        if (this.state.fastPollInterval) clearInterval(this.state.fastPollInterval);
+        if (liveStreamers.length > 0) {
+            this.state.fastPollInterval = setInterval(() => this.performFastPoll(liveStreamers), this.state.fastPollDelay);
+        }
+    },
+
+    async performFastPoll(liveStreamers) {
+        const { liveStreamers: updatedLiveStreamers } = await this.fetchStreamerData(liveStreamers);
+        this.stats.recordSnapshot(Array.from(this.state.streamerData.values()));
+        this.render();
+        if (updatedLiveStreamers.length !== liveStreamers.length) this.startFastPoll(updatedLiveStreamers);
+    },
+
+    // Group Management Methods
+    createGroup() {
+        const groupName = this.elements.newGroupInput.value.trim();
+        if (!groupName) return this.showToast('⚠️ Please enter a group name.', 'warning');
+        if (this.state.groups[groupName]) return this.showToast('⚠️ Group already exists.', 'warning');
+        this.state.groups[groupName] = [];
+        this.saveGroups(); this.renderGroupsList(); this.populateFilterDropdown();
+        this.elements.newGroupInput.value = '';
+        this.showToast(`✅ Group "${groupName}" created.`, 'success');
+    },
+
+    deleteGroup(groupName) {
+        if (!confirm(`Are you sure you want to delete the group "${groupName}"?`)) return;
+        delete this.state.groups[groupName];
+        this.saveGroups(); this.renderGroupsList(); this.populateFilterDropdown();
+        if (this.state.filter === `group-${groupName}`) { this.state.filter = 'all'; this.elements.filterSelect.value = 'all'; this.render(); }
+        this.showToast(`🗑️ Group "${groupName}" deleted.`, 'success');
+    },
+
+    renderGroupsList() {
+        this.elements.groupsList.innerHTML = Object.keys(this.state.groups).sort().map(name => `<div class="group-item" data-group-name="${name}"><span>${Utils.sanitizeHTML(name)}</span><div class="group-item-actions"><button class="delete-group-btn" title="Delete Group">🗑️</button></div></div>`).join('');
+    },
+    
+    saveGroups() { localStorage.setItem('groups', JSON.stringify(this.state.groups)); },
+    populateFilterDropdown() {
+        const defaultOptions = `<option value="all">All</option><option value="live">Live</option><option value="offline">Offline</option><option value="favorites">Favorites</option>`;
+        const groupOptions = Object.keys(this.state.groups).sort().map(name => `<option value="group-${name}">📂 ${Utils.sanitizeHTML(name)}</option>`).join('');
+        this.elements.filterSelect.innerHTML = defaultOptions + (groupOptions ? '<option disabled>-----</option>' + groupOptions : '');
+        this.elements.filterSelect.value = this.state.filter;
+    },
+
+    showGroupModal(streamerNames) {
+        this.showModal(this.elements.assignGroupModal);
+        this.elements.assignGroupModalList.innerHTML = Object.keys(this.state.groups).sort().map(groupName => {
+            const isChecked = streamerNames.length > 0 && streamerNames.every(sName => this.state.groups[groupName]?.includes(sName));
+            return `<label class="assign-group-item"><input type="checkbox" data-group-name="${groupName}" ${isChecked ? 'checked' : ''}>${Utils.sanitizeHTML(groupName)}</label>`;
+        }).join('');
+
+        this.elements.assignGroupSaveBtn.onclick = () => {
+            this.elements.assignGroupModalList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                const groupName = checkbox.dataset.groupName;
+                streamerNames.forEach(streamerName => {
+                    const group = this.state.groups[groupName];
+                    const streamerIndex = group.indexOf(streamerName);
+                    if (checkbox.checked && streamerIndex === -1) group.push(streamerName);
+                    else if (!checkbox.checked && streamerIndex !== -1) group.splice(streamerIndex, 1);
+                });
+            });
+            this.saveGroups(); this.hideGroupModal(); this.showToast('✅ Groups updated.', 'success');
+        };
+        setTimeout(() => this.elements.assignGroupSaveBtn.focus(), 100);
+    },
+
+    hideGroupModal() { this.hideModal(this.elements.assignGroupModal); },
+
+    // Multistream Methods
+    showMultistreamModal() {
+        const liveSelection = Array.from(this.state.selectedStreamers).filter(name => this.state.streamerData.get(name)?.isLive);
+        if (liveSelection.length === 0) return this.showToast('⚠️ No live streamers selected.', 'warning');
+        
+        const grid = this.elements.multistreamGrid;
+        grid.innerHTML = liveSelection.map(name => `<iframe src="https://player.kick.com/${name}?autoplay=true&muted=true"></iframe>`).join('');
+
+        let cols = Math.ceil(Math.sqrt(liveSelection.length));
+        let rows = Math.ceil(liveSelection.length / cols);
+        grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+        this.showModal(this.elements.multistreamModal);
+    },
+
+    hideMultistreamModal() {
+        this.hideModal(this.elements.multistreamModal);
+        this.elements.multistreamGrid.innerHTML = ''; // Stop videos from playing
+    },
+
+    // Misc Helpers
+    notifyFavoriteStreamerLive(name, data) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const notification = new Notification(`${name} is now live!`, { body: data.livestream?.session_title || 'Streaming now on Kick!', icon: data.user?.profile_pic, tag: `streamer-${name}` });
+            notification.onclick = () => { window.open(`https://kick.com/${name}`, '_blank'); notification.close(); };
+            setTimeout(() => notification.close(), 5000);
+        }
+        this.announceToScreenReader(`${name} is now live!`);
+    },
+
+    showToast(message, type = 'info') {
+        const toast = this.elements.toast;
+        toast.textContent = message; toast.className = type;
+        toast.style.visibility = "visible"; toast.style.opacity = "1";
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            setTimeout(() => { toast.style.visibility = "hidden"; toast.className = ''; }, 300);
+        }, 3000);
+    },
+
+    announceToScreenReader(message) {
+        this.elements.announcements.textContent = message;
+        setTimeout(() => { this.elements.announcements.textContent = ''; }, 1000);
+    },
+    
+    announceUpdate(successCount, totalCount) { this.announceToScreenReader(`Updated ${successCount} of ${totalCount} streamers`); },
+    clearSearch() { this.elements.searchInput.value = ''; this.state.searchQuery = ''; this.render(); this.elements.searchInput.focus(); },
+    showAllStreamers() { this.elements.filterSelect.value = 'all'; this.state.filter = 'all'; localStorage.setItem("filter", this.state.filter); this.render(); }
+};
+
+// Error boundary wrapper
+function withErrorBoundary(fn, context = 'Unknown') {
+    return async function(...args) {
+        try { return await fn.apply(this, args); } 
+        catch (error) {
+            console.error(`Error in ${context}:`, error);
+            App.showToast(`⚠️ Error in ${context}: ${error.message}`, 'error');
+            if (context.includes('Poll')) App.setLoadingState(false);
+        }
+    };
+}
+
+// Wrap critical methods
+App.fetchStreamerList = withErrorBoundary(App.fetchStreamerList, 'fetchStreamerList');
+App.performSlowPoll = withErrorBoundary(App.performSlowPoll, 'SlowPoll');
+App.performFastPoll = withErrorBoundary(App.performFastPoll, 'FastPoll');
+
+// Initialize app
+document.addEventListener('DOMContentLoaded', () => {
+    try { App.init(); } 
+    catch (error) {
+        console.error('Failed to initialize app:', error);
+        document.body.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;"><h1>Failed to load Kick Monitor Ultra</h1><p>An unexpected error occurred: ${error.message}</p><button onclick="location.reload()" style="padding: 10px 20px; margin-top: 20px;">Refresh Page</button></div>`;
+    }
+});
 </script>
 
 </body>
