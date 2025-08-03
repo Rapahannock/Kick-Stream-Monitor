@@ -1034,11 +1034,11 @@
 
             #streamers.grid-view .streamer-header {
                 flex-direction: row;
-                gap: 4px;
+                gap: 8px;
             }
             
             #streamers.grid-view .streamer-avatar {
-                display: none; /* Hide avatar on small grid cards to save space */
+                /* Avatars are now visible on mobile grid */
             }
 
             #streamers.grid-view .streamer-name {
@@ -1204,15 +1204,14 @@
                             </div>
                         </div>
                         <div class="setting-group" id="auto-refresh-setting-group">
-                            <label for="auto-refresh-select">Auto Refresh (Offline)</label>
+                            <label for="auto-refresh-select">Auto Refresh</label>
                             <select id="auto-refresh-select" aria-describedby="refresh-help">
                                 <option value="0">Off</option>
-                                <option value="120000">2 minutes</option>
-                                <option value="300000">5 minutes</option>
-                                <option value="600000" selected>10 minutes</option>
-                                <option value="900000">15 minutes</option>
+                                <option value="60000">1 minute</option>
+                                <option value="300000" selected>5 minutes</option>
+                                <option value="600000">10 minutes</option>
                             </select>
-                            <div id="refresh-help" class="sr-only">Live streamers refresh every 2 mins.</div>
+                            <div id="refresh-help" class="sr-only">Automatically refresh streamer data</div>
                         </div>
                         <div class="setting-group">
                             <label for="add-input">Add Streamer</label>
@@ -1290,8 +1289,7 @@
 
 
 <script>
-// Enhanced Kick Monitor Ultra v4.3 Clean
-// Features: Smarter Polling, Custom Groups, Go-Live Animations, Avatars, Compact View, Multistream
+// The full, corrected JavaScript code is now included below.
 
 // Utility functions
 const Utils = {
@@ -1521,10 +1519,8 @@ const App = {
         sort: 'status',
         searchQuery: '',
         lastLiveStates: {},
-        slowPollInterval: null,
-        fastPollInterval: null,
-        slowPollDelay: 600000,
-        fastPollDelay: 120000,
+        autoRefreshInterval: null,
+        autoRefreshDelay: 300000,
         connectionStatus: 'connected',
         viewMode: 'grid',
         selectionMode: false,
@@ -1619,21 +1615,21 @@ const App = {
         this.state.groups = JSON.parse(localStorage.getItem("groups") || "{}");
         this.state.filter = localStorage.getItem("filter") || 'all';
         this.state.sort = localStorage.getItem("sort") || 'status';
-        this.state.slowPollDelay = parseInt(localStorage.getItem("slowPollDelay") || "600000");
+        this.state.autoRefreshDelay = parseInt(localStorage.getItem("autoRefreshDelay") || "300000");
         this.state.viewMode = localStorage.getItem("viewMode") || 'grid';
         this.state.viewerRange = JSON.parse(localStorage.getItem("viewerRange") || '{"min":0,"max":50000}');
         this.state.settingsExpanded = JSON.parse(localStorage.getItem("settingsExpanded") || 'false');
 
         this.elements.filterSelect.value = this.state.filter;
         this.elements.sortSelect.value = this.state.sort;
-        this.elements.autoRefreshSelect.value = this.state.slowPollDelay;
+        this.elements.autoRefreshSelect.value = this.state.autoRefreshDelay;
         this.elements.viewerMin.value = this.state.viewerRange.min;
         this.elements.viewerMax.value = this.state.viewerRange.max;
         
         this.updateViewMode(this.state.viewMode);
         this.updateViewerRangeDisplay();
-        this.updateSettingsPanel(); // This call is now safe
-        this.startAutoRefresh(this.state.slowPollDelay);
+        this.updateSettingsPanel();
+        this.startAutoRefresh(this.state.autoRefreshDelay);
     },
 
     registerEventListeners() {
@@ -1659,9 +1655,9 @@ const App = {
         });
         
         this.elements.autoRefreshSelect.addEventListener('change', e => {
-            this.state.slowPollDelay = parseInt(e.target.value);
-            localStorage.setItem("slowPollDelay", this.state.slowPollDelay);
-            this.startAutoRefresh(this.state.slowPollDelay);
+            this.state.autoRefreshDelay = parseInt(e.target.value);
+            localStorage.setItem("autoRefreshDelay", this.state.autoRefreshDelay);
+            this.startAutoRefresh(this.state.autoRefreshDelay);
         });
         
         // Viewer range controls
@@ -1696,7 +1692,7 @@ const App = {
         
         // Top-level actions
         this.elements.themeBtn.addEventListener('click', () => this.toggleTheme());
-        this.elements.refreshBtn.addEventListener('click', () => this.performSlowPoll());
+        this.elements.refreshBtn.addEventListener('click', () => this.fetchStreamerList());
         this.elements.addBtn.addEventListener('click', () => this.addStreamer());
         this.elements.addInput.addEventListener('keyup', e => { if (e.key === 'Enter') this.addStreamer(); });
         this.elements.exportBtn.addEventListener('click', () => this.exportList());
@@ -1774,7 +1770,7 @@ const App = {
 
             switch(e.key.toLowerCase()) {
                 case 'r':
-                    if (!e.ctrlKey && !e.metaKey && !isModalOpen) { e.preventDefault(); this.performSlowPoll(); }
+                    if (!e.ctrlKey && !e.metaKey && !isModalOpen) { e.preventDefault(); this.fetchStreamerList(); }
                     break;
                 case 'f':
                     if (!e.ctrlKey && !e.metaKey && !isModalOpen) { e.preventDefault(); this.elements.searchInput.focus(); }
@@ -1830,7 +1826,6 @@ const App = {
         this.updateSettingsPanel();
     },
     
-    // START: FIXED FUNCTION
     updateSettingsPanel() {
         const panel = this.elements.settingsPanel;
         const toggle = this.elements.settingsToggle;
@@ -1845,7 +1840,6 @@ const App = {
             toggle.innerHTML = '⚙️ Settings';
         }
     },
-    // END: FIXED FUNCTION
     
     async fetchStreamerList() {
         this.setLoadingState(true, 'Loading streamer list...');
@@ -1855,7 +1849,7 @@ const App = {
             if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
             this.state.streamers = await res.json();
             this.updateConnectionStatus('connected');
-            this.performSlowPoll();
+            this.fetchStreamerData();
         } catch (error) {
             console.error("Failed to load streamer list:", error);
             this.updateConnectionStatus('error');
@@ -1864,14 +1858,14 @@ const App = {
         }
     },
 
-    async fetchStreamerData(streamerList) {
-        const fetchPromises = streamerList.map(name => this.fetchApiWithCache(`https://kick.com/api/v1/channels/${name}`, name));
+    async fetchStreamerData() {
+        this.setLoadingState(true, 'Updating streamer data...');
+        const fetchPromises = this.state.streamers.map(name => this.fetchApiWithCache(`https://kick.com/api/v1/channels/${name}`, name));
         const results = await Promise.allSettled(fetchPromises);
         let successCount = 0;
-        const liveStreamers = [];
 
         results.forEach((result, index) => {
-            const name = streamerList[index];
+            const name = this.state.streamers[index];
             if (result.status === 'fulfilled' && result.value) {
                 const data = result.value;
                 const isLive = data.livestream !== null;
@@ -1886,8 +1880,6 @@ const App = {
                     }
                 }
                 this.state.lastLiveStates[name] = isLive;
-                
-                if (isLive) liveStreamers.push(name);
                 
                 const uptime = isLive ? Utils.calculateUptime(data.livestream?.created_at) : 0;
                 const offlineTime = !isLive ? this.stats.getOfflineTime(name) : 0;
@@ -1908,7 +1900,11 @@ const App = {
                 this.state.streamerData.set(name, { name, isLive: false, title: 'Unavailable', viewers: 0, category: null, url: `https://kick.com/${name}`, uptime: 0, offlineTime });
             }
         });
-        return { successCount, liveStreamers };
+
+        this.stats.recordSnapshot(Array.from(this.state.streamerData.values()));
+        this.setLoadingState(false);
+        this.render();
+        this.announceUpdate(successCount, this.state.streamers.length);
     },
 
     async fetchApiWithCache(url, identifier) {
@@ -2126,40 +2122,20 @@ const App = {
         this.showToast(`🌗 Switched to ${newTheme} theme`, 'success');
     },
     
-    // Auto-refresh Smarter Polling
     startAutoRefresh(delay) {
         this.stopAutoRefresh();
-        if (delay > 0) this.state.slowPollInterval = setInterval(() => this.performSlowPoll(), delay);
-    },
-
-    stopAutoRefresh() {
-        if (this.state.slowPollInterval) clearInterval(this.state.slowPollInterval);
-        if (this.state.fastPollInterval) clearInterval(this.state.fastPollInterval);
-        this.state.slowPollInterval = null; this.state.fastPollInterval = null;
-    },
-    
-    async performSlowPoll() {
-        this.setLoadingState(true, 'Updating all streamers...');
-        const { successCount, liveStreamers } = await this.fetchStreamerData(this.state.streamers);
-        this.stats.recordSnapshot(Array.from(this.state.streamerData.values()));
-        this.setLoadingState(false);
-        this.render();
-        this.announceUpdate(successCount, this.state.streamers.length);
-        this.startFastPoll(liveStreamers);
-    },
-
-    startFastPoll(liveStreamers) {
-        if (this.state.fastPollInterval) clearInterval(this.state.fastPollInterval);
-        if (liveStreamers.length > 0) {
-            this.state.fastPollInterval = setInterval(() => this.performFastPoll(liveStreamers), this.state.fastPollDelay);
+        if (delay > 0) {
+            this.state.autoRefreshInterval = setInterval(() => {
+                this.fetchStreamerList();
+            }, delay);
         }
     },
 
-    async performFastPoll(liveStreamers) {
-        const { liveStreamers: updatedLiveStreamers } = await this.fetchStreamerData(liveStreamers);
-        this.stats.recordSnapshot(Array.from(this.state.streamerData.values()));
-        this.render();
-        if (updatedLiveStreamers.length !== liveStreamers.length) this.startFastPoll(updatedLiveStreamers);
+    stopAutoRefresh() {
+        if (this.state.autoRefreshInterval) {
+            clearInterval(this.state.autoRefreshInterval);
+            this.state.autoRefreshInterval = null;
+        }
     },
 
     // Group Management Methods
@@ -2275,15 +2251,16 @@ function withErrorBoundary(fn, context = 'Unknown') {
         catch (error) {
             console.error(`Error in ${context}:`, error);
             App.showToast(`⚠️ Error in ${context}: ${error.message}`, 'error');
-            if (context.includes('Poll')) App.setLoadingState(false);
+            if (context === 'fetchStreamerList' || context === 'fetchStreamerData') {
+                App.elements.container.innerHTML = `<div class="error-boundary"><h3>Something went wrong</h3><p>We're having trouble loading the streamers. Please try refreshing the page.</p><button onclick="location.reload()">Refresh Page</button><button onclick="App.fetchStreamerList()">Try Again</button></div>`;
+            }
         }
     };
 }
 
 // Wrap critical methods
 App.fetchStreamerList = withErrorBoundary(App.fetchStreamerList, 'fetchStreamerList');
-App.performSlowPoll = withErrorBoundary(App.performSlowPoll, 'SlowPoll');
-App.performFastPoll = withErrorBoundary(App.performFastPoll, 'FastPoll');
+App.fetchStreamerData = withErrorBoundary(App.fetchStreamerData, 'fetchStreamerData');
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
