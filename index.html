@@ -7,6 +7,11 @@
   <meta name="description" content="Monitor your favorite Kick streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
 
+  <!-- iOS / general PWA hints (safe even if unused on Samsung) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- We’ll inject icons + manifest dynamically so install works from a single HTML file -->
+
   <style>
     :root{
       --bg:#111; --text:#f0f0f0; --text-secondary:#b8c0cc;
@@ -84,8 +89,6 @@
       white-space:nowrap;
     }
     .settings-toggle:hover{opacity:.92; transform:translateY(-1px)}
-
-    /* Collapse header = icons only */
     .header-collapse{min-width:36px;min-height:36px}
     .app-header.collapsed .app-title,
     .app-header.collapsed #last-updated{display:none}
@@ -93,13 +96,7 @@
     .app-header.collapsed .settings-toggle{font-size:0}
     .app-header.collapsed .settings-toggle::after{content:"⚙️"; font-size:18px}
     .app-header .spacer{width:1px;height:20px;background:var(--panel-border);border-radius:1px}
-    @media (max-width:640px){
-      .app-header{top:10px;right:10px}
-      /* default collapsed on small screens for more tiles */
-      body:not(.header-expanded) .app-header{ /* purely visual state; toggled by JS */
-        /* nothing extra, just leave collapsed state saved in storage */
-      }
-    }
+    @media (max-width:640px){ .app-header{top:10px;right:10px} }
 
     /* MAIN: grid starts at the very top; header floats and takes no space */
     main#main-content{ margin-top:0; padding-top:0; }
@@ -245,6 +242,7 @@
     }
     .qb-btn:hover{transform:translateY(-1px); background:var(--panel-bg)}
     .qb-btn[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+    .qb-btn.hidden{display:none}
     .quick-scroll{display:flex;gap:8px;overflow:auto;flex:1;padding-right:4px}
     .chip{
       display:inline-flex;align-items:center;gap:6px; padding:8px 12px; border-radius:999px;
@@ -297,12 +295,13 @@
       <div class="header-controls">
         <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
         <div id="last-updated" aria-live="polite" title="Last updated time"></div>
+        <button class="icon-btn" id="install-btn" title="Install app" aria-label="Install app" style="display:none">📲</button>
         <button class="icon-btn" id="shortcuts-btn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">❔</button>
         <button class="settings-toggle" id="settings-toggle" aria-expanded="false">⚙️ Settings</button>
       </div>
     </header>
 
-    <!-- MAIN: Tiles first (no gap above) -->
+    <!-- MAIN: Tiles first -->
     <main id="main-content" aria-label="Streamer monitoring dashboard">
       <div id="streamers" class="grid-view" role="grid" aria-describedby="streamers-help"></div>
       <div id="streamers-help" class="sr-only">Grid of streamer cards showing live status, viewer count, and stream information</div>
@@ -332,7 +331,7 @@
       <div id="stats-container"></div>
     </main>
 
-    <!-- Settings Panel at the bottom -->
+    <!-- Settings Panel -->
     <section class="settings-panel" id="settings-panel">
       <div class="settings-content">
         <div class="settings-grid">
@@ -446,6 +445,7 @@
       <button class="qb-btn" id="qb-compact" title="Compact view" aria-pressed="false">📄</button>
       <button class="qb-btn" id="qb-refresh" title="Refresh">🔄</button>
       <button class="qb-btn" id="qb-select" title="Selection mode" aria-pressed="false">☑️</button>
+      <button class="qb-btn hidden" id="qb-install" title="Install app">📲</button>
     </div>
     <div class="quick-scroll" id="quickbar-chips" aria-label="Quick filters"></div>
   </div>
@@ -497,6 +497,234 @@
   </div>
 
 <script>
+/* ===================== PWA (Manifest + Service Worker + Install UI) ===================== */
+const PWA = {
+  deferredPrompt: null,
+  iconCache: {},
+
+  async init() {
+    try {
+      await this.injectManifest();
+      await this.registerServiceWorker();
+      this.setupInstallUI();
+      this.reflectDisplayMode();
+    } catch (e) {
+      console.warn('[PWA] init error:', e);
+    }
+  },
+
+  async injectManifest() {
+    const icon192 = await this.generateIcon(192);
+    const icon512 = await this.generateIcon(512);
+
+    const theme = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4ade80';
+    const manifest = {
+      name: 'Kick Monitor Ultra',
+      short_name: 'KMU',
+      description: 'Kick Monitor Ultra — live dashboards, alerts, and tools.',
+      start_url: './?source=pwa',
+      scope: './',
+      display: 'standalone',
+      background_color: '#111111',
+      theme_color: theme,
+      icons: [
+        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    };
+
+    const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/manifest+json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = url;
+    document.head.appendChild(link);
+
+    // Also add Apple touch icon (uses 192)
+    const apple = document.createElement('link');
+    apple.rel = 'apple-touch-icon';
+    apple.href = icon192;
+    document.head.appendChild(apple);
+  },
+
+  async generateIcon(size = 192) {
+    if (this.iconCache[size]) return this.iconCache[size];
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, size, size);
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4ade80';
+    const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent-2').trim() || '#86efac';
+    grad.addColorStop(0, accent);
+    grad.addColorStop(1, accent2);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    // Stylized "K" glyph
+    ctx.fillStyle = '#0f172a';
+    ctx.globalAlpha = 0.2;
+    ctx.fillRect(size*0.1, size*0.1, size*0.8, size*0.8);
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `${Math.floor(size*0.6)}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('K', size/2, size/2 + size*0.06);
+
+    const url = c.toDataURL('image/png');
+    this.iconCache[size] = url;
+    return url;
+  },
+
+  async registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+
+    const swCode = `
+      const STATIC_CACHE = 'kmu-static-v1';
+      const RUNTIME_CACHE = 'kmu-runtime-v1';
+      const APP_SHELL = ['.'];
+
+      self.addEventListener('install', (event) => {
+        event.waitUntil(
+          caches.open(STATIC_CACHE)
+            .then(cache => cache.addAll(APP_SHELL))
+            .then(() => self.skipWaiting())
+        );
+      });
+
+      self.addEventListener('activate', (event) => {
+        event.waitUntil(
+          caches.keys().then(keys => Promise.all(
+            keys.filter(k => ![STATIC_CACHE, RUNTIME_CACHE].includes(k))
+                .map(k => caches.delete(k))
+          ))
+          .then(() => self.clients.claim())
+        );
+      });
+
+      self.addEventListener('fetch', (event) => {
+        const req = event.request;
+        if (req.method !== 'GET') return;
+
+        const url = new URL(req.url);
+
+        // App shell for navigations
+        if (req.mode === 'navigate') {
+          event.respondWith(
+            fetch(req).then(res => {
+              const copy = res.clone();
+              caches.open(STATIC_CACHE).then(c => c.put('.', copy));
+              return res;
+            }).catch(() => caches.match('.') )
+          );
+          return;
+        }
+
+        // Runtime caching for APIs and images
+        if (url.origin !== self.location.origin) {
+          if (url.href.includes('/api/v1/channels/') || url.href.includes('gist.githubusercontent.com')) {
+            event.respondWith(networkFirst(req));
+            return;
+          }
+          if (req.destination === 'image') {
+            event.respondWith(cacheFirst(req));
+            return;
+          }
+          return;
+        }
+
+        // Same-origin assets
+        event.respondWith(cacheFirst(req));
+      });
+
+      function cacheFirst(request) {
+        return caches.match(request).then(cached => {
+          if (cached) return cached;
+          return fetch(request).then(res => {
+            const copy = res.clone();
+            caches.open(RUNTIME_CACHE).then(c => c.put(request, copy));
+            return res;
+          });
+        });
+      }
+
+      function networkFirst(request) {
+        return fetch(request).then(res => {
+          const copy = res.clone();
+          caches.open(RUNTIME_CACHE).then(c => c.put(request, copy));
+          return res;
+        }).catch(() => caches.match(request));
+      }
+
+      self.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+      });
+    `;
+
+    const blob = new Blob([swCode], { type: 'text/javascript' });
+    const swUrl = URL.createObjectURL(blob);
+    try {
+      await navigator.serviceWorker.register(swUrl, { scope: './' });
+    } catch (err) {
+      console.warn('[PWA] SW registration failed:', err);
+    }
+  },
+
+  setupInstallUI() {
+    const headerBtn = document.getElementById('install-btn');
+    const quickBtn = document.getElementById('qb-install');
+
+    const showInstall = (show) => {
+      headerBtn.style.display = show ? '' : 'none';
+      quickBtn.classList.toggle('hidden', !show);
+    };
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) showInstall(false);
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredPrompt = e;
+      showInstall(true);
+    });
+
+    const promptInstall = async () => {
+      if (!this.deferredPrompt) {
+        // Some browsers (Samsung Internet) show native UI from the menu; we provide fallback tip.
+        alert('To install: open browser menu and choose “Add to apps” / “Install app”.');
+        return;
+      }
+      this.deferredPrompt.prompt();
+      const { outcome } = await this.deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('PWA install accepted');
+      }
+      this.deferredPrompt = null;
+      showInstall(false);
+    };
+
+    headerBtn.addEventListener('click', promptInstall);
+    quickBtn.addEventListener('click', promptInstall);
+
+    window.addEventListener('appinstalled', () => showInstall(false));
+  },
+
+  reflectDisplayMode() {
+    const handler = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+      document.documentElement.classList.toggle('pwa-installed', !!standalone);
+    };
+    handler();
+    ['resize','visibilitychange'].forEach(ev => window.addEventListener(ev, handler));
+  }
+};
+/* =================== End PWA block =================== */
+
+
 /*** Utilities ***/
 const Utils = {
   debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a), wait); }; },
@@ -636,7 +864,6 @@ const App = {
       settingsPanel: document.getElementById('settings-panel'),
       shortcutsBtn: document.getElementById('shortcuts-btn'),
       shortcutsModal: document.getElementById('shortcuts-modal'),
-      // Shortcuts modal close btn:
       shortcutsModalClose: document.getElementById('shortcuts-modal-close'),
       accentColor: document.getElementById('accent-color'),
       densitySelect: document.getElementById('density-select'),
@@ -664,8 +891,10 @@ const App = {
       qbCompact: document.getElementById('qb-compact'),
       qbRefresh: document.getElementById('qb-refresh'),
       qbSelect: document.getElementById('qb-select'),
+      qbInstall: document.getElementById('qb-install'),
       quickFilters: document.getElementById('quickbar-chips'),
       dataSaverToggle: document.getElementById('data-saver-toggle'),
+      installBtn: document.getElementById('install-btn'),
     };
   },
 
@@ -753,14 +982,14 @@ const App = {
     });
 
     this.elements.selectModeBtn.addEventListener('click', ()=>this.toggleSelectionMode());
-    this.elements.bulkFavorite.addEventListener('click', ()=>this.bulkToggleFavorite(true));
-    this.elements.bulkUnfavorite.addEventListener('click', ()=>this.bulkToggleFavorite(false));
-    this.elements.selectAll.addEventListener('click', ()=>this.selectAllStreamers());
-    this.elements.clearSelection.addEventListener('click', ()=>this.clearSelection());
-    this.elements.bulkWatchBtn.addEventListener('click', ()=>this.showMultistreamModal());
-    this.elements.selectLiveBtn.addEventListener('click', ()=>this.selectLive());
-    this.elements.pickTop4Btn.addEventListener('click', ()=>this.pickTopN(4));
-    this.elements.copyUrlsBtn.addEventListener('click', ()=>this.copySelectedUrls());
+    document.getElementById('bulk-favorite').addEventListener('click', ()=>this.bulkToggleFavorite(true));
+    document.getElementById('bulk-unfavorite').addEventListener('click', ()=>this.bulkToggleFavorite(false));
+    document.getElementById('select-all').addEventListener('click', ()=>this.selectAllStreamers());
+    document.getElementById('clear-selection').addEventListener('click', ()=>this.clearSelection());
+    document.getElementById('bulk-watch-btn').addEventListener('click', ()=>this.showMultistreamModal());
+    document.getElementById('select-live').addEventListener('click', ()=>this.selectLive());
+    document.getElementById('pick-top-4').addEventListener('click', ()=>this.pickTopN(4));
+    document.getElementById('copy-urls-btn').addEventListener('click', ()=>this.copySelectedUrls());
 
     this.elements.themeBtn.addEventListener('click', ()=>this.toggleTheme());
     this.elements.refreshBtn.addEventListener('click', ()=>this.fetchStreamerList());
@@ -791,25 +1020,15 @@ const App = {
     this.elements.qbRefresh.addEventListener('click', ()=>this.fetchStreamerList());
     this.elements.qbSelect.addEventListener('click', ()=>this.toggleSelectionMode());
 
-    // Quickbar chips
-    this.elements.quickFilters.addEventListener('click', e=>{
-      const chip = e.target.closest('.chip'); if(!chip) return;
-      const val = chip.dataset.filter;
-      this.state.filter = val; localStorage.setItem('filter', val);
-      this.elements.filterSelect.value = val;
-      this.syncQuickFilters();
-      this.render();
-    });
-
     // Groups
-    this.elements.addGroupBtn.addEventListener('click', ()=>this.createGroup());
-    this.elements.newGroupInput.addEventListener('keyup', e=>{ if(e.key==='Enter') this.createGroup(); });
-    this.elements.groupsList.addEventListener('click', e=>{
+    document.getElementById('add-group-btn').addEventListener('click', ()=>this.createGroup());
+    document.getElementById('new-group-input').addEventListener('keyup', e=>{ if(e.key==='Enter') this.createGroup(); });
+    document.getElementById('groups-list').addEventListener('click', e=>{
       const btn=e.target.closest('button'); if(!btn) return;
       const item=e.target.closest('.group-item'); const name=item.dataset.groupName;
       if(btn.classList.contains('delete-group-btn')) this.deleteGroup(name);
     });
-    this.elements.bulkAssignGroup.addEventListener('click', ()=>this.showGroupModal(Array.from(this.state.selectedStreamers)));
+    document.getElementById('bulk-assign-group').addEventListener('click', ()=>this.showGroupModal(Array.from(this.state.selectedStreamers)));
 
     // Shortcuts modal
     this.elements.shortcutsBtn.addEventListener('click', ()=>this.showModal(this.elements.shortcutsModal));
@@ -838,11 +1057,14 @@ const App = {
       }
     });
 
-    this.elements.modalCloseBtn.addEventListener('click', ()=>this.hideEnlargedThumbnail());
+    document.getElementById('thumbnail-modal-close').addEventListener('click', ()=>this.hideEnlargedThumbnail());
     document.getElementById('thumbnail-modal').addEventListener('click', e=>{ if(e.target.id==='thumbnail-modal') this.hideEnlargedThumbnail(); });
     this.elements.enlargedThumbnail.addEventListener('click', e=>{
       const url=e.target.dataset.kickUrl; if(url){ window.open(url,'_blank','noopener,noreferrer'); this.hideEnlargedThumbnail(); }
     });
+
+    // Quickbar “Install” (visibility is handled by PWA.setupInstallUI)
+    document.getElementById('qb-install').addEventListener('click', ()=>{}); // bound in PWA
 
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && this.state.autoRefreshDelay > 0) this.fetchStreamerList();
@@ -890,7 +1112,7 @@ const App = {
   showModal(el){ this.state.lastFocusedElement=document.activeElement; el.style.display='flex'; document.body.style.overflow='hidden'; },
   hideModal(el){ el.style.display='none'; document.body.style.overflow=''; if(this.state.lastFocusedElement) this.state.lastFocusedElement.focus(); },
 
-  showEnlargedThumbnail(src, url){ this.showModal(document.getElementById('thumbnail-modal')); this.elements.enlargedThumbnail.src=src; this.elements.enlargedThumbnail.dataset.kickUrl=url; setTimeout(()=>this.elements.modalCloseBtn.focus(),100); },
+  showEnlargedThumbnail(src, url){ this.showModal(document.getElementById('thumbnail-modal')); this.elements.enlargedThumbnail.src=src; this.elements.enlargedThumbnail.dataset.kickUrl=url; setTimeout(()=>this.elements.modalCloseBtn?.focus?.(),100); },
   hideEnlargedThumbnail(){ this.hideModal(document.getElementById('thumbnail-modal')); this.elements.enlargedThumbnail.src=''; this.elements.enlargedThumbnail.removeAttribute('data-kick-url'); },
 
   toggleSettings(){
@@ -1269,12 +1491,12 @@ const App = {
   },
 
   createGroup(){
-    const name=this.elements.newGroupInput.value.trim();
+    const name=document.getElementById('new-group-input').value.trim();
     if(!name) return this.showToast('⚠️ Please enter a group name.','warning');
     if(this.state.groups[name]) return this.showToast('⚠️ Group already exists.','warning');
     this.state.groups[name]=[];
     this.saveGroups(); this.renderGroupsList(); this.populateFilterDropdown(); this.renderQuickFilters();
-    this.elements.newGroupInput.value=''; this.showToast(`✅ Group "${name}" created.`,'success');
+    document.getElementById('new-group-input').value=''; this.showToast(`✅ Group "${name}" created.`,'success');
   },
   deleteGroup(name){
     if(!confirm(`Are you sure you want to delete the group "${name}"?`)) return;
@@ -1284,7 +1506,7 @@ const App = {
     this.showToast(`🗑️ Group "${name}" deleted.`,'success');
   },
   renderGroupsList(){
-    this.elements.groupsList.innerHTML = Object.keys(this.state.groups).sort().map(n=>`
+    document.getElementById('groups-list').innerHTML = Object.keys(this.state.groups).sort().map(n=>`
       <div class="group-item" data-group-name="${n}">
         <span>${Utils.sanitizeHTML(n)}</span>
         <div class="group-item-actions"><button class="delete-group-btn" title="Delete Group">🗑️</button></div>
@@ -1300,13 +1522,13 @@ const App = {
 
   showGroupModal(names){
     this.showModal(document.getElementById('assign-group-modal'));
-    this.elements.assignGroupModalList.innerHTML = Object.keys(this.state.groups).sort().map(g=>{
+    document.getElementById('assign-group-modal-list').innerHTML = Object.keys(this.state.groups).sort().map(g=>{
       const allIn = names.length>0 && names.every(n=>this.state.groups[g]?.includes(n));
       return `<label class="assign-group-item"><input type="checkbox" data-group-name="${g}" ${allIn?'checked':''}>${Utils.sanitizeHTML(g)}</label>`;
     }).join('');
 
     this.elements.assignGroupSaveBtn.onclick = ()=>{
-      this.elements.assignGroupModalList.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      document.querySelectorAll('#assign-group-modal-list input[type="checkbox"]').forEach(cb=>{
         const g=cb.dataset.groupName;
         names.forEach(n=>{
           const arr=this.state.groups[g]; const idx=arr.indexOf(n);
@@ -1344,26 +1566,7 @@ const App = {
   announceToScreenReader(m){ this.elements.announcements.textContent=m; setTimeout(()=>{ this.elements.announcements.textContent=''; },1000); },
   announceUpdate(ok,total){ this.announceToScreenReader(`Updated ${ok} of ${total} streamers`); },
   clearSearch(){ this.elements.searchInput.value=''; this.state.searchQuery=''; this.render(); this.elements.searchInput.focus(); },
-
-  exportList(){
-    const payload={ streamers:this.state.streamers, favorites:this.state.favorites, groups:this.state.groups };
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
-    a.download=`kick-monitor-export-${Date.now()}.json`; a.click();
-  },
-  importList(e){
-    const file=e.target.files?.[0]; if(!file) return;
-    const reader=new FileReader();
-    reader.onload=()=>{
-      try{
-        const data=JSON.parse(reader.result);
-        if(Array.isArray(data.streamers)) this.state.streamers=data.streamers;
-        if(Array.isArray(data.favorites)) { this.state.favorites=data.favorites; localStorage.setItem('favorites', JSON.stringify(this.state.favorites)); }
-        if(data.groups && typeof data.groups==='object'){ this.state.groups=data.groups; this.saveGroups(); this.renderGroupsList(); this.populateFilterDropdown(); this.renderQuickFilters(); }
-        this.showToast('✅ Import successful','success'); this.cache.clear(); this.fetchStreamerList();
-      }catch{ this.showToast('❌ Invalid file format','error'); }
-    };
-    reader.readAsText(file); e.target.value='';
-  },
+  showAllStreamers(){ this.elements.filterSelect.value = 'all'; this.state.filter = 'all'; localStorage.setItem("filter", this.state.filter); this.render(); },
 
   enableQuickbar(){ document.body.classList.add('has-quickbar'); this.syncQuickFilters(); },
 
@@ -1407,10 +1610,9 @@ const App = {
     }
   },
 
-  /* Floating header collapsed state */
   applyHeaderCollapsed(collapsed){
     this.elements.header.classList.toggle('collapsed', collapsed);
-    this.elements.headerCollapse.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+    document.getElementById('header-collapse').setAttribute('aria-pressed', collapsed ? 'true' : 'false');
   },
 };
 
@@ -1435,17 +1637,19 @@ function withErrorBoundary(fn, name='Unknown'){
 App.fetchStreamerList = withErrorBoundary(App.fetchStreamerList,'fetchStreamerList');
 App.fetchStreamerData = withErrorBoundary(App.fetchStreamerData,'fetchStreamerData');
 
-// Init
-document.addEventListener('DOMContentLoaded', ()=>{
+/* Boot: build PWA first (manifest & SW), then init app */
+document.addEventListener('DOMContentLoaded', async ()=>{
   try{
+    await PWA.init();
     App.init();
+
     // Default: collapse header on small screens for maximum tiles
     if (window.innerWidth <= 640 && !localStorage.getItem('headerCollapsed')) {
       App.state.headerCollapsed = true; localStorage.setItem('headerCollapsed','true'); App.applyHeaderCollapsed(true);
     }
   }
   catch(e){
-    console.error('Failed to initialize app:', e);
+    console.error('Failed to initialize:', e);
     document.body.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;">
       <h1>Failed to load Kick Monitor Ultra</h1>
       <p>An unexpected error occurred: ${e.message}</p>
