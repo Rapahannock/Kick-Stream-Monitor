@@ -1,598 +1,243 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kick Streamers Monitor Pro v3.3</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stream Embed: Twitch + Kick (with Logs)</title>
   <style>
-    :root {
-      --bg: #111;
-      --text: #eee;
-      --card: #1a1a1a;
-      --border: #444;
-      --accent: #4af;
-      --toast-bg: #333;
-      --toast-text: #fff;
-    }
-    [data-theme="light"] {
-      --bg: #f4f4f4;
-      --text: #222;
-      --card: #fff;
-      --border: #ccc;
-      --accent: #06c;
-      --toast-bg: #ddd;
-      --toast-text: #000;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      padding: 20px;
-      transition: background 0.3s, color 0.3s;
-    }
-    #streamers {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 12px;
-    }
-    .streamer {
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background-color: var(--card);
-      position: relative;
-    }
-    .offline {
-      opacity: 0.5;
-    }
-    .live {
-      outline: 2px solid var(--accent);
-      outline-offset: -2px;
-      box-shadow: 0 0 8px var(--accent);
-      transition: box-shadow 0.3s ease;
-    }
-    .favorite {
-      border-left: 4px solid gold;
-    }
-    a {
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: bold;
-    }
-    .thumbnail-preview {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      border-radius: 6px;
-      margin-top: 8px;
-      border: 1px solid var(--border);
-      transition: transform 0.2s ease-in-out;
-      loading: lazy;
-    }
-    .thumbnail-preview:hover {
-      transform: scale(1.03);
-    }
-    .remove-btn {
-      color: #f55;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 10px;
-      text-align: right;
-    }
-    .favorite-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      cursor: pointer;
-      font-size: 18px;
-    }
-    #controls, #filters, #sort-options, #search-bar, #bulk-controls {
-      margin-top: 20px;
-    }
-    #controls input, #search-input, #bulk-input {
-      padding: 5px;
-      font-size: 14px;
-      width: 200px;
-    }
-    #controls button, #filters button, #bulk-controls button {
-      padding: 5px 10px;
-      margin-left: 5px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    #bulk-input {
-      width: 300px;
-      height: 60px;
-      resize: none;
-    }
-    #refresh-slider {
-      width: 100px;
-      margin-left: 10px;
-    }
-    #last-updated {
-      font-size: 12px;
-      color: var(--border);
-      margin: 10px 0;
-    }
-    #refresh-countdown {
-      font-size: 12px;
-      color: var(--accent);
-      margin-top: -8px;
-    }
-    #toast {
-      visibility: hidden;
-      min-width: 200px;
-      background-color: var(--toast-bg);
-      color: var(--toast-text);
-      text-align: center;
-      border-radius: 6px;
-      padding: 10px;
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      font-size: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-      transition: opacity 0.3s ease;
-      opacity: 0;
-    }
-    @media (max-width: 600px) {
-      body {
-        padding: 10px;
-      }
-      #controls input, #search-input, #bulk-input {
-        width: 100%;
-        margin-bottom: 10px;
-      }
-      #controls button, #bulk-controls button {
-        display: block;
-        width: 100%;
-        margin: 5px 0;
-      }
-      #floatingAdd {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: var(--accent);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 48px;
-        height: 48px;
-        font-size: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        z-index: 1000;
-      }
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0px var(--accent); }
-      50% { box-shadow: 0 0 15px var(--accent); }
-      100% { box-shadow: 0 0 0px var(--accent); }
-    }
+    :root { --bg:#0f172a; --panel:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --bad:#ef4444; --good:#22c55e; }
+    html, body { height:100%; margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    header { padding:14px 16px; border-bottom:1px solid #1f2937; background:linear-gradient(180deg, #0b1222, #0b1222cc 60%, transparent); position:sticky; top:0; z-index:10; }
+    h1 { font-size:16px; margin:0 0 6px; letter-spacing:0.4px; }
+    .row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+    label { display:flex; gap:6px; align-items:center; color:var(--muted); }
+    select, input[type="text"] { background:#0b1020; border:1px solid #253046; color:var(--text); padding:8px 10px; border-radius:10px; outline:none; }
+    select:focus, input:focus { border-color:var(--accent); box-shadow:0 0 0 3px #22d3ee22; }
+    button { background:var(--accent); color:#001018; border:0; padding:9px 14px; border-radius:10px; font-weight:600; cursor:pointer; }
+    button.secondary { background:#1f2937; color:#cbd5e1; border:1px solid #334155; }
+    button.bad { background:var(--bad); color:white; }
+    .wrap { display:grid; grid-template-columns: 1fr 380px; gap:14px; padding:14px; }
+    .panel { background:var(--panel); border:1px solid #1f2937; border-radius:14px; overflow:hidden; }
+    .player { aspect-ratio:16/9; width:100%; height:auto; background:#0b1020; display:grid; place-items:center; }
+    iframe { width:100%; height:100%; border:0; }
+    .logs { height:calc(100% - 40px); display:flex; flex-direction:column; }
+    .logs header { padding:10px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #253046; background:#0b1222; position:sticky; top:0; }
+    .loglist { padding:10px; overflow:auto; white-space:pre-wrap; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .log { margin:0 0 6px; border-left:3px solid #334155; padding-left:8px; }
+    .log.info { border-color:#3b82f6; }
+    .log.warn { border-color:#f59e0b; }
+    .log.error { border-color:#ef4444; }
+    .kv { color:#a5b4fc; }
+    .hint { color:#93c5fd; font-size:12px; margin-left:4px; }
+    .footer { padding:10px; text-align:center; color:#9ca3af; }
+    @media (max-width: 1100px) { .wrap { grid-template-columns: 1fr; } }
   </style>
 </head>
-<body data-theme="dark">
-  <h1>Kick Streamers Monitor Pro <small>v3.3</small></h1>
-  <div id="last-updated"></div>
-  <div id="refresh-countdown"></div>
-  <div id="filters">
-    <button onclick="filterStreamers('all')" aria-label="Show all streamers">All</button>
-    <button onclick="filterStreamers('live')" aria-label="Show live streamers">Live</button>
-    <button onclick="filterStreamers('offline')" aria-label="Show offline streamers">Offline</button>
-    <button onclick="filterStreamers('favorites')" aria-label="Show favorite streamers">Favorites</button>
-    <button onclick="toggleTheme()" aria-label="Toggle light/dark theme">🌗 Toggle Theme</button>
-    <button onclick="exportStreamers()" aria-label="Export streamers list">📤 Export</button>
-    <button onclick="document.getElementById('importFile').click()" aria-label="Import streamers list">📥 Import</button>
-    <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importStreamers(event)">
+<body>
+  <header>
+    <h1>Stream Embed: Twitch + Kick</h1>
+    <div class="row">
+      <label>Platform
+        <select id="platform">
+          <option value="twitch">Twitch</option>
+          <option value="kick">Kick</option>
+        </select>
+      </label>
+      <label>Channel/User
+        <input id="channel" type="text" placeholder="channel name" />
+      </label>
+      <label><input id="autoplay" type="checkbox" /> Autoplay</label>
+      <label><input id="muted" type="checkbox" checked /> Start muted</label>
+      <button id="load">Load stream</button>
+      <button id="swap" class="secondary" title="Swap platform">Swap</button>
+      <span class="hint" id="hostHint"></span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="panel">
+      <div class="player" id="player">
+        <div style="text-align:center; padding:14px; color:#9ca3af;">
+          <div style="font-size:18px; margin-bottom:6px;">No stream loaded</div>
+          <div>Pick a platform, enter a channel, and hit <strong>Load stream</strong>.</div>
+        </div>
+      </div>
+      <div class="footer">Tip: Twitch requires a <code>parent</code> domain. If you see a playback error, make sure you’re serving this page over HTTP(S) and the hostname matches.</div>
+    </div>
+
+    <div class="panel logs">
+      <header>
+        <div>Logs</div>
+        <div class="row">
+          <button id="download" class="secondary">Download</button>
+          <button id="clear" class="bad">Clear</button>
+        </div>
+      </header>
+      <div id="loglist" class="loglist" aria-live="polite"></div>
+    </div>
   </div>
-  <div id="sort-options">
-    <label for="sort-select">Sort by:</label>
-    <select id="sort-select" onchange="changeSort(this.value)">
-      <option value="status">Live Status</option>
-      <option value="viewers">Viewer Count</option>
-      <option value="name">Name</option>
-      <option value="category">Category</option>
-      <option value="offlineDuration">Offline Duration</option>
-    </select>
-    <button onclick="toggleSortDirection()" aria-label="Toggle sort direction">↕️</button>
-  </div>
-  <div id="search-bar">
-    <input type="text" id="search-input" placeholder="Search by name or category..." oninput="renderStreamers()" aria-label="Search streamers">
-  </div>
-  <div id="streamers"></div>
-  <div id="controls">
-    <input type="text" id="newStreamer" placeholder="Add new streamer..." aria-label="Add new streamer">
-    <button onclick="addStreamer()" aria-label="Add streamer">Add</button>
-    <button onclick="loadStreamers()" aria-label="Refresh streamers">🔁 Refresh</button>
-    <label for="refresh-slider">Refresh interval (s):</label>
-    <input type="range" id="refresh-slider" min="30" max="120" value="60" oninput="updateRefreshInterval(this.value)">
-  </div>
-  <div id="bulk-controls">
-    <textarea id="bulk-input" placeholder="Enter streamers to add/remove (comma-separated)"></textarea>
-    <button onclick="bulkAddStreamers()" aria-label="Bulk add streamers">Bulk Add</button>
-    <button onclick="bulkRemoveStreamers()" aria-label="Bulk remove streamers">Bulk Remove</button>
-  </div>
-  <button id="floatingAdd" onclick="document.getElementById('newStreamer').focus()" aria-label="Focus on add streamer input">+</button>
-  <div id="toast" role="alert" aria-live="assertive"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<script>
-const theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-document.body.setAttribute("data-theme", theme);
 
-let streamers = [];
-let filter = localStorage.getItem("streamerFilter") || "all";
-let countdown = parseInt(localStorage.getItem("refreshInterval") || 60);
-let lastLiveStates = {};
-let sortMode = "status";
-let sortDirection = 1;
-let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-let cache = {};
+  <script>
+    const els = {
+      platform: document.getElementById('platform'),
+      channel: document.getElementById('channel'),
+      autoplay: document.getElementById('autoplay'),
+      muted: document.getElementById('muted'),
+      load: document.getElementById('load'),
+      swap: document.getElementById('swap'),
+      player: document.getElementById('player'),
+      loglist: document.getElementById('loglist'),
+      download: document.getElementById('download'),
+      clear: document.getElementById('clear'),
+      hostHint: document.getElementById('hostHint'),
+    };
 
-function toggleTheme() {
-  const current = document.body.getAttribute("data-theme");
-  const newTheme = current === "dark" ? "light" : "dark";
-  document.body.setAttribute("data-theme", newTheme);
-  localStorage.setItem("theme", newTheme);
-}
+    // Simple logger with levels and persistence
+    const LOGS_KEY = 'streamEmbedLogs';
+    let logs = JSON.parse(localStorage.getItem(LOGS_KEY) || '[]');
 
-function autoToggleNightMode() {
-  const hour = new Date().getHours();
-  const preferred = hour >= 19 || hour <= 6 ? "dark" : "light";
-  document.body.setAttribute("data-theme", preferred);
-  localStorage.setItem("theme", preferred);
-}
-if (!localStorage.getItem("theme")) autoToggleNightMode();
-
-function showToast(message) {
-  const toast = document.getElementById("toast");
-  toast.innerText = message;
-  toast.style.visibility = "visible";
-  toast.style.opacity = "1";
-  setTimeout(() => {
-    toast.style.opacity = "0";
-    setTimeout(() => {
-      toast.style.visibility = "hidden";
-    }, 300);
-  }, 3000);
-}
-
-function filterStreamers(mode) {
-  filter = mode;
-  localStorage.setItem("streamerFilter", mode);
-  renderStreamers();
-}
-
-function changeSort(mode) {
-  sortMode = mode;
-  renderStreamers();
-}
-
-function toggleSortDirection() {
-  sortDirection = -sortDirection;
-  renderStreamers();
-}
-
-function updateRefreshInterval(value) {
-  countdown = parseInt(value);
-  localStorage.setItem("refreshInterval", countdown);
-}
-
-function exportStreamers() {
-  const blob = new Blob([JSON.stringify(streamers, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "streamers_export.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importStreamers(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const imported = JSON.parse(e.target.result);
-      streamers = [...new Set([...streamers, ...imported])];
-      renderStreamers();
-      showToast("✅ Imported streamers list");
-    } catch (err) {
-      console.error("Failed to import streamers:", err);
-      showToast("⚠️ Failed to import");
+    function log(level, msg, kv) {
+      const entry = { ts: new Date().toISOString(), level, msg, kv: kv || null };
+      logs.push(entry);
+      localStorage.setItem(LOGS_KEY, JSON.stringify(logs).slice(-50000));
+      const div = document.createElement('div');
+      div.className = `log ${level}`;
+      const meta = `[${new Date(entry.ts).toLocaleString()}] [${level.toUpperCase()}]`;
+      let text = `${meta} ${msg}`;
+      if (kv && typeof kv === 'object') {
+        text += '\n' + Object.entries(kv).map(([k,v]) => `  · ${k}: ${JSON.stringify(v)}`).join('\n');
+      }
+      div.textContent = text;
+      els.loglist.appendChild(div);
+      els.loglist.scrollTop = els.loglist.scrollHeight;
     }
-  };
-  reader.readAsText(file);
-}
 
-async function loadStreamers() {
-  try {
-    const cacheBuster = `?t=${Date.now()}`;
-    const res = await fetch(`https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json${cacheBuster}`);
-    streamers = await res.json();
-    renderStreamers();
-  } catch (err) {
-    console.error("Failed to load streamers list:", err);
-    showToast("⚠️ Failed to load streamers");
-    streamers = [];
-    renderStreamers();
-  }
-}
+    // Hostname hint, useful for Twitch parent param
+    (function() {
+      const host = location.hostname || '(file://)';
+      els.hostHint.textContent = `Host: ${host}`;
+      if (!location.protocol.startsWith('http')) {
+        log('warn', 'Page is not served over HTTP(S). Twitch embeds may fail due to missing parent domain. Use a local dev server like `python -m http.server`.', { protocol: location.protocol });
+      } else {
+        log('info', 'Page served over HTTP(S).', { host });
+      }
+    })();
 
-async function fetchStreamerInfo(username, retries = 3, backoff = 1000) {
-  const cacheKey = `streamer_${username}`;
-  const cachedData = cache[cacheKey];
-  if (cachedData && Date.now() - cachedData.timestamp < 60000) {
-    return cachedData.data;
-  }
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const res = await fetch(`https://kick.com/api/v1/channels/${username}`);
-      if (!res.ok) {
-        if (res.status === 429 && attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, backoff * attempt));
-          continue;
+    function twitchSrc(channel, opts) {
+      // Opt for the non-interactive iframe for simplicity
+      // https://player.twitch.tv/?channel=<name>&parent=<domain>&muted=true
+      const parent = (location.hostname || '').split(':')[0] || 'localhost';
+      const q = new URLSearchParams({ channel, parent });
+      if (opts.autoplay) q.set('autoplay', 'true');
+      if (opts.muted) q.set('muted', 'true');
+      return `https://player.twitch.tv/?${q.toString()}`;
+    }
+
+    function kickSrc(user, opts) {
+      // Kick embed docs: https://player.kick.com/<username>
+      const q = new URLSearchParams();
+      if (opts.autoplay) q.set('autoplay', 'true');
+      if (opts.muted) q.set('muted', 'true');
+      const qs = q.toString();
+      return `https://player.kick.com/${encodeURIComponent(user)}${qs ? ('?' + qs) : ''}`;
+    }
+
+    function setPlayer(src, title) {
+      els.player.innerHTML = '';
+      const frame = document.createElement('iframe');
+      frame.allowFullscreen = true;
+      frame.referrerPolicy = 'origin-when-cross-origin';
+      frame.src = src;
+      frame.title = title || 'Stream Player';
+      // Event hooks
+      let loaded = false;
+      frame.addEventListener('load', () => {
+        loaded = true;
+        log('info', 'Iframe loaded.', { src });
+      }, { once: true });
+      frame.addEventListener('error', (e) => {
+        log('error', 'Iframe error event.', { src, error: String(e) });
+      });
+
+      // Timeout watchdog for silent failures
+      const watchdog = setTimeout(() => {
+        if (!loaded) {
+          log('warn', 'Iframe did not finish loading in 8s. This often means a blocked embed or wrong parent domain.', { src });
+          if (src.includes('player.twitch.tv') && (!location.hostname || !location.protocol.startsWith('http'))) {
+            log('error', 'Twitch requires a valid parent domain over HTTPS. Serve this file via a web server and ensure the hostname is correct.', { tip: 'Use `http://localhost:8080` or similar.' });
+          }
         }
-        throw new Error(`API error: ${res.status}`);
-      }
-      const data = await res.json();
-      if (!data) {
-        throw new Error("No data returned from API");
-      }
-      const info = {
-        name: username,
-        live: data.livestream !== null,
-        title: data.livestream?.session_title || "Offline",
-        viewers: data.livestream?.viewer_count || 0,
-        url: `https://kick.com/${username}`,
-        category: data.livestream?.categories?.[0]?.name || null,
-        thumbnail: data.livestream?.thumbnail?.url || null
-      };
-      if (info.live) {
-        localStorage.setItem(`lastLive_${username}`, Date.now());
-      }
-      cache[cacheKey] = { data: info, timestamp: Date.now() };
-      return info;
-    } catch (err) {
-      console.error(`Error fetching info for ${username} (attempt ${attempt}):`, err);
-      if (attempt === retries) {
-        return {
-          name: username,
-          live: false,
-          title: "Unavailable",
-          viewers: 0,
-          url: `https://kick.com/${username}`,
-          category: null,
-          thumbnail: null
-        };
-      }
-    }
-  }
-}
+      }, 8000);
 
-function getOfflineDuration(username) {
-  const lastLive = localStorage.getItem(`lastLive_${username}`);
-  if (!lastLive) return "Unknown";
-  const diffMs = Date.now() - parseInt(lastLive);
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
-
-function categoryIcon(cat) {
-  if (!cat) return '';
-  const icons = {
-    "Just Chatting": "💬",
-    "Call of Duty": "🎯",
-    "GTA V": "🚗",
-    "Sports": "🏀",
-    "Music": "🎵",
-    "Valorant": "🔫",
-    "Fortnite": "🛡️",
-    "League of Legends": "🧙‍♂️",
-    "Minecraft": "⛏️",
-    "IRL": "🌍",
-    "Poker": "🃏",
-    "Slots": "🎰"
-  };
-  return icons[cat] || "🎮";
-}
-
-async function renderStreamers() {
-  const container = document.getElementById("streamers");
-  container.innerHTML = "";
-  const searchQuery = document.getElementById("search-input")?.value.toLowerCase() || "";
-  const streamerData = await Promise.all(streamers.map(fetchStreamerInfo));
-  let filteredData = streamerData.filter(s => s && s.name).filter(s => {
-    if (filter === "live") return s.live;
-    if (filter === "offline") return !s.live;
-    if (filter === "favorites") return favorites.includes(s.name);
-    return true;
-  });
-  if (searchQuery) {
-    filteredData = filteredData.filter(s => 
-      s.name.toLowerCase().includes(searchQuery) || (s.category || "").toLowerCase().includes(searchQuery)
-    );
-  }
-
-  filteredData.sort((a, b) => {
-    let comparison = 0;
-    if (sortMode === "viewers") comparison = b.viewers - a.viewers;
-    if (sortMode === "name") comparison = a.name.localeCompare(b.name);
-    if (sortMode === "category") comparison = (a.category || "").localeCompare(b.category || "");
-    if (sortMode === "status") comparison = (b.live - a.live) || (b.viewers - a.viewers);
-    if (sortMode === "offlineDuration") {
-      const aTime = localStorage.getItem(`lastLive_${a.name}`) || 0;
-      const bTime = localStorage.getItem(`lastLive_${b.name}`) || 0;
-      comparison = bTime - aTime;
-    }
-    return comparison * sortDirection;
-  });
-
-  if (filteredData.length === 0) {
-    container.innerHTML = "<p>No streamers match this view.</p>";
-    return;
-  }
-
-  for (const s of filteredData) {
-    const wasOffline = lastLiveStates[s.name] === false;
-    lastLiveStates[s.name] = s.live;
-    if (s.live && wasOffline && Notification.permission === "granted" && favorites.includes(s.name)) {
-      new Notification(`${s.name} is now live!`, { body: s.title });
+      els.player.appendChild(frame);
+      return () => clearTimeout(watchdog);
     }
 
-    const div = document.createElement("div");
-    div.className = "streamer" + (s.live ? " live" : " offline") + (favorites.includes(s.name) ? " favorite" : "");
-    if (s.live && wasOffline) {
-      div.style.animation = "pulse 1s ease";
+    function loadStream() {
+      const platform = els.platform.value.trim();
+      const channel = els.channel.value.trim();
+      const opts = { autoplay: els.autoplay.checked, muted: els.muted.checked };
+      if (!channel) {
+        log('warn', 'Channel/user is empty.');
+        alert('Enter a channel name.');
+        return;
+      }
+      try {
+        let src = '';
+        if (platform === 'twitch') {
+          src = twitchSrc(channel, opts);
+        } else if (platform === 'kick') {
+          src = kickSrc(channel, opts);
+        } else {
+          throw new Error('Unknown platform: ' + platform);
+        }
+        log('info', 'Loading stream...', { platform, channel, opts, src });
+        setPlayer(src, `${platform}:${channel}`);
+      } catch (err) {
+        log('error', 'Failed to build embed URL.', { error: err.message, stack: err.stack });
+        alert('Could not load stream. Check logs.');
+      }
     }
-    div.innerHTML = `
-      <a href="${s.url}" target="_blank" aria-label="View ${s.name}'s stream">${s.name}</a>
-      <div>${s.live ? `🔴 ${s.title} (${s.viewers} viewers)` : `⚫ Offline for ${getOfflineDuration(s.name)}`}</div>
-      ${s.category ? `<div>${categoryIcon(s.category)} ${s.category}</div>` : ""}
-      ${s.live && s.thumbnail ? `<a href="${s.url}" target="_blank"><img class="thumbnail-preview" src="${s.thumbnail}" alt="Stream preview for ${s.name}" loading="lazy"></a>` : ""}
-      <div class="favorite-btn" onclick="toggleFavorite('${s.name}')" aria-label="Toggle favorite for ${s.name}">${favorites.includes(s.name) ? '⭐' : '☆'}</div>
-      <div class="remove-btn" onclick="removeStreamer('${s.name}')">❌ Remove</div>
-    `;
-    container.appendChild(div);
-  }
-  const now = new Date();
-  document.getElementById("last-updated").textContent = "Last updated: " + now.toLocaleTimeString();
-}
 
-function toggleFavorite(name) {
-  if (favorites.includes(name)) {
-    favorites = favorites.filter(f => f !== name);
-  } else {
-    favorites.push(name);
-  }
-  localStorage.setItem("favorites", JSON.stringify(favorites));
-  renderStreamers();
-}
-
-async function addStreamer() {
-  const input = document.getElementById("newStreamer");
-  const name = input.value.trim().toLowerCase();
-  if (!name) {
-    showToast("⚠️ Enter a streamer name");
-    return;
-  }
-  if (streamers.includes(name)) {
-    showToast("⚠️ Streamer already in list");
-    input.value = "";
-    return;
-  }
-  try {
-    const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ streamer: name })
+    els.load.addEventListener('click', loadStream);
+    els.swap.addEventListener('click', () => {
+      els.platform.value = els.platform.value === 'twitch' ? 'kick' : 'twitch';
+      loadStream();
     });
-    const msg = await res.text();
-    showToast(msg);
-    setTimeout(loadStreamers, 1500);
-  } catch (err) {
-    console.error("Failed to add streamer:", err);
-    showToast("Add failed");
-  }
-  input.value = "";
-}
 
-async function removeStreamer(name) {
-  const pin = prompt("Enter PIN to remove streamer:");
-  if (!pin) {
-    showToast("⚠️ PIN required");
-    return;
-  }
-  try {
-    const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ remove: name, pin: String(pin).padStart(5, "0") })
+    // Logs: download and clear
+    els.download.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const stamp = new Date().toISOString().replace(/[:.]/g,'-');
+      a.download = `stream-embed-logs-${stamp}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      log('info', 'Logs downloaded.');
     });
-    const msg = await res.text();
-    if (res.ok) {
-      showToast(msg);
-      setTimeout(loadStreamers, 1500);
-    } else {
-      showToast("❌ " + msg);
-    }
-  } catch (err) {
-    console.error("Failed to remove streamer:", err);
-    showToast("Remove failed");
-  }
-}
 
-async function bulkAddStreamers() {
-  const input = document.getElementById("bulk-input");
-  const names = input.value.split(',').map(name => name.trim().toLowerCase()).filter(name => name);
-  if (!names.length) {
-    showToast("⚠️ Enter at least one streamer name");
-    return;
-  }
-  let added = 0;
-  for (const name of names) {
-    if (streamers.includes(name)) continue;
-    try {
-      const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ streamer: name })
-      });
-      if (res.ok) added++;
-    } catch (err) {
-      console.error(`Failed to add ${name}:`, err);
-    }
-  }
-  showToast(`✅ Added ${added} of ${names.length} streamers`);
-  input.value = "";
-  setTimeout(loadStreamers, 1500);
-}
+    els.clear.addEventListener('click', () => {
+      logs = [];
+      localStorage.removeItem(LOGS_KEY);
+      els.loglist.innerHTML = '';
+      log('info', 'Logs cleared.');
+    });
 
-async function bulkRemoveStreamers() {
-  const input = document.getElementById("bulk-input");
-  const names = input.value.split(',').map(name => name.trim().toLowerCase()).filter(name => name);
-  if (!names.length) {
-    showToast("⚠️ Enter at least one streamer name");
-    return;
-  }
-  const pin = prompt("Enter PIN to remove streamers:");
-  if (!pin) {
-    showToast("⚠️ PIN required");
-    return;
-  }
-  let removed = 0;
-  for (const name of names) {
-    try {
-      const res = await fetch("https://autumn-base-826c.rapahannock.workers.dev/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ remove: name, pin: String(pin).padStart(5, "0") })
-      });
-      if (res.ok) removed++;
-    } catch (err) {
-      console.error(`Failed to remove ${name}:`, err);
-    }
-  }
-  showToast(`✅ Removed ${removed} of ${names.length} streamers`);
-  input.value = "";
-  setTimeout(loadStreamers, 1500);
-}
-
-if (Notification.permission !== "granted") {
-  Notification.requestPermission();
-}
-
-loadStreamers();
-setInterval(() => {
-  countdown--;
-  if (countdown <= 0) {
-    loadStreamers();
-    countdown = parseInt(localStorage.getItem("refreshInterval") || 60);
-  }
-  document.getElementById("refresh-countdown").textContent = `⏳ Refreshing in ${countdown}s`;
-}, 1000);
-</script>
+    // Quick deep-link support: ?platform=twitch&channel=foobar&autoplay=1&muted=1
+    (function handleQuery() {
+      const params = new URLSearchParams(location.search);
+      const p = params.get('platform');
+      const c = params.get('channel');
+      const a = params.get('autoplay');
+      const m = params.get('muted');
+      if (p) els.platform.value = p;
+      if (c) els.channel.value = c;
+      if (a !== null) els.autoplay.checked = a === '1' || a === 'true';
+      if (m !== null) els.muted.checked = m === '1' || m === 'true';
+      if (p && c) loadStream();
+    })();
+  </script>
 </body>
 </html>
