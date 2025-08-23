@@ -1106,55 +1106,38 @@ const App = {
         console.log("[DEBUG] Extracted Gist ID from URL:", gistId);
     }
 
-    if (!gistId) {
+    let listUrl = this.state.apiEndpoint; // Default to public read-only
+    if (gistId) {
+        // If a user Gist ID is provided, construct the raw URL to read from it.
+        listUrl = `https://gist.githubusercontent.com/${gistId}/raw/streamers1455.json`;
+        console.log("[DEBUG] Custom Gist ID provided. Using URL:", listUrl);
+    } else {
+        console.log("[DEBUG] No Gist ID set. Using default read-only URL:", listUrl);
         this.showToast('⚠️ Gist ID not set. Viewing in read-only mode.', 'warning');
-        try {
-            const url = `${this.state.apiEndpoint}?t=${Date.now()}`;
-            console.log("[DEBUG] Fetching from fallback URL:", url);
-            const res = await fetch(url);
-            console.log("[DEBUG] Fallback Response Status:", res.status);
-            if(!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
-            const data = await res.json();
-            console.log("[DEBUG] Fallback data received:", data);
-            if (data.length > 0 && typeof data[0] === 'string') {
-                this.state.streamers = data.map(name => ({ name, platform: 'kick' }));
-            } else {
-                this.state.streamers = data;
-            }
-            this.updateConnectionStatus('connected');
-            this.fetchStreamerData();
-        } catch(err) {
-            console.error('[DEBUG] Failed to load streamer list from fallback:',err);
-            this.updateConnectionStatus('error');
-            this.showToast(`⚠️ Error fetching list: ${err.message}`,'error');
-            this.setLoadingState(false);
-        }
-        return;
     }
     
     try {
-        const url = `https://api.github.com/gists/${gistId}`;
-        console.log("[DEBUG] Fetching from Gist API URL:", url);
-        const res = await fetch(url);
-        console.log("[DEBUG] Gist API Response Status:", res.status, res.statusText);
-        if (!res.ok) throw new Error(`Could not fetch Gist (Status: ${res.status}). Check Gist ID.`);
-        const gistData = await res.json();
-        console.log("[DEBUG] Gist API data received. Checking for file 'streamers1455.json'.");
+        const res = await fetch(`${listUrl}?t=${Date.now()}`);
+        console.log(`[DEBUG] Fetch response from ${listUrl}:`, res.status, res.statusText);
+        if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
+        
+        const data = await res.json();
+        console.log("[DEBUG] Data received:", data);
 
-        if (gistData.files && gistData.files['streamers1455.json']) {
-            const fileContent = gistData.files['streamers1455.json'].content;
-            console.log("[DEBUG] Found file content. Attempting to parse JSON.");
-            this.state.streamers = JSON.parse(fileContent);
-            console.log("[DEBUG] Successfully parsed streamers from Gist:", this.state.streamers);
+        if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'string') {
+            console.log("[DEBUG] Data is a simple string array, converting to object format.");
+            this.state.streamers = data.map(name => ({ name, platform: 'kick' }));
         } else {
-            throw new Error('Your Gist does not contain a file named "streamers1455.json".');
+            this.state.streamers = data;
         }
+
+        console.log("[DEBUG] Final streamer list:", this.state.streamers);
         this.updateConnectionStatus('connected');
         this.fetchStreamerData();
     } catch(err) {
-        console.error('[DEBUG] Failed to load streamer list from Gist:', err);
+        console.error('[DEBUG] Failed to load streamer list:', err);
         this.updateConnectionStatus('error');
-        this.showToast(`❌ Error fetching Gist: ${err.message}`, 'error');
+        this.showToast(`❌ Error fetching list: ${err.message}`, 'error');
         this.state.streamers = [];
         this.setLoadingState(false);
         this.render();
