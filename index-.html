@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor Ultra v5.5</title>
+  <title>Kick & Twitch Monitor Ultra v5.7</title>
   <meta name="description" content="Monitor your favorite Kick and Twitch streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
   <!-- PWA and Mobile App hints -->
@@ -279,7 +279,7 @@
     <!-- FLOATING HEADER -->
     <header class="app-header" id="app-header" role="region" aria-label="App toolbar">
       <button id="header-collapse" class="icon-btn header-collapse" title="Collapse/Expand toolbar" aria-pressed="false">◧</button>
-      <h1 class="app-title">Kick & Twitch Monitor <small>v5.5</small></h1>
+      <h1 class="app-title">Kick & Twitch Monitor <small>v5.6</small></h1>
       <div class="spacer" aria-hidden="true"></div>
       <div class="header-controls">
         <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
@@ -854,11 +854,9 @@ const App = {
     this.state.notificationsEnabled = (localStorage.getItem("notificationsEnabled") || 'on') === 'on';
     this.state.dataSaver = (localStorage.getItem("dataSaver") || 'off') === 'on';
     this.state.headerCollapsed = (localStorage.getItem("headerCollapsed") || 'false') === 'true';
-    this.state.twitchClientId = localStorage.getItem("twitchClientId") || '';
-    this.state.twitchAccessToken = localStorage.getItem("twitchAccessToken") || '';
     this.state.gistId = localStorage.getItem("gistId") || '';
     this.state.githubPat = localStorage.getItem("githubPat") || '';
-
+    
     this.elements.filterSelect.value = this.state.filter;
     this.elements.sortSelect.value = this.state.sort;
     this.elements.autoRefreshSelect.value = this.state.autoRefreshDelay;
@@ -868,8 +866,6 @@ const App = {
     this.elements.densitySelect.value = this.state.density;
     this.elements.notificationsToggle.value = this.state.notificationsEnabled ? 'on' : 'off';
     this.elements.dataSaverToggle.value = this.state.dataSaver ? 'on' : 'off';
-    this.elements.twitchClientIdInput.value = this.state.twitchClientId;
-    this.elements.twitchAccessTokenInput.value = this.state.twitchAccessToken;
     this.elements.gistIdInput.value = this.state.gistId;
     this.elements.githubPatInput.value = this.state.githubPat;
 
@@ -959,11 +955,11 @@ const App = {
 
     this.elements.twitchClientIdInput.addEventListener('input', Utils.debounce(e => {
         this.state.twitchClientId = e.target.value;
-        localStorage.setItem('twitchClientId', e.target.value);
+        this.saveConfig();
     }, 500));
     this.elements.twitchAccessTokenInput.addEventListener('input', Utils.debounce(e => {
         this.state.twitchAccessToken = e.target.value;
-        localStorage.setItem('twitchAccessToken', e.target.value);
+        this.saveConfig();
     }, 500));
     this.elements.gistIdInput.addEventListener('input', Utils.debounce(e => {
         this.state.gistId = e.target.value;
@@ -1217,7 +1213,8 @@ const App = {
   },
 
   async fetchKickStreamer(name) {
-      const url = `https://kick.com/api/v1/channels/${name}`;
+      const kickApiUrl = `https://kick.com/api/v1/channels/${name}`;
+      const url = `https://corsproxy.io/?${encodeURIComponent(kickApiUrl)}`;
       const k = `api-kick-${name}`;
       const c = this.cache.get(k);
       if (c) return c;
@@ -1586,8 +1583,6 @@ const App = {
   },
 
   async removeStreamer(name, platform){
-    if(!confirm(`Are you sure you want to remove ${name} from ${platform}? This requires a PIN.`)) return;
-    
     const pin = prompt("Enter PIN to confirm removal:");
     if (pin !== this.state.PIN) {
         if (pin !== null) {
