@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor Ultra v5.6</title>
+  <title>Kick & Twitch Monitor Ultra v5.7</title>
   <meta name="description" content="Monitor your favorite Kick and Twitch streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
   <!-- PWA and Mobile App hints -->
@@ -279,7 +279,7 @@
     <!-- FLOATING HEADER -->
     <header class="app-header" id="app-header" role="region" aria-label="App toolbar">
       <button id="header-collapse" class="icon-btn header-collapse" title="Collapse/Expand toolbar" aria-pressed="false">◧</button>
-      <h1 class="app-title">Kick & Twitch Monitor <small>v5.5</small></h1>
+      <h1 class="app-title">Kick & Twitch Monitor <small>v5.6</small></h1>
       <div class="spacer" aria-hidden="true"></div>
       <div class="header-controls">
         <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
@@ -729,7 +729,7 @@ const App = {
     lastLiveStates:{}, autoRefreshInterval:null, autoRefreshDelay:300000,
     connectionStatus:'connected', viewMode:'grid', selectionMode:false, selectedStreamers:new Set(),
     viewerRange:{min:0,max:50000}, settingsExpanded:false, lastFocusedElement:null,
-    apiEndpoint: 'https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json',
+    workerEndpoint: 'https://autumn-base-826c.rapahannock.workers.dev/',
     notificationsEnabled:true, accentColor:'#4ade80', density:'comfortable',
     dataSaver:false, headerCollapsed:false,
     twitchClientId: '', twitchAccessToken: '',
@@ -854,11 +854,7 @@ const App = {
     this.state.notificationsEnabled = (localStorage.getItem("notificationsEnabled") || 'on') === 'on';
     this.state.dataSaver = (localStorage.getItem("dataSaver") || 'off') === 'on';
     this.state.headerCollapsed = (localStorage.getItem("headerCollapsed") || 'false') === 'true';
-    this.state.twitchClientId = localStorage.getItem("twitchClientId") || '';
-    this.state.twitchAccessToken = localStorage.getItem("twitchAccessToken") || '';
-    this.state.gistId = localStorage.getItem("gistId") || '';
-    this.state.githubPat = localStorage.getItem("githubPat") || '';
-
+    
     this.elements.filterSelect.value = this.state.filter;
     this.elements.sortSelect.value = this.state.sort;
     this.elements.autoRefreshSelect.value = this.state.autoRefreshDelay;
@@ -868,11 +864,7 @@ const App = {
     this.elements.densitySelect.value = this.state.density;
     this.elements.notificationsToggle.value = this.state.notificationsEnabled ? 'on' : 'off';
     this.elements.dataSaverToggle.value = this.state.dataSaver ? 'on' : 'off';
-    this.elements.twitchClientIdInput.value = this.state.twitchClientId;
-    this.elements.twitchAccessTokenInput.value = this.state.twitchAccessToken;
-    this.elements.gistIdInput.value = this.state.gistId;
-    this.elements.githubPatInput.value = this.state.githubPat;
-
+    
     this.applyAccent(this.state.accentColor);
     this.applyDensity(this.state.density);
 
@@ -959,19 +951,19 @@ const App = {
 
     this.elements.twitchClientIdInput.addEventListener('input', Utils.debounce(e => {
         this.state.twitchClientId = e.target.value;
-        localStorage.setItem('twitchClientId', e.target.value);
+        this.saveConfig();
     }, 500));
     this.elements.twitchAccessTokenInput.addEventListener('input', Utils.debounce(e => {
         this.state.twitchAccessToken = e.target.value;
-        localStorage.setItem('twitchAccessToken', e.target.value);
+        this.saveConfig();
     }, 500));
     this.elements.gistIdInput.addEventListener('input', Utils.debounce(e => {
         this.state.gistId = e.target.value;
-        localStorage.setItem('gistId', e.target.value);
+        this.saveConfig();
     }, 500));
     this.elements.githubPatInput.addEventListener('input', Utils.debounce(e => {
         this.state.githubPat = e.target.value;
-        localStorage.setItem('githubPat', e.target.value);
+        this.saveConfig();
     }, 500));
 
     this.elements.unlockCredentialsBtn.addEventListener('click', () => this.unlockCredentials());
@@ -1103,63 +1095,31 @@ const App = {
   async fetchStreamerList(){
     this.setLoadingState(true,'Loading streamer list...');
     this.updateConnectionStatus('connecting');
-    console.log("[DEBUG] Starting fetchStreamerList");
-
-    let gistId = this.state.gistId.trim();
-    if (gistId.includes('/')) {
-        gistId = gistId.split('/').pop();
-        console.log("[DEBUG] Extracted Gist ID from URL:", gistId);
-    }
-
-    let listUrl = this.state.apiEndpoint; // Default to public read-only
-    let isUserGist = false;
-
-    if (gistId) {
-        listUrl = `https://api.github.com/gists/${gistId}`;
-        isUserGist = true;
-        console.log("[DEBUG] Custom Gist ID provided. Using API URL:", listUrl);
-    } else {
-        console.log("[DEBUG] No Gist ID set. Using default read-only URL:", listUrl);
-        this.showToast('⚠️ Gist ID not set. Viewing in read-only mode.', 'warning');
-    }
-    
     try {
-        const res = await fetch(`${listUrl}?t=${Date.now()}`);
-        console.log(`[DEBUG] Fetch response from ${listUrl}:`, res.status, res.statusText);
-        if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
-        
-        const data = await res.json();
-        console.log("[DEBUG] Data received:", data);
-        
-        let streamerList;
-        if (isUserGist) {
-            if (data.files && data.files['streamers1455.json']) {
-                console.log("[DEBUG] Found file content in Gist. Attempting to parse JSON.");
-                streamerList = JSON.parse(data.files['streamers1455.json'].content);
-            } else {
-                throw new Error('Your Gist does not contain a file named "streamers1455.json".');
-            }
-        } else {
-            streamerList = data;
-        }
+      const res = await fetch(`${this.state.workerEndpoint}?t=${Date.now()}`);
+      if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
+      const data = await res.json();
+      
+      this.state.streamers = data.streamers || [];
+      this.state.twitchClientId = data.config.twitchClientId || '';
+      this.state.twitchAccessToken = data.config.twitchAccessToken || '';
+      this.state.gistId = data.config.gistId || '';
+      this.state.githubPat = data.config.githubPat || '';
+      
+      this.elements.twitchClientIdInput.value = this.state.twitchClientId;
+      this.elements.twitchAccessTokenInput.value = this.state.twitchAccessToken;
+      this.elements.gistIdInput.value = this.state.gistId;
+      this.elements.githubPatInput.value = this.state.githubPat;
 
-        if (Array.isArray(streamerList) && streamerList.length > 0 && typeof streamerList[0] === 'string') {
-            console.log("[DEBUG] Data is a simple string array, converting to object format.");
-            this.state.streamers = streamerList.map(name => ({ name, platform: 'kick' }));
-        } else {
-            this.state.streamers = streamerList;
-        }
-
-        console.log("[DEBUG] Final streamer list:", this.state.streamers);
-        this.updateConnectionStatus('connected');
-        this.fetchStreamerData();
+      this.updateConnectionStatus('connected');
+      this.fetchStreamerData();
     } catch(err) {
-        console.error('[DEBUG] Failed to load streamer list:', err);
-        this.updateConnectionStatus('error');
-        this.showToast(`❌ Error fetching list: ${err.message}`, 'error');
-        this.state.streamers = [];
-        this.setLoadingState(false);
-        this.render();
+      console.error('Failed to load data from worker:', err);
+      this.updateConnectionStatus('error');
+      this.showToast(`❌ Error fetching data: ${err.message}`, 'error');
+      this.state.streamers = [];
+      this.setLoadingState(false);
+      this.render();
     }
   },
 
@@ -1534,38 +1494,21 @@ const App = {
     }
   },
 
-  async updateGist(newList) {
-    if (!this.state.gistId || !this.state.githubPat) {
-        this.showToast('❌ Gist ID and GitHub PAT must be set in settings to save changes.', 'error');
-        return false;
-    }
-    this.setLoadingState(true, 'Saving to Gist...');
+  async postToWorker(body) {
     try {
-        const res = await fetch(`https://api.github.com/gists/${this.state.gistId}`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `token ${this.state.githubPat}`,
-                'Accept': 'application/vnd.github.v3+json',
-            },
-            body: JSON.stringify({
-                files: {
-                    'streamers1455.json': {
-                        content: JSON.stringify(newList, null, 2)
-                    }
-                }
-            })
-        });
-        if (!res.ok) {
-            const errorData = await res.json();
-            console.error("[DEBUG] Gist update failed:", errorData);
-            throw new Error(errorData.message || 'Failed to update Gist.');
-        }
-        this.setLoadingState(false);
-        return true;
+      const res = await fetch(this.state.workerEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || `Worker responded with status ${res.status}`);
+      }
+      return await res.text();
     } catch (e) {
-        this.showToast(`❌ Gist update failed: ${e.message}`, 'error');
-        this.setLoadingState(false);
-        return false;
+      this.showToast(`❌ Action failed: ${e.message}`, 'error');
+      return null;
     }
   },
 
@@ -1575,40 +1518,45 @@ const App = {
     if(!name) return this.showToast('⚠️ Please enter a streamer name.','warning');
     if(this.state.streamers.some(s => s.name === name && s.platform === platform)) return this.showToast('⚠️ Streamer is already in the list.','warning');
 
-    const newList = [...this.state.streamers, { name, platform }];
-    const success = await this.updateGist(newList);
-    
-    if (success) {
-        this.state.streamers = newList;
-        this.showToast(`✅ Added ${name} and saved to Gist.`, 'success');
+    const result = await this.postToWorker({ action: 'add', name, platform });
+    if (result) {
+        this.showToast(`✅ ${result}`, 'success');
         this.elements.addInput.value = '';
-        this.fetchStreamerData();
+        this.fetchStreamerList();
     }
   },
 
   async removeStreamer(name, platform){
     const pin = prompt("Enter PIN to confirm removal:");
     if (pin !== this.state.PIN) {
-        if (pin !== null) {
-            this.showToast('❌ Incorrect PIN. Removal cancelled.', 'error');
-        }
+        if (pin !== null) this.showToast('❌ Incorrect PIN. Removal cancelled.', 'error');
+        return;
+    }
+    
+    const result = await this.postToWorker({ action: 'remove', name, platform, pin });
+    if (result) {
+        this.showToast(`🗑️ ${result}`, 'success');
+        this.fetchStreamerList();
+    }
+  },
+
+  async saveConfig() {
+    const pin = prompt("Enter PIN to save credentials:");
+    if (pin !== this.state.PIN) {
+        if (pin !== null) this.showToast('❌ Incorrect PIN. Save cancelled.', 'error');
         return;
     }
 
-    const newList = this.state.streamers.filter(s => !(s.name === name && s.platform === platform));
-    const success = await this.updateGist(newList);
+    const config = {
+        twitchClientId: this.state.twitchClientId,
+        twitchAccessToken: this.state.twitchAccessToken,
+        gistId: this.state.gistId,
+        githubPat: this.state.githubPat
+    };
 
-    if (success) {
-        this.state.streamers = newList;
-        this.state.streamerData.delete(name);
-        this.state.favorites = this.state.favorites.filter(favName => favName !== name);
-        localStorage.setItem('favorites', JSON.stringify(this.state.favorites));
-        Object.keys(this.state.groups).forEach(groupName => {
-            this.state.groups[groupName] = this.state.groups[groupName].filter(streamerName => streamerName !== name);
-        });
-        this.saveGroups();
-        this.showToast(`🗑️ Removed ${name} and saved to Gist.`, 'success');
-        this.render();
+    const result = await this.postToWorker({ action: 'save_config', config, pin });
+    if (result) {
+        this.showToast('✅ Configuration saved successfully.', 'success');
     }
   },
 
