@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor Ultra v5.4</title>
+  <title>Kick & Twitch Monitor Ultra v5.5 (Debug)</title>
   <meta name="description" content="Monitor your favorite Kick and Twitch streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
   <!-- PWA and Mobile App hints -->
@@ -1098,12 +1098,19 @@ const App = {
   async fetchStreamerList(){
     this.setLoadingState(true,'Loading streamer list...');
     this.updateConnectionStatus('connecting');
+    console.log("Attempting to fetch streamer list...");
+    console.log("Using Gist ID:", this.state.gistId || "Not Set (will use fallback)");
+    
     if (!this.state.gistId) {
         this.showToast('⚠️ Gist ID not set. Viewing in read-only mode.', 'warning');
         try {
-            const res = await fetch(`${this.state.apiEndpoint}?t=${Date.now()}`);
+            const url = `${this.state.apiEndpoint}?t=${Date.now()}`;
+            console.log("Fetching from fallback URL:", url);
+            const res = await fetch(url);
+            console.log("Fallback Response Status:", res.status);
             if(!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
             const data = await res.json();
+            console.log("Fallback data received:", data);
             if (data.length > 0 && typeof data[0] === 'string') {
                 this.state.streamers = data.map(name => ({ name, platform: 'kick' }));
             } else {
@@ -1121,11 +1128,16 @@ const App = {
     }
     
     try {
-        const res = await fetch(`https://api.github.com/gists/${this.state.gistId}`);
+        const url = `https://api.github.com/gists/${this.state.gistId}`;
+        console.log("Fetching from Gist URL:", url);
+        const res = await fetch(url);
+        console.log("Gist Response Status:", res.status);
         if (!res.ok) throw new Error(`Could not fetch Gist: ${res.statusText}`);
         const gistData = await res.json();
+        console.log("Gist data received:", gistData);
         if (gistData.files && gistData.files['streamers1455.json']) {
             this.state.streamers = JSON.parse(gistData.files['streamers1455.json'].content);
+            console.log("Successfully parsed streamers from Gist:", this.state.streamers);
         } else {
             throw new Error('Gist does not contain a "streamers1455.json" file.');
         }
@@ -1377,7 +1389,7 @@ const App = {
         : `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #53FC18; margin-right: 6px; flex-shrink: 0;"><title>Kick</title><path d="M19.43 2.57L4.57 17.43V2.57h14.86M19.43 0H4.57C2.05 0 0 2.05 0 4.57v14.86C0 21.95 2.05 24 4.57 24h14.86c2.52 0 4.57-2.05 4.57-4.57V4.57C24 2.05 21.95 0 19.43 0z"/></svg>`;
 
     const icons = {"Just Chatting":"💬","Slots & Casino":"🎰","Games & Casino":"🎲","Call of Duty":"🎯","Grand Theft Auto V":"🚗","Sports":"🏀","Music":"🎵","Valorant":"🔫","Fortnite":"🛡️","League of Legends":"🧙‍♂️","Minecraft":"⛏️","IRL":"🌍","Poker":"🃏"};
-    const icon = icons[s.category] || '🎮';
+    const icon = icons[s.category] || '�';
     const avatar = `<img class="streamer-avatar" src="${s.profilePic||''}" alt="${s.name} avatar" onerror="this.style.display='none'">`;
     const showThumb = s.isLive && s.thumbnail && !this.state.dataSaver && this.state.viewMode!=='compact';
 
@@ -1833,3 +1845,4 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 </script>
 </body>
 </html>
+�
