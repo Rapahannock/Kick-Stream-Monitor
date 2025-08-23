@@ -6,8 +6,9 @@
   <title>Kick & Twitch Monitor Ultra v5.4</title>
   <meta name="description" content="Monitor your favorite Kick and Twitch streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
-  <!-- iOS / general PWA hints (safe even if unused on Samsung) -->
+  <!-- PWA and Mobile App hints -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- We’ll inject icons + manifest dynamically so install works from a single HTML file -->
 
@@ -727,6 +728,7 @@ const App = {
     lastLiveStates:{}, autoRefreshInterval:null, autoRefreshDelay:300000,
     connectionStatus:'connected', viewMode:'grid', selectionMode:false, selectedStreamers:new Set(),
     viewerRange:{min:0,max:50000}, settingsExpanded:false, lastFocusedElement:null,
+    apiEndpoint: 'https://gist.githubusercontent.com/Rapahannock/9d6241637b3be456f610b3aa415d8b4f/raw/streamers1455.json',
     notificationsEnabled:true, accentColor:'#4ade80', density:'comfortable',
     dataSaver:false, headerCollapsed:false,
     twitchClientId: '', twitchAccessToken: '',
@@ -1097,10 +1099,24 @@ const App = {
     this.setLoadingState(true,'Loading streamer list...');
     this.updateConnectionStatus('connecting');
     if (!this.state.gistId) {
-        this.showToast('⚠️ Please set your Gist ID in settings.', 'warning');
-        this.setLoadingState(false);
-        this.state.streamers = [];
-        this.render();
+        this.showToast('⚠️ Gist ID not set. Viewing in read-only mode.', 'warning');
+        try {
+            const res = await fetch(`${this.state.apiEndpoint}?t=${Date.now()}`);
+            if(!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
+            const data = await res.json();
+            if (data.length > 0 && typeof data[0] === 'string') {
+                this.state.streamers = data.map(name => ({ name, platform: 'kick' }));
+            } else {
+                this.state.streamers = data;
+            }
+            this.updateConnectionStatus('connected');
+            this.fetchStreamerData();
+        } catch(err) {
+            console.error('Failed to load streamer list from fallback:',err);
+            this.updateConnectionStatus('error');
+            this.showToast(`⚠️ Error fetching list: ${err.message}`,'error');
+            this.setLoadingState(false);
+        }
         return;
     }
     
@@ -1816,4 +1832,4 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 });
 </script>
 </body>
-</ht
+</html>
