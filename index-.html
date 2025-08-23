@@ -1107,10 +1107,12 @@ const App = {
     }
 
     let listUrl = this.state.apiEndpoint; // Default to public read-only
+    let isUserGist = false;
+
     if (gistId) {
-        // If a user Gist ID is provided, construct the raw URL to read from it.
-        listUrl = `https://gist.githubusercontent.com/${gistId}/raw/streamers1455.json`;
-        console.log("[DEBUG] Custom Gist ID provided. Using URL:", listUrl);
+        listUrl = `https://api.github.com/gists/${gistId}`;
+        isUserGist = true;
+        console.log("[DEBUG] Custom Gist ID provided. Using API URL:", listUrl);
     } else {
         console.log("[DEBUG] No Gist ID set. Using default read-only URL:", listUrl);
         this.showToast('⚠️ Gist ID not set. Viewing in read-only mode.', 'warning');
@@ -1123,12 +1125,24 @@ const App = {
         
         const data = await res.json();
         console.log("[DEBUG] Data received:", data);
-
-        if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'string') {
-            console.log("[DEBUG] Data is a simple string array, converting to object format.");
-            this.state.streamers = data.map(name => ({ name, platform: 'kick' }));
+        
+        let streamerList;
+        if (isUserGist) {
+            if (data.files && data.files['streamers1455.json']) {
+                console.log("[DEBUG] Found file content in Gist. Attempting to parse JSON.");
+                streamerList = JSON.parse(data.files['streamers1455.json'].content);
+            } else {
+                throw new Error('Your Gist does not contain a file named "streamers1455.json".');
+            }
         } else {
-            this.state.streamers = data;
+            streamerList = data;
+        }
+
+        if (Array.isArray(streamerList) && streamerList.length > 0 && typeof streamerList[0] === 'string') {
+            console.log("[DEBUG] Data is a simple string array, converting to object format.");
+            this.state.streamers = streamerList.map(name => ({ name, platform: 'kick' }));
+        } else {
+            this.state.streamers = streamerList;
         }
 
         console.log("[DEBUG] Final streamer list:", this.state.streamers);
