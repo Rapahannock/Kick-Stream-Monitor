@@ -1551,6 +1551,7 @@ const App = {
         });
         if (!res.ok) {
             const errorData = await res.json();
+            console.error("[DEBUG] Gist update failed:", errorData);
             throw new Error(errorData.message || 'Failed to update Gist.');
         }
         this.setLoadingState(false);
