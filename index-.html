@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor Ultra v5.3</title>
+  <title>Kick & Twitch Monitor Ultra v5.4</title>
   <meta name="description" content="Monitor your favorite Kick and Twitch streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
   <!-- iOS / general PWA hints (safe even if unused on Samsung) -->
@@ -322,137 +322,135 @@
 
     <!-- Settings Panel -->
     <section class="settings-panel" id="settings-panel">
-      <form onsubmit="return false;">
-        <div class="settings-content">
-          <div class="settings-grid">
-            <div class="setting-group">
-              <label for="search-input">Search / Filter</label>
-              <input type="text" id="search-input" placeholder="Name, category, title..." aria-describedby="search-help">
-              <div id="search-help" class="sr-only">Search by streamer name, category, or stream title</div>
-            </div>
-
-            <div class="setting-group">
-              <label for="filter-select">View</label>
-              <select id="filter-select" aria-describedby="filter-help"></select>
-              <div id="filter-help" class="sr-only">Filter streamers by status</div>
-            </div>
-
-            <div class="setting-group">
-              <label for="sort-select">Sort By</label>
-              <select id="sort-select" aria-describedby="sort-help">
-                <option value="status">Live Status</option>
-                <option value="viewers">Viewer Count</option>
-                <option value="name">Name (A-Z)</option>
-                <option value="category">Category</option>
-                <option value="uptime">Stream Duration</option>
-              </select>
-              <div id="sort-help" class="sr-only">Sort streamers by different criteria</div>
-            </div>
-
-            <div class="setting-group">
-              <label>Viewer Count Range</label>
-              <div class="range-container" id="viewer-range">
-                <input type="range" id="viewer-min" class="range-input" min="0" max="10000" step="100" value="0" aria-label="Minimum viewers">
-                <span class="range-display" id="viewer-range-display">0 - ∞</span>
-                <input type="range" id="viewer-max" class="range-input" min="0" max="50000" step="500" value="50000" aria-label="Maximum viewers">
-              </div>
-            </div>
-
-            <div class="setting-group" id="auto-refresh-setting-group">
-              <label for="auto-refresh-select">Auto Refresh</label>
-              <select id="auto-refresh-select" aria-describedby="refresh-help">
-                <option value="0">Off</option>
-                <option value="60000">1 minute</option>
-                <option value="300000" selected>5 minutes</option>
-                <option value="600000">10 minutes</option>
-              </select>
-              <div id="refresh-help" class="sr-only">Automatically refresh streamer data</div>
-            </div>
-
-            <div class="setting-group">
-              <label for="add-input">Add Streamer</label>
-              <div style="display: flex; gap: 8px;">
-                  <input type="text" id="add-input" placeholder="Enter streamer name" style="flex: 1;" aria-describedby="add-help">
-                  <select id="platform-select" style="flex-basis: 100px;">
-                      <option value="kick" selected>Kick</option>
-                      <option value="twitch">Twitch</option>
-                  </select>
-                  <button id="add-btn" style="flex-basis: 80px;">➕ Add</button>
-              </div>
-               <div id="add-help" class="sr-only">Add a new streamer to monitor</div>
-            </div>
-
-            <div class="setting-group">
-              <label for="accent-color">Accent Color</label>
-              <input type="color" id="accent-color" value="#4ade80" aria-describedby="accent-help">
-              <div id="accent-help" class="sr-only">Pick a custom accent color for the UI</div>
-            </div>
-
-            <div class="setting-group">
-              <label for="density-select">Card Density</label>
-              <select id="density-select" aria-label="Card density">
-                <option value="comfortable" selected>Comfortable</option>
-                <option value="compact">Compact</option>
-              </select>
-            </div>
-
-            <div class="setting-group">
-              <label for="notifications-toggle">Notifications</label>
-              <select id="notifications-toggle" aria-label="Enable notifications on favorites going live">
-                <option value="on">On</option>
-                <option value="off">Off</option>
-              </select>
-            </div>
-
-            <div class="setting-group">
-              <label for="data-saver-toggle">Data Saver (hide thumbnails)</label>
-              <select id="data-saver-toggle" aria-label="Data Saver">
-                <option value="off" selected>Off</option>
-                <option value="on">On</option>
-              </select>
-            </div>
-            
-            <div class="setting-group">
-              <label for="gist-id">GitHub Gist ID</label>
-              <input type="password" id="gist-id" placeholder="Enter your Gist ID">
-              <p class="help-text">Your streamer list is synced using a Gist.</p>
-            </div>
-            
-            <div class="setting-group">
-              <label for="github-pat">GitHub Personal Access Token</label>
-              <input type="password" id="github-pat" placeholder="Enter your GitHub PAT">
-              <p class="help-text">Required to update your Gist. Needs the `gist` scope. <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer">Create one here</a>.</p>
-            </div>
-
-            <div class="setting-group">
-              <label for="twitch-client-id">Twitch Client ID</label>
-              <input type="password" id="twitch-client-id" placeholder="Enter your Twitch Client ID">
-            </div>
-            
-            <div class="setting-group">
-              <label for="twitch-access-token">Twitch App Access Token</label>
-              <input type="password" id="twitch-access-token" placeholder="Enter your Twitch App Access Token">
-              <p class="help-text">Required for Twitch API. <a href="https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow" target="_blank" rel="noopener noreferrer">How to get credentials</a>.</p>
-            </div>
-
+      <div class="settings-content">
+        <div class="settings-grid">
+          <div class="setting-group">
+            <label for="search-input">Search / Filter</label>
+            <input type="text" id="search-input" placeholder="Name, category, title..." aria-describedby="search-help">
+            <div id="search-help" class="sr-only">Search by streamer name, category, or stream title</div>
           </div>
-          <div class="action-buttons">
-            <button id="refresh-btn">🔄 Refresh</button>
-            <button id="theme-toggle-btn">🌗 Toggle Theme</button>
-            <button id="export-btn">📤 Export</button>
-            <button onclick="document.getElementById('import-file').click()">📥 Import</button>
-            <input type="file" id="import-file" accept="application/json" style="display:none" aria-label="Import streamer list">
+
+          <div class="setting-group">
+            <label for="filter-select">View</label>
+            <select id="filter-select" aria-describedby="filter-help"></select>
+            <div id="filter-help" class="sr-only">Filter streamers by status</div>
           </div>
-          <div class="groups-panel">
-            <h3>Manage Groups</h3>
-            <div class="setting-group">
-              <input type="text" id="new-group-input" placeholder="New group name...">
-              <button id="add-group-btn">Create Group</button>
+
+          <div class="setting-group">
+            <label for="sort-select">Sort By</label>
+            <select id="sort-select" aria-describedby="sort-help">
+              <option value="status">Live Status</option>
+              <option value="viewers">Viewer Count</option>
+              <option value="name">Name (A-Z)</option>
+              <option value="category">Category</option>
+              <option value="uptime">Stream Duration</option>
+            </select>
+            <div id="sort-help" class="sr-only">Sort streamers by different criteria</div>
+          </div>
+
+          <div class="setting-group">
+            <label>Viewer Count Range</label>
+            <div class="range-container" id="viewer-range">
+              <input type="range" id="viewer-min" class="range-input" min="0" max="10000" step="100" value="0" aria-label="Minimum viewers">
+              <span class="range-display" id="viewer-range-display">0 - ∞</span>
+              <input type="range" id="viewer-max" class="range-input" min="0" max="50000" step="500" value="50000" aria-label="Maximum viewers">
             </div>
-            <div id="groups-list"></div>
           </div>
+
+          <div class="setting-group" id="auto-refresh-setting-group">
+            <label for="auto-refresh-select">Auto Refresh</label>
+            <select id="auto-refresh-select" aria-describedby="refresh-help">
+              <option value="0">Off</option>
+              <option value="60000">1 minute</option>
+              <option value="300000" selected>5 minutes</option>
+              <option value="600000">10 minutes</option>
+            </select>
+            <div id="refresh-help" class="sr-only">Automatically refresh streamer data</div>
+          </div>
+
+          <div class="setting-group">
+            <label for="add-input">Add Streamer</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="add-input" placeholder="Enter streamer name" style="flex: 1;" aria-describedby="add-help">
+                <select id="platform-select" style="flex-basis: 100px;">
+                    <option value="kick" selected>Kick</option>
+                    <option value="twitch">Twitch</option>
+                </select>
+                <button id="add-btn" style="flex-basis: 80px;">➕ Add</button>
+            </div>
+             <div id="add-help" class="sr-only">Add a new streamer to monitor</div>
+          </div>
+
+          <div class="setting-group">
+            <label for="accent-color">Accent Color</label>
+            <input type="color" id="accent-color" value="#4ade80" aria-describedby="accent-help">
+            <div id="accent-help" class="sr-only">Pick a custom accent color for the UI</div>
+          </div>
+
+          <div class="setting-group">
+            <label for="density-select">Card Density</label>
+            <select id="density-select" aria-label="Card density">
+              <option value="comfortable" selected>Comfortable</option>
+              <option value="compact">Compact</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="notifications-toggle">Notifications</label>
+            <select id="notifications-toggle" aria-label="Enable notifications on favorites going live">
+              <option value="on">On</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="data-saver-toggle">Data Saver (hide thumbnails)</label>
+            <select id="data-saver-toggle" aria-label="Data Saver">
+              <option value="off" selected>Off</option>
+              <option value="on">On</option>
+            </select>
+          </div>
+          
+          <div class="setting-group">
+            <label for="gist-id">GitHub Gist ID</label>
+            <input type="password" id="gist-id" placeholder="Enter your Gist ID">
+            <p class="help-text">Your streamer list is synced using a Gist.</p>
+          </div>
+          
+          <div class="setting-group">
+            <label for="github-pat">GitHub Personal Access Token</label>
+            <input type="password" id="github-pat" placeholder="Enter your GitHub PAT">
+            <p class="help-text">Required to update your Gist. Needs the `gist` scope. <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer">Create one here</a>.</p>
+          </div>
+
+          <div class="setting-group">
+            <label for="twitch-client-id">Twitch Client ID</label>
+            <input type="password" id="twitch-client-id" placeholder="Enter your Twitch Client ID">
+          </div>
+          
+          <div class="setting-group">
+            <label for="twitch-access-token">Twitch App Access Token</label>
+            <input type="password" id="twitch-access-token" placeholder="Enter your Twitch App Access Token">
+            <p class="help-text">Required for Twitch API. <a href="https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow" target="_blank" rel="noopener noreferrer">How to get credentials</a>.</p>
+          </div>
+
         </div>
-      </form>
+        <div class="action-buttons">
+          <button id="refresh-btn">🔄 Refresh</button>
+          <button id="theme-toggle-btn">🌗 Toggle Theme</button>
+          <button id="export-btn">📤 Export</button>
+          <button onclick="document.getElementById('import-file').click()">📥 Import</button>
+          <input type="file" id="import-file" accept="application/json" style="display:none" aria-label="Import streamer list">
+        </div>
+        <div class="groups-panel">
+          <h3>Manage Groups</h3>
+          <div class="setting-group">
+            <input type="text" id="new-group-input" placeholder="New group name...">
+            <button id="add-group-btn">Create Group</button>
+          </div>
+          <div id="groups-list"></div>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -537,12 +535,14 @@ const PWA = {
     const icon512 = await this.generateIcon(512);
 
     const theme = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4ade80';
+    const baseUrl = new URL('.', window.location.href).href;
+    
     const manifest = {
       name: 'Kick & Twitch Monitor',
       short_name: 'KTM',
       description: 'Monitor your favorite Kick and Twitch streamers.',
-      start_url: '.',
-      scope: '.',
+      start_url: baseUrl,
+      scope: baseUrl,
       display: 'standalone',
       background_color: '#111111',
       theme_color: theme,
@@ -1362,7 +1362,7 @@ const App = {
         : `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #53FC18; margin-right: 6px; flex-shrink: 0;"><title>Kick</title><path d="M19.43 2.57L4.57 17.43V2.57h14.86M19.43 0H4.57C2.05 0 0 2.05 0 4.57v14.86C0 21.95 2.05 24 4.57 24h14.86c2.52 0 4.57-2.05 4.57-4.57V4.57C24 2.05 21.95 0 19.43 0z"/></svg>`;
 
     const icons = {"Just Chatting":"💬","Slots & Casino":"🎰","Games & Casino":"🎲","Call of Duty":"🎯","Grand Theft Auto V":"🚗","Sports":"🏀","Music":"🎵","Valorant":"🔫","Fortnite":"🛡️","League of Legends":"🧙‍♂️","Minecraft":"⛏️","IRL":"🌍","Poker":"🃏"};
-    const icon = icons[s.category] || '�';
+    const icon = icons[s.category] || '🎮';
     const avatar = `<img class="streamer-avatar" src="${s.profilePic||''}" alt="${s.name} avatar" onerror="this.style.display='none'">`;
     const showThumb = s.isLive && s.thumbnail && !this.state.dataSaver && this.state.viewMode!=='compact';
 
@@ -1818,4 +1818,3 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 </script>
 </body>
 </html>
-�
