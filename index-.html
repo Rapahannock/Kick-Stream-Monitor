@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor Ultra v5.5 (Debug)</title>
+  <title>Kick & Twitch Monitor Ultra v5.5</title>
   <meta name="description" content="Monitor your favorite Kick and Twitch streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
   <!-- PWA and Mobile App hints -->
@@ -279,7 +279,7 @@
     <!-- FLOATING HEADER -->
     <header class="app-header" id="app-header" role="region" aria-label="App toolbar">
       <button id="header-collapse" class="icon-btn header-collapse" title="Collapse/Expand toolbar" aria-pressed="false">◧</button>
-      <h1 class="app-title">Kick & Twitch Monitor <small>v5.4</small></h1>
+      <h1 class="app-title">Kick & Twitch Monitor <small>v5.5</small></h1>
       <div class="spacer" aria-hidden="true"></div>
       <div class="header-controls">
         <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
@@ -413,29 +413,30 @@
           
           <div class="setting-group">
             <label for="gist-id">GitHub Gist ID</label>
-            <input type="password" id="gist-id" placeholder="Enter your Gist ID">
+            <input type="password" id="gist-id" placeholder="Enter your Gist ID" disabled>
             <p class="help-text">Your streamer list is synced using a Gist.</p>
           </div>
           
           <div class="setting-group">
             <label for="github-pat">GitHub Personal Access Token</label>
-            <input type="password" id="github-pat" placeholder="Enter your GitHub PAT">
+            <input type="password" id="github-pat" placeholder="Enter your GitHub PAT" disabled>
             <p class="help-text">Required to update your Gist. Needs the `gist` scope. <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer">Create one here</a>.</p>
           </div>
 
           <div class="setting-group">
             <label for="twitch-client-id">Twitch Client ID</label>
-            <input type="password" id="twitch-client-id" placeholder="Enter your Twitch Client ID">
+            <input type="password" id="twitch-client-id" placeholder="Enter your Twitch Client ID" disabled>
           </div>
           
           <div class="setting-group">
             <label for="twitch-access-token">Twitch App Access Token</label>
-            <input type="password" id="twitch-access-token" placeholder="Enter your Twitch App Access Token">
+            <input type="password" id="twitch-access-token" placeholder="Enter your Twitch App Access Token" disabled>
             <p class="help-text">Required for Twitch API. <a href="https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow" target="_blank" rel="noopener noreferrer">How to get credentials</a>.</p>
           </div>
 
         </div>
         <div class="action-buttons">
+          <button id="unlock-credentials-btn" class="secondary">🔓 Unlock Credentials</button>
           <button id="refresh-btn">🔄 Refresh</button>
           <button id="theme-toggle-btn">🌗 Toggle Theme</button>
           <button id="export-btn">📤 Export</button>
@@ -732,7 +733,8 @@ const App = {
     notificationsEnabled:true, accentColor:'#4ade80', density:'comfortable',
     dataSaver:false, headerCollapsed:false,
     twitchClientId: '', twitchAccessToken: '',
-    gistId: '', githubPat: ''
+    gistId: '', githubPat: '',
+    PIN: '02134'
   },
 
   PLACEHOLDER_THUMBNAIL:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='%23404040'%3E%3Cpath d='M14 0H2C.9 0 0 .9 0 2v5c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm-1.5 5.5l-2.5-3-3.5 4.5-1.5-2-3.5 4.5h11l-1-1z'/%3E%3C/svg%3E",
@@ -830,6 +832,7 @@ const App = {
       twitchAccessTokenInput: document.getElementById('twitch-access-token'),
       gistIdInput: document.getElementById('gist-id'),
       githubPatInput: document.getElementById('github-pat'),
+      unlockCredentialsBtn: document.getElementById('unlock-credentials-btn'),
     };
   },
 
@@ -970,6 +973,8 @@ const App = {
         this.state.githubPat = e.target.value;
         localStorage.setItem('githubPat', e.target.value);
     }, 500));
+
+    this.elements.unlockCredentialsBtn.addEventListener('click', () => this.unlockCredentials());
 
     this.elements.qbGrid.addEventListener('click', ()=>this.updateViewMode('grid'));
     this.elements.qbList.addEventListener('click', ()=>this.updateViewMode('list'));
@@ -1581,8 +1586,16 @@ const App = {
   },
 
   async removeStreamer(name, platform){
-    if(!confirm(`Are you sure you want to remove ${name} from ${platform}?`)) return;
+    if(!confirm(`Are you sure you want to remove ${name} from ${platform}? This requires a PIN.`)) return;
     
+    const pin = prompt("Enter PIN to confirm removal:");
+    if (pin !== this.state.PIN) {
+        if (pin !== null) {
+            this.showToast('❌ Incorrect PIN. Removal cancelled.', 'error');
+        }
+        return;
+    }
+
     const newList = this.state.streamers.filter(s => !(s.name === name && s.platform === platform));
     const success = await this.updateGist(newList);
 
@@ -1598,6 +1611,31 @@ const App = {
         this.showToast(`🗑️ Removed ${name} and saved to Gist.`, 'success');
         this.render();
     }
+  },
+
+  unlockCredentials() {
+    const pin = prompt("Enter PIN to unlock credentials:");
+    if (pin === this.state.PIN) {
+        this.elements.gistIdInput.disabled = false;
+        this.elements.githubPatInput.disabled = false;
+        this.elements.twitchClientIdInput.disabled = false;
+        this.elements.twitchAccessTokenInput.disabled = false;
+        this.showToast('✅ Credentials unlocked.', 'success');
+        this.elements.unlockCredentialsBtn.textContent = '🔒 Lock Credentials';
+        this.elements.unlockCredentialsBtn.onclick = () => this.lockCredentials();
+    } else if (pin) {
+        this.showToast('❌ Incorrect PIN.', 'error');
+    }
+  },
+
+  lockCredentials() {
+    this.elements.gistIdInput.disabled = true;
+    this.elements.githubPatInput.disabled = true;
+    this.elements.twitchClientIdInput.disabled = true;
+    this.elements.twitchAccessTokenInput.disabled = true;
+    this.showToast('🔒 Credentials locked.', 'info');
+    this.elements.unlockCredentialsBtn.textContent = '🔓 Unlock Credentials';
+    this.elements.unlockCredentialsBtn.onclick = () => this.unlockCredentials();
   },
 
   toggleFavorite(name){
