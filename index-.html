@@ -596,7 +596,13 @@ const PWA = {
   async registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
 
-    const swCode = `
+    /*
+      NOTE: To enable PWA offline capabilities, you must create a file named 'sw.js'
+      in the same directory as your HTML file and paste the following code into it.
+      The previous method of creating a Blob URL for the service worker is not
+      supported in all browser environments.
+
+      --- START OF sw.js CONTENT ---
       const STATIC_CACHE = 'ktm-static-v1';
       const RUNTIME_CACHE = 'ktm-runtime-v1';
       const APP_SHELL = ['.'];
@@ -673,11 +679,10 @@ const PWA = {
       self.addEventListener('message', (e) => {
         if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
       });
-    `;
-    const blob = new Blob([swCode], { type: 'text/javascript' });
-    const swUrl = URL.createObjectURL(blob);
+      --- END OF sw.js CONTENT ---
+    */
     try {
-      await navigator.serviceWorker.register(swUrl, { scope: './' });
+      await navigator.serviceWorker.register('./sw.js', { scope: './' });
     } catch (err) {
       console.warn('[PWA] SW registration failed:', err);
     }
