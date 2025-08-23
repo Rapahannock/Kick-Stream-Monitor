@@ -1,243 +1,1899 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stream Embed: Twitch + Kick (with Logs)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Kick & Twitch Monitor Ultra v5.3</title>
+  <meta name="description" content="Monitor your favorite Kick and Twitch streamers with real-time updates, notifications, and enhanced accessibility">
+  <meta name="theme-color" content="#111111">
+  <!-- iOS / general PWA hints (safe even if unused on Samsung) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- We’ll inject icons + manifest dynamically so install works from a single HTML file -->
+
   <style>
-    :root { --bg:#0f172a; --panel:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --bad:#ef4444; --good:#22c55e; }
-    html, body { height:100%; margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
-    header { padding:14px 16px; border-bottom:1px solid #1f2937; background:linear-gradient(180deg, #0b1222, #0b1222cc 60%, transparent); position:sticky; top:0; z-index:10; }
-    h1 { font-size:16px; margin:0 0 6px; letter-spacing:0.4px; }
-    .row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
-    label { display:flex; gap:6px; align-items:center; color:var(--muted); }
-    select, input[type="text"] { background:#0b1020; border:1px solid #253046; color:var(--text); padding:8px 10px; border-radius:10px; outline:none; }
-    select:focus, input:focus { border-color:var(--accent); box-shadow:0 0 0 3px #22d3ee22; }
-    button { background:var(--accent); color:#001018; border:0; padding:9px 14px; border-radius:10px; font-weight:600; cursor:pointer; }
-    button.secondary { background:#1f2937; color:#cbd5e1; border:1px solid #334155; }
-    button.bad { background:var(--bad); color:white; }
-    .wrap { display:grid; grid-template-columns: 1fr 380px; gap:14px; padding:14px; }
-    .panel { background:var(--panel); border:1px solid #1f2937; border-radius:14px; overflow:hidden; }
-    .player { aspect-ratio:16/9; width:100%; height:auto; background:#0b1020; display:grid; place-items:center; }
-    iframe { width:100%; height:100%; border:0; }
-    .logs { height:calc(100% - 40px); display:flex; flex-direction:column; }
-    .logs header { padding:10px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #253046; background:#0b1222; position:sticky; top:0; }
-    .loglist { padding:10px; overflow:auto; white-space:pre-wrap; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .log { margin:0 0 6px; border-left:3px solid #334155; padding-left:8px; }
-    .log.info { border-color:#3b82f6; }
-    .log.warn { border-color:#f59e0b; }
-    .log.error { border-color:#ef4444; }
-    .kv { color:#a5b4fc; }
-    .hint { color:#93c5fd; font-size:12px; margin-left:4px; }
-    .footer { padding:10px; text-align:center; color:#9ca3af; }
-    @media (max-width: 1100px) { .wrap { grid-template-columns: 1fr; } }
+    :root{
+      --bg:#111; --text:#f0f0f0; --text-secondary:#b8c0cc;
+      --card:#1a1a1a; --border:#404040;
+      --accent:#4ade80; --accent-2:#86efac;
+      --live-glow:#4ade80; --toast-bg:#222; --toast-text:#fff; --skeleton-bg:#2a2a2a;
+      --error:#ef4444; --success:#10b981; --warning:#f59e0b; --info:#3b82f6;
+      --panel-bg:#1a1a1a; --panel-border:#333; --modal-bg:rgba(26,26,26,.8);
+      --shadow-1:0 1px 2px rgba(0,0,0,.24); --shadow-2:0 10px 24px rgba(0,0,0,.35);
+      --ring:0 0 0 3px rgba(74,222,128,.15); --radius:12px;
+    }
+    [data-theme="light"]{
+      --bg:#f8fafc; --text:#1a1a1a; --text-secondary:#475569;
+      --card:#fff; --border:#e2e8f0; --panel-bg:#f1f5f9; --panel-border:#cbd5e1;
+      --accent:#059669; --accent-2:#34d399; --live-glow:#059669;
+      --toast-bg:#eee; --toast-text:#000; --skeleton-bg:#e2e2e2;
+      --error:#dc2626; --success:#059669; --warning:#d97706; --info:#2563eb;
+      --shadow-1:0 1px 2px rgba(2,6,23,.06); --shadow-2:0 12px 28px rgba(2,6,23,.10);
+      --ring:0 0 0 3px rgba(5,150,105,.18);
+    }
+    *{box-sizing:border-box}
+    body{
+      color-scheme:light dark;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:var(--bg); color:var(--text);
+      margin:0; line-height:1.6; padding:0 20px 20px 20px;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      transition:background .3s,color .3s;
+    }
+    body.has-quickbar{ padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+    body.quickbar-hidden{ padding-bottom: 20px; }
+    *::-webkit-scrollbar{width:10px;height:10px}
+    *::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+    *::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    #app-container{max-width:1600px;margin:0 auto}
+    /* FLOATING HEADER (top-right) */
+    .app-header{
+      position:fixed; top:12px; right:12px; z-index:1200;
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px; margin:0;
+      border:1px solid var(--panel-border);
+      border-radius:12px; box-shadow:var(--shadow-2);
+      background:color-mix(in srgb, var(--panel-bg) 88%, transparent);
+      -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    }
+    .app-header .app-title{
+      margin:0; font-weight:800; letter-spacing:.2px;
+      font-size:clamp(1.0rem,2vw,1.2rem);
+      background-image:linear-gradient(90deg,var(--accent),var(--accent-2));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      white-space:nowrap;
+    }
+    .app-title small{color:var(--text);opacity:.6;font-weight:600;font-size:.6em}
+    .header-controls{display:flex;align-items:center;gap:8px}
+    .status-indicator{width:10px;height:10px;border-radius:50%;background:var(--success)}
+    .status-indicator.connected{background:var(--success)}
+    .status-indicator.connecting{background:var(--warning)}
+    .status-indicator.error{background:var(--error)}
+    #last-updated{font-size:.85em;opacity:.8;white-space:nowrap}
+    .icon-btn{
+      display:inline-grid;place-items:center;min-width:36px;min-height:36px;
+      border:1px solid var(--border); background:var(--card); color:var(--text);
+      border-radius:10px; cursor:pointer; transition:transform .15s,background .15s,border-color .15s;
+    }
+    .icon-btn:hover{transform:translateY(-1px); background:var(--panel-bg)}
+    .icon-btn:focus-visible{outline:none;box-shadow:var(--ring)}
+    .settings-toggle{
+      background:var(--accent); color:var(--bg); border:none; border-radius:10px;
+      padding:8px 12px; font-weight:800; cursor:pointer; transition:transform .2s,opacity .2s;
+      white-space:nowrap;
+    }
+    .settings-toggle:hover{opacity:.92; transform:translateY(-1px)}
+    .header-collapse{min-width:36px;min-height:36px}
+    .app-header.collapsed .app-title,
+    .app-header.collapsed #last-updated{display:none}
+    .app-header.collapsed .settings-toggle{padding:0; width:36px; height:36px}
+    .app-header.collapsed .settings-toggle{font-size:0}
+    .app-header.collapsed .settings-toggle::after{content:"⚙️"; font-size:18px}
+    .app-header .spacer{width:1px;height:20px;background:var(--panel-border);border-radius:1px}
+    @media (max-width:640px){ .app-header{top:10px;right:10px} }
+    /* MAIN: grid starts at the very top; header floats and takes no space */
+    main#main-content{ margin-top:0; padding-top:0; }
+    /* Grid/cards */
+    #streamers{display:grid;gap:12px; margin-top:0;}
+    #streamers.grid-view{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+    #streamers.list-view,#streamers.compact-view{grid-template-columns:1fr}
+    .streamer{
+      background:var(--card);border:1px solid var(--border);border-radius:12px;
+      padding:10px;display:flex;flex-direction:column;gap:6px;
+      transition:transform .2s,box-shadow .2s,background .2s,border-color .2s;
+      position:relative;box-shadow:var(--shadow-1)
+    }
+    .streamer:hover:not(.selected){transform:translateY(-2px);box-shadow:var(--shadow-2)}
+    .streamer.selected{border-color:var(--accent);box-shadow:var(--ring)}
+    .streamer.list-view,.streamer.compact-view{flex-direction:row;align-items:center;gap:12px;padding:10px 12px}
+    .streamer.kick.live{border-color:rgba(74,222,128,.45)}
+    .streamer.twitch.live{border-color:rgba(145, 70, 255, .45)}
+    .streamer.favorite{border-left:4px solid gold}
+    @keyframes go-live-pulse{0%{box-shadow:0 0 0 0 rgba(76,222,128,.7)}70%{box-shadow:0 0 0 10px rgba(76,222,128,0)}100%{box-shadow:0 0 0 0 rgba(76,222,128,0)}}
+    .newly-live{animation:go-live-pulse 2s ease-out;border-color:var(--accent)}
+    .streamer-checkbox{position:absolute;top:12px;right:12px;width:20px;height:20px;cursor:pointer;z-index:10;background:rgba(255,255,255,.9);border-radius:6px;padding:2px}
+    [data-theme="dark"] .streamer-checkbox{background:rgba(0,0,0,.7)}
+    .streamer.list-view .streamer-checkbox,.streamer.compact-view .streamer-checkbox{position:static;margin-right:12px;background:transparent;padding:0}
+    .streamer-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .streamer.list-view .streamer-header,.streamer.compact-view .streamer-header{flex:1;min-width:150px;gap:10px;align-items:center}
+    .streamer-avatar{width:24px;height:24px;border-radius:50%;background:var(--border);flex-shrink:0}
+    .streamer-name{font-weight:800;text-decoration:none;font-size:14px;line-height:1.2; display: inline-flex; align-items: center;}
+    .streamer.kick .streamer-name{color:var(--accent);}
+    .streamer.twitch .streamer-name{color:#9146FF;}
+    .streamer-name:hover{text-decoration:underline}
+    .streamer-status{font-weight:900;font-size:.78em;display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:var(--panel-bg);border:1px solid var(--panel-border)}
+    .live .streamer-status{color:var(--success);background:rgba(16,185,129,.1)}
+    .offline .streamer-status{color:var(--error);background:rgba(239,68,68,.1)}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:var(--error)}
+    .live .status-dot{background:var(--success);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    .streamer-info{display:flex;flex-direction:column;gap:2px}
+    .stream-title{font-size:12px;color:var(--text-secondary);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .streamer.list-view .stream-title{-webkit-line-clamp:1;font-size:.95em}
+    .stream-category{font-size:.8em;display:inline-flex;align-items:center;gap:6px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--panel-border);background:var(--panel-bg);width:max-content}
+    .stream-meta{display:flex;gap:12px;font-size:.75em;opacity:.9;margin-top:2px}
+    .uptime,.offline-time{color:var(--info);font-weight:700}
+    .offline-time{color:var(--warning)}
+    .thumbnail-container{position:relative;margin-top:4px}
+    .streamer.list-view .thumbnail-container{width:140px;flex-shrink:0;margin-top:0}
+    .thumbnail-preview{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:pointer;transition:opacity .2s,transform .2s;background:var(--skeleton-bg);border:1px solid var(--border)}
+    .thumbnail-preview.placeholder{object-fit:contain;padding:10%}
+    .thumbnail-container a:hover .thumbnail-preview{opacity:.9;transform:translateY(-1px)}
+    .viewer-overlay{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.82);color:#fff;padding:4px 8px;border-radius:999px;font-size:.8em;font-weight:900;border:1px solid rgba(255,255,255,.08)}
+    .live.kick .thumbnail-container::after{content:"";position:absolute;inset:-2px;border-radius:12px;pointer-events:none;box-shadow:0 0 0 0 rgba(74,222,128,.28);animation:liveGlowKick 3s ease-out infinite}
+    .live.twitch .thumbnail-container::after{content:"";position:absolute;inset:-2px;border-radius:12px;pointer-events:none;box-shadow:0 0 0 0 rgba(145, 70, 255, .28);animation:liveGlowTwitch 3s ease-out infinite}
+    @keyframes liveGlowKick{0%{box-shadow:0 0 0 0 rgba(74,222,128,.28)}70%{box-shadow:0 0 0 10px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
+    @keyframes liveGlowTwitch{0%{box-shadow:0 0 0 0 rgba(145, 70, 255, .28)}70%{box-shadow:0 0 0 10px rgba(145, 70, 255,0)}100%{box-shadow:0 0 0 0 rgba(145, 70, 255,0)}}
+    .streamer-actions{display:flex;justify-content:flex-end;align-items:center;gap:4px;z-index:5}
+    .streamer.grid-view .streamer-actions{position:absolute;bottom:8px;right:8px;background:rgba(26,26,26,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:4px;border-radius:999px;opacity:0;transform:translateY(5px);transition:opacity .2s,transform .2s}
+    .streamer.grid-view:hover .streamer-actions,.streamer.grid-view:focus-within .streamer-actions{opacity:1;transform:translateY(0)}
+    .action-btn{background:none;border:none;cursor:pointer;color:var(--text);font-size:14px;padding:4px;border-radius:8px;min-width:28px;min-height:28px;display:grid;place-items:center;transition:transform .15s,background .15s}
+    .action-btn:hover{background:var(--panel-bg);transform:scale(1.06)}
+    .action-btn:focus-visible{outline:none;box-shadow:var(--ring)}
+    .action-btn.remove{color:var(--error)}
+    .action-btn.favorite.active{color:gold}
+    /* COMPACT VIEW: single row, tidy */
+    .streamer.compact-view{padding:8px 10px;gap:10px;align-items:center}
+    .streamer.compact-view .thumbnail-container{display:none}
+    .streamer.compact-view .streamer-info{display:none}
+    .streamer.compact-view .streamer-header{gap:10px;align-items:center}
+    .streamer.compact-view .streamer-avatar{width:28px;height:28px}
+    .streamer.compact-view .streamer-name{font-size:.95em}
+    .streamer.compact-view .streamer-status{margin-left:auto;background:transparent;border:0;padding:0;font-size:.92em}
+    .streamer.compact-view .streamer-actions{margin-left:8px}
+    /* Controls under grid */
+    .view-controls{display:flex;gap:8px;align-items:center;margin:12px 0 12px 0}
+    .view-toggle{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700}
+    .view-toggle.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+    .bulk-actions{display:none;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:10px;padding:16px;margin:0 0 16px 0;gap:12px;align-items:center}
+    .bulk-actions.visible{display:flex}
+    .selection-count{font-size:14px;color:var(--accent);font-weight:800}
+    /* Stats & settings (below grid) */
+    .stats-panel,.groups-panel{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:12px;padding:20px;margin:0 0 16px 0}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:20px}
+    .stat{text-align:center;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow-1)}
+    .stat-value{display:block;font-size:1.8em;font-weight:800;color:var(--accent)}
+    .stat-label{display:block;font-size:.85em;opacity:.8;margin-top:4px;font-weight:600}
+    .settings-panel{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:var(--radius);margin:12px 0 0 0;overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:0;opacity:0}
+    .settings-panel.expanded{max-height:1500px;opacity:1}
+    .settings-content{padding:20px}
+    .settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px}
+    .setting-group{display:flex;flex-direction:column;gap:8px}
+    .setting-group label{font-weight:700;font-size:.92em}
+    .range-container{display:flex;align-items:center;gap:12px}
+    .range-display{font-size:.85em;color:var(--accent);min-width:90px;text-align:center;font-weight:700}
+    input,select,button{background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:12px; font-size:14px; width:100%; transition:border-color .2s,box-shadow .2s,transform .2s;}
+    input[type="color"]{height:42px;padding:6px}
+    input[type="range"]{padding:0;height:6px;background:var(--border);outline:none;-webkit-appearance:none;border-radius:999px}
+    input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:var(--accent);border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+    input[type="range"]::-moz-range-thumb{width:20px;height:20px;background:var(--accent);border:none;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+    input:focus-visible,select:focus-visible,button:focus-visible{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
+    button{cursor:pointer;background:var(--accent);color:var(--bg);font-weight:800;border:none}
+    button:hover:not(:disabled){opacity:.95;transform:translateY(-1px)}
+    button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    button.secondary{background:var(--card);color:var(--text);border:1px solid var(--border)}
+    .action-buttons{display:flex;gap:12px;flex-wrap:wrap}
+    .action-buttons button{flex:1;min-width:120px}
+    .empty-state{text-align:center;padding:60px 20px;color:var(--border)}
+    .empty-state h3{margin:0 0 16px 0;color:var(--text);font-size:1.3em}
+    /* Toast & Modals */
+    #toast{visibility:hidden;background:var(--toast-bg);color:var(--toast-text);text-align:center;border-radius:12px;padding:16px 24px;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:3001;box-shadow:0 8px 32px rgba(0,0,0,.3);opacity:0;transition:opacity .3s,visibility .3s;max-width:420px;border:1px solid var(--border)}
+    #toast.success{background:var(--success);color:#fff}
+    #toast.error{background:var(--error);color:#fff}
+    #toast.warning{background:var(--warning);color:#fff}
+    #toast.info{background:var(--info);color:#fff}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:2000;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+    .modal-content{background:var(--panel-bg);padding:24px;border-radius:12px;border:1px solid var(--border);box-shadow:0 10px 40px rgba(0,0,0,.5);max-width:90vw;max-height:90vh;width:440px;position:relative}
+    .modal-close{position:absolute;top:8px;right:8px;background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);padding:4px;line-height:1;border-radius:8px}
+    .modal-close:focus-visible{box-shadow:var(--ring)}
+    #thumbnail-modal .modal-content{background:transparent;border:none;box-shadow:none;padding:0;width:auto}
+    .enlarged-thumbnail{display:block;max-width:100%;max-height:85vh;border-radius:12px;cursor:pointer;transition:transform .2s;border:2px solid var(--border)}
+    .enlarged-thumbnail:hover{transform:scale(1.02)}
+    /* Sticky QUICKBAR (bottom) */
+    .sticky-quickbar{
+      position:fixed; z-index:1400;
+      left:12px; right:12px;
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      display:flex; align-items:center; gap:10px;
+      padding:8px; border-radius:16px;
+      background:color-mix(in srgb, var(--panel-bg) 85%, transparent);
+      -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+      border:1px solid var(--panel-border); box-shadow:var(--shadow-2);
+      transition:transform .25s ease, opacity .2s ease;
+    }
+    .quickbar-hidden .sticky-quickbar{ transform:translateY(130%); opacity:0; pointer-events:none; }
+    .quick-actions{display:flex;gap:6px}
+    .qb-btn{
+      display:inline-grid;place-items:center;min-width:40px;min-height:40px;
+      border:1px solid var(--panel-border); background:var(--card); color:var(--text);
+      border-radius:10px; cursor:pointer; font-size:18px; transition:transform .15s,background .15s,border-color .15s;
+    }
+    .qb-btn:hover{transform:translateY(-1px); background:var(--panel-bg)}
+    .qb-btn[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+    .qb-btn.hidden{display:none}
+    .quick-scroll{display:flex;gap:8px;overflow:auto;flex:1;padding-right:4px}
+    .chip{
+      display:inline-flex;align-items:center;gap:6px; padding:8px 12px; border-radius:999px;
+      border:1px solid var(--panel-border); background:var(--panel-bg); font-size:.92em; font-weight:700; cursor:pointer;
+      white-space:nowrap; user-select:none; transition:background .15s, border-color .15s, transform .15s;
+    }
+    .chip[aria-pressed="true"]{ background:var(--accent); color:var(--bg); border-color:var(--accent); }
+    .chip:hover{ transform:translateY(-1px); }
+    .setting-group .help-text { font-size: 0.8em; color: var(--text-secondary); margin-top: -4px; }
+    .setting-group .help-text a { color: var(--accent); }
+    /* Responsive */
+    @media (max-width:768px){
+      body{padding:16px}
+      .settings-grid{grid-template-columns:1fr}
+      .action-buttons{flex-direction:column}
+      .stats-grid{grid-template-columns:repeat(2,1fr)}
+      #streamers.grid-view{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+      #streamers.grid-view .streamer{padding:8px;gap:6px}
+      #streamers.grid-view .stream-title,#streamers.grid-view .stream-meta{display:none}
+      #streamers.grid-view .stream-category{display:flex;font-size:12px}
+      #streamers.grid-view .streamer-actions{opacity:1;transform:none;position:static;background:transparent;backdrop-filter:none;padding:0;margin-top:4px;gap:4px}
+      .qb-btn{min-width:42px;min-height:42px}
+    }
+    @media (max-width:480px){
+      .stats-grid{grid-template-columns:1fr}
+      .streamer.list-view{flex-direction:column;align-items:stretch}
+      .streamer.list-view .thumbnail-container{width:100%}
+      .streamer.list-view .streamer-list-view .thumbnail-preview{width:100%;height:auto}
+    }
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+      .streamer:hover,.action-btn:hover,button:hover:not(:disabled){transform:none}
+    }
+    /* Skip link */
+    .skip-link{position:absolute;top:-40px;left:6px;background:var(--accent);color:var(--bg);padding:8px;text-decoration:none;border-radius:8px;z-index:1500}
+    .skip-link:focus{top:6px}
   </style>
 </head>
-<body>
-  <header>
-    <h1>Stream Embed: Twitch + Kick</h1>
-    <div class="row">
-      <label>Platform
-        <select id="platform">
-          <option value="twitch">Twitch</option>
-          <option value="kick">Kick</option>
-        </select>
-      </label>
-      <label>Channel/User
-        <input id="channel" type="text" placeholder="channel name" />
-      </label>
-      <label><input id="autoplay" type="checkbox" /> Autoplay</label>
-      <label><input id="muted" type="checkbox" checked /> Start muted</label>
-      <button id="load">Load stream</button>
-      <button id="swap" class="secondary" title="Swap platform">Swap</button>
-      <span class="hint" id="hostHint"></span>
-    </div>
-  </header>
+<body data-theme="dark" data-density="comfortable" class="has-quickbar">
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <div class="wrap">
-    <div class="panel">
-      <div class="player" id="player">
-        <div style="text-align:center; padding:14px; color:#9ca3af;">
-          <div style="font-size:18px; margin-bottom:6px;">No stream loaded</div>
-          <div>Pick a platform, enter a channel, and hit <strong>Load stream</strong>.</div>
+  <div id="app-container">
+    <!-- FLOATING HEADER -->
+    <header class="app-header" id="app-header" role="region" aria-label="App toolbar">
+      <button id="header-collapse" class="icon-btn header-collapse" title="Collapse/Expand toolbar" aria-pressed="false">◧</button>
+      <h1 class="app-title">Kick & Twitch Monitor <small>v5.3</small></h1>
+      <div class="spacer" aria-hidden="true"></div>
+      <div class="header-controls">
+        <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
+        <div id="last-updated" aria-live="polite" title="Last updated time"></div>
+        <button class="icon-btn" id="install-btn" title="Install app" aria-label="Install app" style="display:none">📲</button>
+        <button class="icon-btn" id="shortcuts-btn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">❔</button>
+        <button class="settings-toggle" id="settings-toggle" aria-expanded="false">⚙️ Settings</button>
+      </div>
+    </header>
+
+    <!-- MAIN: Tiles first -->
+    <main id="main-content" aria-label="Streamer monitoring dashboard">
+      <div id="streamers" class="grid-view" role="grid" aria-describedby="streamers-help"></div>
+      <div id="streamers-help" class="sr-only">Grid of streamer cards showing live status, viewer count, and stream information</div>
+
+      <!-- Controls BELOW the grid -->
+      <div class="view-controls">
+        <button class="view-toggle active" data-view="grid" aria-label="Grid view">📱 Grid</button>
+        <button class="view-toggle" data-view="list" aria-label="List view">📋 List</button>
+        <button class="view-toggle" data-view="compact" aria-label="Compact view">📄 Compact</button>
+        <button id="select-mode-btn" class="view-toggle" aria-label="Selection mode">☑️ Select</button>
+      </div>
+
+      <div class="bulk-actions" id="bulk-actions">
+        <span class="selection-count" id="selection-count">0 selected</span>
+        <button id="bulk-watch-btn" class="secondary" disabled>📺 Watch Selected</button>
+        <button id="bulk-assign-group" class="secondary">📂 Assign Group</button>
+        <button id="bulk-favorite" class="secondary">⭐ Favorite</button>
+        <button id="bulk-unfavorite" class="secondary">☆ Unfavorite</button>
+        <button id="select-live" class="secondary">🔥 Select Live</button>
+        <button id="pick-top-4" class="secondary">🏆 Top 4</button>
+        <button id="copy-urls-btn" class="secondary">🔗 Copy URLs</button>
+        <button id="select-all">Select All</button>
+        <button id="clear-selection">Clear</button>
+      </div>
+
+      <!-- Stats -->
+      <div id="stats-container"></div>
+    </main>
+
+    <!-- Settings Panel -->
+    <section class="settings-panel" id="settings-panel">
+      <div class="settings-content">
+        <div class="settings-grid">
+          <div class="setting-group">
+            <label for="search-input">Search / Filter</label>
+            <input type="text" id="search-input" placeholder="Name, category, title..." aria-describedby="search-help">
+            <div id="search-help" class="sr-only">Search by streamer name, category, or stream title</div>
+          </div>
+
+          <div class="setting-group">
+            <label for="filter-select">View</label>
+            <select id="filter-select" aria-describedby="filter-help"></select>
+            <div id="filter-help" class="sr-only">Filter streamers by status</div>
+          </div>
+
+          <div class="setting-group">
+            <label for="sort-select">Sort By</label>
+            <select id="sort-select" aria-describedby="sort-help">
+              <option value="status">Live Status</option>
+              <option value="viewers">Viewer Count</option>
+              <option value="name">Name (A-Z)</option>
+              <option value="category">Category</option>
+              <option value="uptime">Stream Duration</option>
+            </select>
+            <div id="sort-help" class="sr-only">Sort streamers by different criteria</div>
+          </div>
+
+          <div class="setting-group">
+            <label>Viewer Count Range</label>
+            <div class="range-container" id="viewer-range">
+              <input type="range" id="viewer-min" class="range-input" min="0" max="10000" step="100" value="0" aria-label="Minimum viewers">
+              <span class="range-display" id="viewer-range-display">0 - ∞</span>
+              <input type="range" id="viewer-max" class="range-input" min="0" max="50000" step="500" value="50000" aria-label="Maximum viewers">
+            </div>
+          </div>
+
+          <div class="setting-group" id="auto-refresh-setting-group">
+            <label for="auto-refresh-select">Auto Refresh</label>
+            <select id="auto-refresh-select" aria-describedby="refresh-help">
+              <option value="0">Off</option>
+              <option value="60000">1 minute</option>
+              <option value="300000" selected>5 minutes</option>
+              <option value="600000">10 minutes</option>
+            </select>
+            <div id="refresh-help" class="sr-only">Automatically refresh streamer data</div>
+          </div>
+
+          <div class="setting-group">
+            <label for="add-input">Add Streamer</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="add-input" placeholder="Enter streamer name" style="flex: 1;" aria-describedby="add-help">
+                <select id="platform-select" style="flex-basis: 100px;">
+                    <option value="kick" selected>Kick</option>
+                    <option value="twitch">Twitch</option>
+                </select>
+                <button id="add-btn" style="flex-basis: 80px;">➕ Add</button>
+            </div>
+             <div id="add-help" class="sr-only">Add a new streamer to monitor</div>
+          </div>
+
+          <div class="setting-group">
+            <label for="accent-color">Accent Color</label>
+            <input type="color" id="accent-color" value="#4ade80" aria-describedby="accent-help">
+            <div id="accent-help" class="sr-only">Pick a custom accent color for the UI</div>
+          </div>
+
+          <div class="setting-group">
+            <label for="density-select">Card Density</label>
+            <select id="density-select" aria-label="Card density">
+              <option value="comfortable" selected>Comfortable</option>
+              <option value="compact">Compact</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="notifications-toggle">Notifications</label>
+            <select id="notifications-toggle" aria-label="Enable notifications on favorites going live">
+              <option value="on">On</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="data-saver-toggle">Data Saver (hide thumbnails)</label>
+            <select id="data-saver-toggle" aria-label="Data Saver">
+              <option value="off" selected>Off</option>
+              <option value="on">On</option>
+            </select>
+          </div>
+          
+          <div class="setting-group">
+            <label for="gist-id">GitHub Gist ID</label>
+            <input type="password" id="gist-id" placeholder="Enter your Gist ID">
+            <p class="help-text">Your streamer list is synced using a Gist.</p>
+          </div>
+          
+          <div class="setting-group">
+            <label for="github-pat">GitHub Personal Access Token</label>
+            <input type="password" id="github-pat" placeholder="Enter your GitHub PAT">
+            <p class="help-text">Required to update your Gist. Needs the `gist` scope. <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer">Create one here</a>.</p>
+          </div>
+
+          <div class="setting-group">
+            <label for="twitch-client-id">Twitch Client ID</label>
+            <input type="password" id="twitch-client-id" placeholder="Enter your Twitch Client ID">
+          </div>
+          
+          <div class="setting-group">
+            <label for="twitch-access-token">Twitch App Access Token</label>
+            <input type="password" id="twitch-access-token" placeholder="Enter your Twitch App Access Token">
+            <p class="help-text">Required for Twitch API. <a href="https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow" target="_blank" rel="noopener noreferrer">How to get credentials</a>.</p>
+          </div>
+
+        </div>
+        <div class="action-buttons">
+          <button id="refresh-btn">🔄 Refresh</button>
+          <button id="theme-toggle-btn">🌗 Toggle Theme</button>
+          <button id="export-btn">📤 Export</button>
+          <button onclick="document.getElementById('import-file').click()">📥 Import</button>
+          <input type="file" id="import-file" accept="application/json" style="display:none" aria-label="Import streamer list">
+        </div>
+        <div class="groups-panel">
+          <h3>Manage Groups</h3>
+          <div class="setting-group">
+            <input type="text" id="new-group-input" placeholder="New group name...">
+            <button id="add-group-btn">Create Group</button>
+          </div>
+          <div id="groups-list"></div>
         </div>
       </div>
-      <div class="footer">Tip: Twitch requires a <code>parent</code> domain. If you see a playback error, make sure you’re serving this page over HTTP(S) and the hostname matches.</div>
-    </div>
+    </section>
+  </div>
 
-    <div class="panel logs">
-      <header>
-        <div>Logs</div>
-        <div class="row">
-          <button id="download" class="secondary">Download</button>
-          <button id="clear" class="bad">Clear</button>
-        </div>
-      </header>
-      <div id="loglist" class="loglist" aria-live="polite"></div>
+  <!-- Sticky Quickbar -->
+  <div class="sticky-quickbar" id="quickbar" role="region" aria-label="Quick actions and filters">
+    <div class="quick-actions" role="group" aria-label="View & actions">
+      <button class="qb-btn" id="qb-grid" title="Grid view" aria-pressed="true">📱</button>
+      <button class="qb-btn" id="qb-list" title="List view" aria-pressed="false">📋</button>
+      <button class="qb-btn" id="qb-compact" title="Compact view" aria-pressed="false">📄</button>
+      <button class="qb-btn" id="qb-refresh" title="Refresh">🔄</button>
+      <button class="qb-btn" id="qb-select" title="Selection mode" aria-pressed="false">☑️</button>
+      <button class="qb-btn hidden" id="qb-install" title="Install app">📲</button>
+    </div>
+    <div class="quick-scroll" id="quickbar-chips" aria-label="Quick filters"></div>
+  </div>
+
+  <!-- Toast + SR live region -->
+  <div id="toast" role="alert" aria-live="assertive"></div>
+  <div id="status-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+  <!-- Thumbnail Modal -->
+  <div id="thumbnail-modal" class="modal-overlay">
+    <div class="modal-content">
+      <button id="thumbnail-modal-close" class="modal-close" title="Close (Esc)" aria-label="Close enlarged view">&times;</button>
+      <img id="enlarged-thumbnail" class="enlarged-thumbnail" src="" alt="Enlarged stream thumbnail">
     </div>
   </div>
 
-  <script>
-    const els = {
-      platform: document.getElementById('platform'),
-      channel: document.getElementById('channel'),
-      autoplay: document.getElementById('autoplay'),
-      muted: document.getElementById('muted'),
-      load: document.getElementById('load'),
-      swap: document.getElementById('swap'),
-      player: document.getElementById('player'),
-      loglist: document.getElementById('loglist'),
-      download: document.getElementById('download'),
-      clear: document.getElementById('clear'),
-      hostHint: document.getElementById('hostHint'),
+  <!-- Assign Group Modal -->
+  <div id="assign-group-modal" class="modal-overlay">
+    <div class="modal-content">
+      <button id="assign-group-modal-close" class="modal-close" title="Close (Esc)" aria-label="Close group assignment">&times;</button>
+      <h3>Assign to Groups</h3>
+      <div id="assign-group-modal-list"></div>
+      <button id="assign-group-save-btn">Save</button>
+    </div>
+  </div>
+
+  <!-- Multistream Modal -->
+  <div id="multistream-modal" class="modal-overlay">
+    <button id="multistream-modal-close" class="modal-close" title="Close (Esc)" aria-label="Close multistream view">&times;</button>
+    <div id="multistream-grid"></div>
+  </div>
+
+  <!-- Shortcuts Modal -->
+  <div id="shortcuts-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-labelledby="shortcuts-title" aria-modal="true">
+      <button id="shortcuts-modal-close" class="modal-close" title="Close (Esc)" aria-label="Close">&times;</button>
+      <h3 id="shortcuts-title">Keyboard Shortcuts</h3>
+      <ul>
+        <li><b>r</b> — Refresh</li>
+        <li><b>f</b> — Focus search</li>
+        <li><b>g / l / c</b> — Grid / List / Compact view</li>
+        <li><b>s</b> — Toggle selection mode</li>
+        <li><b>t</b> — Toggle theme</li>
+        <li><b>h</b> — Toggle settings</li>
+        <li><b>?</b> — Show this help</li>
+        <li><b>Esc</b> — Close modals</li>
+      </ul>
+    </div>
+  </div>
+
+<script>
+/* ===================== PWA (Manifest + Service Worker + Install UI) ===================== */
+const PWA = {
+  deferredPrompt: null,
+  iconCache: {},
+
+  async init() {
+    try {
+      await this.injectManifest();
+      await this.registerServiceWorker();
+      this.setupInstallUI();
+      this.reflectDisplayMode();
+    } catch (e) {
+      console.warn('[PWA] init error:', e);
+    }
+  },
+
+  async injectManifest() {
+    const icon192 = await this.generateIcon(192);
+    const icon512 = await this.generateIcon(512);
+
+    const theme = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4ade80';
+    const manifest = {
+      name: 'Kick & Twitch Monitor',
+      short_name: 'KTM',
+      description: 'Monitor your favorite Kick and Twitch streamers.',
+      start_url: './?source=pwa',
+      scope: './',
+      display: 'standalone',
+      background_color: '#111111',
+      theme_color: theme,
+      icons: [
+        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
     };
 
-    // Simple logger with levels and persistence
-    const LOGS_KEY = 'streamEmbedLogs';
-    let logs = JSON.parse(localStorage.getItem(LOGS_KEY) || '[]');
+    const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/manifest+json' });
+    const url = URL.createObjectURL(blob);
 
-    function log(level, msg, kv) {
-      const entry = { ts: new Date().toISOString(), level, msg, kv: kv || null };
-      logs.push(entry);
-      localStorage.setItem(LOGS_KEY, JSON.stringify(logs).slice(-50000));
-      const div = document.createElement('div');
-      div.className = `log ${level}`;
-      const meta = `[${new Date(entry.ts).toLocaleString()}] [${level.toUpperCase()}]`;
-      let text = `${meta} ${msg}`;
-      if (kv && typeof kv === 'object') {
-        text += '\n' + Object.entries(kv).map(([k,v]) => `  · ${k}: ${JSON.stringify(v)}`).join('\n');
-      }
-      div.textContent = text;
-      els.loglist.appendChild(div);
-      els.loglist.scrollTop = els.loglist.scrollHeight;
-    }
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = url;
+    document.head.appendChild(link);
 
-    // Hostname hint, useful for Twitch parent param
-    (function() {
-      const host = location.hostname || '(file://)';
-      els.hostHint.textContent = `Host: ${host}`;
-      if (!location.protocol.startsWith('http')) {
-        log('warn', 'Page is not served over HTTP(S). Twitch embeds may fail due to missing parent domain. Use a local dev server like `python -m http.server`.', { protocol: location.protocol });
-      } else {
-        log('info', 'Page served over HTTP(S).', { host });
-      }
-    })();
+    const apple = document.createElement('link');
+    apple.rel = 'apple-touch-icon';
+    apple.href = icon192;
+    document.head.appendChild(apple);
+  },
 
-    function twitchSrc(channel, opts) {
-      // Opt for the non-interactive iframe for simplicity
-      // https://player.twitch.tv/?channel=<name>&parent=<domain>&muted=true
-      const parent = (location.hostname || '').split(':')[0] || 'localhost';
-      const q = new URLSearchParams({ channel, parent });
-      if (opts.autoplay) q.set('autoplay', 'true');
-      if (opts.muted) q.set('muted', 'true');
-      return `https://player.twitch.tv/?${q.toString()}`;
-    }
+  async generateIcon(size = 192) {
+    if (this.iconCache[size]) return this.iconCache[size];
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
 
-    function kickSrc(user, opts) {
-      // Kick embed docs: https://player.kick.com/<username>
-      const q = new URLSearchParams();
-      if (opts.autoplay) q.set('autoplay', 'true');
-      if (opts.muted) q.set('muted', 'true');
-      const qs = q.toString();
-      return `https://player.kick.com/${encodeURIComponent(user)}${qs ? ('?' + qs) : ''}`;
-    }
+    const grad = ctx.createLinearGradient(0, 0, size, size);
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4ade80';
+    const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent-2').trim() || '#86efac';
+    grad.addColorStop(0, accent);
+    grad.addColorStop(1, accent2);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
 
-    function setPlayer(src, title) {
-      els.player.innerHTML = '';
-      const frame = document.createElement('iframe');
-      frame.allowFullscreen = true;
-      frame.referrerPolicy = 'origin-when-cross-origin';
-      frame.src = src;
-      frame.title = title || 'Stream Player';
-      // Event hooks
-      let loaded = false;
-      frame.addEventListener('load', () => {
-        loaded = true;
-        log('info', 'Iframe loaded.', { src });
-      }, { once: true });
-      frame.addEventListener('error', (e) => {
-        log('error', 'Iframe error event.', { src, error: String(e) });
+    ctx.fillStyle = '#0f172a';
+    ctx.globalAlpha = 0.2;
+    ctx.fillRect(size*0.1, size*0.1, size*0.8, size*0.8);
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `${Math.floor(size*0.6)}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('KT', size/2, size/2 + size*0.06);
+
+    const url = c.toDataURL('image/png');
+    this.iconCache[size] = url;
+    return url;
+  },
+
+  async registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+
+    const swCode = `
+      const STATIC_CACHE = 'ktm-static-v1';
+      const RUNTIME_CACHE = 'ktm-runtime-v1';
+      const APP_SHELL = ['.'];
+
+      self.addEventListener('install', (event) => {
+        event.waitUntil(
+          caches.open(STATIC_CACHE)
+            .then(cache => cache.addAll(APP_SHELL))
+            .then(() => self.skipWaiting())
+        );
       });
 
-      // Timeout watchdog for silent failures
-      const watchdog = setTimeout(() => {
-        if (!loaded) {
-          log('warn', 'Iframe did not finish loading in 8s. This often means a blocked embed or wrong parent domain.', { src });
-          if (src.includes('player.twitch.tv') && (!location.hostname || !location.protocol.startsWith('http'))) {
-            log('error', 'Twitch requires a valid parent domain over HTTPS. Serve this file via a web server and ensure the hostname is correct.', { tip: 'Use `http://localhost:8080` or similar.' });
-          }
+      self.addEventListener('activate', (event) => {
+        event.waitUntil(
+          caches.keys().then(keys => Promise.all(
+            keys.filter(k => ![STATIC_CACHE, RUNTIME_CACHE].includes(k))
+                .map(k => caches.delete(k))
+          ))
+          .then(() => self.clients.claim())
+        );
+      });
+
+      self.addEventListener('fetch', (event) => {
+        const req = event.request;
+        if (req.method !== 'GET') return;
+
+        const url = new URL(req.url);
+
+        if (req.mode === 'navigate') {
+          event.respondWith(
+            fetch(req).then(res => {
+              const copy = res.clone();
+              caches.open(STATIC_CACHE).then(c => c.put('.', copy));
+              return res;
+            }).catch(() => caches.match('.') )
+          );
+          return;
         }
-      }, 8000);
 
-      els.player.appendChild(frame);
-      return () => clearTimeout(watchdog);
+        if (url.origin !== self.location.origin) {
+          if (url.href.includes('/api/v1/channels/') || url.href.includes('api.twitch.tv') || url.href.includes('api.github.com')) {
+            event.respondWith(networkFirst(req));
+            return;
+          }
+          if (req.destination === 'image') {
+            event.respondWith(cacheFirst(req));
+            return;
+          }
+          return;
+        }
+
+        event.respondWith(cacheFirst(req));
+      });
+
+      function cacheFirst(request) {
+        return caches.match(request).then(cached => {
+          if (cached) return cached;
+          return fetch(request).then(res => {
+            const copy = res.clone();
+            caches.open(RUNTIME_CACHE).then(c => c.put(request, copy));
+            return res;
+          });
+        });
+      }
+
+      function networkFirst(request) {
+        return fetch(request).then(res => {
+          const copy = res.clone();
+          caches.open(RUNTIME_CACHE).then(c => c.put(request, copy));
+          return res;
+        }).catch(() => caches.match(request));
+      }
+
+      self.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+      });
+    `;
+    const blob = new Blob([swCode], { type: 'text/javascript' });
+    const swUrl = URL.createObjectURL(blob);
+    try {
+      await navigator.serviceWorker.register(swUrl, { scope: './' });
+    } catch (err) {
+      console.warn('[PWA] SW registration failed:', err);
     }
+  },
 
-    function loadStream() {
-      const platform = els.platform.value.trim();
-      const channel = els.channel.value.trim();
-      const opts = { autoplay: els.autoplay.checked, muted: els.muted.checked };
-      if (!channel) {
-        log('warn', 'Channel/user is empty.');
-        alert('Enter a channel name.');
+  setupInstallUI() {
+    const headerBtn = document.getElementById('install-btn');
+    const quickBtn = document.getElementById('qb-install');
+
+    const showInstall = (show) => {
+      headerBtn.style.display = show ? '' : 'none';
+      quickBtn.classList.toggle('hidden', !show);
+    };
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) showInstall(false);
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredPrompt = e;
+      showInstall(true);
+    });
+
+    const promptInstall = async () => {
+      if (!this.deferredPrompt) {
+        alert('To install: open browser menu and choose “Add to apps” / “Install app”.');
         return;
       }
-      try {
-        let src = '';
-        if (platform === 'twitch') {
-          src = twitchSrc(channel, opts);
-        } else if (platform === 'kick') {
-          src = kickSrc(channel, opts);
+      this.deferredPrompt.prompt();
+      const { outcome } = await this.deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('PWA install accepted');
+      }
+      this.deferredPrompt = null;
+      showInstall(false);
+    };
+
+    headerBtn.addEventListener('click', promptInstall);
+    quickBtn.addEventListener('click', promptInstall);
+
+    window.addEventListener('appinstalled', () => showInstall(false));
+  },
+
+  reflectDisplayMode() {
+    const handler = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+      document.documentElement.classList.toggle('pwa-installed', !!standalone);
+    };
+    handler();
+    ['resize','visibilitychange'].forEach(ev => window.addEventListener(ev, handler));
+  }
+};
+/* =================== End PWA block =================== */
+
+
+/*** Utilities ***/
+const Utils = {
+  debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a), wait); }; },
+  throttle(fn, ms){ let ok=true; return function(){ if(!ok) return; fn.apply(this, arguments); ok=false; setTimeout(()=>ok=true, ms); }; },
+  formatNumber(n){ if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toString(); },
+  formatDuration(m){ if(m<60) return `${m}m`; const h=Math.floor(m/60), min=m%60; if(h<24) return `${h}h ${min}m`; const d=Math.floor(h/24), rh=h%24; return `${d}d ${rh}h`; },
+  sanitizeHTML(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; },
+  calculateUptime(start){ if(!start) return 0; return Math.floor((new Date()-new Date(start))/(1000*60)); },
+  calculateOfflineTime(last){ if(!last) return 0; return Math.floor((new Date()-new Date(last))/(1000*60)); },
+  hexToHsl(hex){
+    hex=hex.replace('#',''); if(hex.length===3) hex=[...hex].map(x=>x+x).join('');
+    const r=parseInt(hex.slice(0,2),16)/255, g=parseInt(hex.slice(2,4),16)/255, b=parseInt(hex.slice(4,6),16)/255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b); let h,s,l=(max+min)/2;
+    if(max===min){ h=s=0; } else {
+      const d=max-min; s=l>0.5? d/(2-max-min) : d/(max+min);
+      switch(max){ case r:h=(g-b)/d + (g<b?6:0); break; case g:h=(b-r)/d + 2; break; case b:h=(r-g)/d + 4; break; } h*=60;
+    }
+    return {h, s: s*100, l: l*100};
+  },
+  hslToHex(h,s,l){
+    s/=100; l/=100; const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l);
+    const f=n=>l - a*Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n),1)));
+    const toHex=x=>Math.round(x*255).toString(16).padStart(2,'0');
+    return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+  },
+  lighten(hex, amt=28){ const {h,s,l}=Utils.hexToHsl(hex); const nl=Math.max(0, Math.min(100, l+amt)); return Utils.hslToHex(h, s, nl); }
+};
+
+/*** Cache ***/
+class CacheManager{
+  constructor(ttl=60000){ this.cache=new Map(); this.ttl=ttl; }
+  set(k,d,ttl=this.ttl){ this.cache.set(k,{d,t:Date.now(),ttl}); }
+  get(k){ const it=this.cache.get(k); if(!it) return null; if(Date.now()-it.t>it.ttl){ this.cache.delete(k); return null; } return it.d; }
+  clear(){ this.cache.clear(); }
+  cleanup(){ const now=Date.now(); for(const [k,v] of this.cache.entries()) if(now-v.t>v.ttl) this.cache.delete(k); }
+}
+
+/*** Stats ***/
+class StatsManager{
+  constructor(){ this.history=JSON.parse(localStorage.getItem('stream-history')||'{}'); this.offline=JSON.parse(localStorage.getItem('offline-tracking')||'{}'); setInterval(()=>this.cleanup(),3600000); }
+  recordSnapshot(items){
+    const ts=Date.now(), live=items.filter(s=>s.isLive), totalViewers=live.reduce((a,s)=>a+(s.viewers||0),0);
+    items.forEach(s=>{ if(!s.isLive){ if(!this.offline[s.name]) this.offline[s.name]=ts; } else { delete this.offline[s.name]; } });
+    this.history[ts]={timestamp:ts,totalStreamers:items.length,liveStreamers:live.length,totalViewers,categories:this.dist(live),topStreamer:this.top(live)};
+    this.cleanup();
+    localStorage.setItem('stream-history', JSON.stringify(this.history));
+    localStorage.setItem('offline-tracking', JSON.stringify(this.offline));
+  }
+  offlineTime(name){ const start=this.offline[name]; if(!start) return 0; return Math.floor((Date.now()-start)/(1000*60)); }
+  dist(items){ const d={}; items.forEach(s=>{ if(s.category) d[s.category]=(d[s.category]||0)+1; }); return d; }
+  top(items){ if(!items.length) return null; return items.reduce((t,c)=>(c.viewers||0)>(t.viewers||0)?c:t); }
+  stats(){
+    const snaps=Object.values(this.history); if(!snaps.length) return null;
+    const latest=snaps[snaps.length-1], hourAgo=Date.now()-3600000, recent=snaps.filter(s=>s.timestamp>hourAgo);
+    const averageLive = recent.length ? Math.round(recent.reduce((a,s)=>a+s.liveStreamers,0)/recent.length) : 0;
+    const peakViewers = Math.max(...snaps.map(s=>s.totalViewers));
+    const topCategory = (()=>{ const c=latest.categories; if(!c||!Object.keys(c).length) return null; return Object.entries(c).reduce((a,b)=>a[1]>b[1]?a:b)[0]; })();
+    return {current:latest, peakViewers, averageLive, topCategory};
+  }
+  cleanup(){
+    const dayAgo=Date.now()-86400000; this.history=Object.fromEntries(Object.entries(this.history).filter(([k])=>parseInt(k)>dayAgo));
+    const weekAgo=Date.now()-604800000; this.offline=Object.fromEntries(Object.entries(this.offline).filter(([_,v])=>v>weekAgo));
+  }
+}
+
+/*** App ***/
+const App = {
+  state:{
+    streamers:[], streamerData:new Map(), favorites:[], groups:{},
+    isLoading:true, filter:'all', sort:'status', searchQuery:'',
+    lastLiveStates:{}, autoRefreshInterval:null, autoRefreshDelay:300000,
+    connectionStatus:'connected', viewMode:'grid', selectionMode:false, selectedStreamers:new Set(),
+    viewerRange:{min:0,max:50000}, settingsExpanded:false, lastFocusedElement:null,
+    notificationsEnabled:true, accentColor:'#4ade80', density:'comfortable',
+    dataSaver:false, headerCollapsed:false,
+    twitchClientId: '', twitchAccessToken: '',
+    gistId: '', githubPat: ''
+  },
+
+  PLACEHOLDER_THUMBNAIL:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='%23404040'%3E%3Cpath d='M14 0H2C.9 0 0 .9 0 2v5c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm-1.5 5.5l-2.5-3-3.5 4.5-1.5-2-3.5 4.5h11l-1-1z'/%3E%3C/svg%3E",
+
+  cache:new CacheManager(60000),
+  stats:new StatsManager(),
+  elements:{},
+
+  init(){
+    this.cacheElements();
+    this.loadSettings();
+    this.renderGroupsList();
+    this.populateFilterDropdown();
+    this.renderQuickFilters();
+    this.registerEventListeners();
+    this.setupKeyboardNavigation();
+    this.requestNotificationPermission();
+    this.startPeriodicCleanup();
+    this.updateThemeColorMeta();
+    this.fetchStreamerList();
+    this.styleRangeTracks();
+    this.enableQuickbar();
+    this.attachLongPressSelection();
+    this.applyHeaderCollapsed(this.state.headerCollapsed);
+  },
+
+  cacheElements(){
+    this.elements = {
+      header: document.getElementById('app-header'),
+      headerCollapse: document.getElementById('header-collapse'),
+      container: document.getElementById('streamers'),
+      searchInput: document.getElementById('search-input'),
+      filterSelect: document.getElementById('filter-select'),
+      sortSelect: document.getElementById('sort-select'),
+      autoRefreshSelect: document.getElementById('auto-refresh-select'),
+      viewerMin: document.getElementById('viewer-min'),
+      viewerMax: document.getElementById('viewer-max'),
+      viewerRangeDisplay: document.getElementById('viewer-range-display'),
+      addInput: document.getElementById('add-input'),
+      platformSelect: document.getElementById('platform-select'),
+      addBtn: document.getElementById('add-btn'),
+      refreshBtn: document.getElementById('refresh-btn'),
+      themeBtn: document.getElementById('theme-toggle-btn'),
+      exportBtn: document.getElementById('export-btn'),
+      importFile: document.getElementById('import-file'),
+      lastUpdated: document.getElementById('last-updated'),
+      toast: document.getElementById('toast'),
+      statsContainer: document.getElementById('stats-container'),
+      statusIndicator: document.getElementById('connection-status'),
+      announcements: document.getElementById('status-announcements'),
+      selectModeBtn: document.getElementById('select-mode-btn'),
+      bulkActions: document.getElementById('bulk-actions'),
+      selectionCount: document.getElementById('selection-count'),
+      bulkFavorite: document.getElementById('bulk-favorite'),
+      bulkUnfavorite: document.getElementById('bulk-unfavorite'),
+      bulkAssignGroup: document.getElementById('bulk-assign-group'),
+      bulkWatchBtn: document.getElementById('bulk-watch-btn'),
+      selectAll: document.getElementById('select-all'),
+      clearSelection: document.getElementById('clear-selection'),
+      settingsToggle: document.getElementById('settings-toggle'),
+      settingsPanel: document.getElementById('settings-panel'),
+      shortcutsBtn: document.getElementById('shortcuts-btn'),
+      shortcutsModal: document.getElementById('shortcuts-modal'),
+      shortcutsModalClose: document.getElementById('shortcuts-modal-close'),
+      accentColor: document.getElementById('accent-color'),
+      densitySelect: document.getElementById('density-select'),
+      notificationsToggle: document.getElementById('notifications-toggle'),
+      selectLiveBtn: document.getElementById('select-live'),
+      pickTop4Btn: document.getElementById('pick-top-4'),
+      copyUrlsBtn: document.getElementById('copy-urls-btn'),
+      thumbnailModal: document.getElementById('thumbnail-modal'),
+      enlargedThumbnail: document.getElementById('enlarged-thumbnail'),
+      modalCloseBtn: document.getElementById('thumbnail-modal-close'),
+      newGroupInput: document.getElementById('new-group-input'),
+      addGroupBtn: document.getElementById('add-group-btn'),
+      groupsList: document.getElementById('groups-list'),
+      assignGroupModal: document.getElementById('assign-group-modal'),
+      assignGroupModalList: document.getElementById('assign-group-modal-list'),
+      assignGroupModalCloseBtn: document.getElementById('assign-group-modal-close'),
+      assignGroupSaveBtn: document.getElementById('assign-group-save-btn'),
+      multistreamModal: document.getElementById('multistream-modal'),
+      multistreamGrid: document.getElementById('multistream-grid'),
+      multistreamModalCloseBtn: document.getElementById('multistream-modal-close'),
+      quickbar: document.getElementById('quickbar'),
+      qbGrid: document.getElementById('qb-grid'),
+      qbList: document.getElementById('qb-list'),
+      qbCompact: document.getElementById('qb-compact'),
+      qbRefresh: document.getElementById('qb-refresh'),
+      qbSelect: document.getElementById('qb-select'),
+      qbInstall: document.getElementById('qb-install'),
+      quickFilters: document.getElementById('quickbar-chips'),
+      dataSaverToggle: document.getElementById('data-saver-toggle'),
+      installBtn: document.getElementById('install-btn'),
+      twitchClientIdInput: document.getElementById('twitch-client-id'),
+      twitchAccessTokenInput: document.getElementById('twitch-access-token'),
+      gistIdInput: document.getElementById('gist-id'),
+      githubPatInput: document.getElementById('github-pat'),
+    };
+  },
+
+  loadSettings(){
+    const theme = localStorage.getItem("theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.body.setAttribute("data-theme", theme);
+
+    this.state.favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+    this.state.groups = JSON.parse(localStorage.getItem("groups") || "{}");
+    this.state.filter = localStorage.getItem("filter") || 'all';
+    this.state.sort = localStorage.getItem("sort") || 'status';
+    this.state.autoRefreshDelay = parseInt(localStorage.getItem("autoRefreshDelay") || "300000");
+    const storedViewMode = localStorage.getItem("viewMode");
+    this.state.viewMode = storedViewMode || (window.innerWidth <= 520 ? 'compact' : 'grid');
+    this.state.viewerRange = JSON.parse(localStorage.getItem("viewerRange") || '{"min":0,"max":50000}');
+    this.state.settingsExpanded = JSON.parse(localStorage.getItem("settingsExpanded") || 'false');
+    this.state.accentColor = localStorage.getItem("accentColor") || this.state.accentColor;
+    this.state.density = localStorage.getItem("density") || 'comfortable';
+    this.state.notificationsEnabled = (localStorage.getItem("notificationsEnabled") || 'on') === 'on';
+    this.state.dataSaver = (localStorage.getItem("dataSaver") || 'off') === 'on';
+    this.state.headerCollapsed = (localStorage.getItem("headerCollapsed") || 'false') === 'true';
+    this.state.twitchClientId = localStorage.getItem("twitchClientId") || '';
+    this.state.twitchAccessToken = localStorage.getItem("twitchAccessToken") || '';
+    this.state.gistId = localStorage.getItem("gistId") || '';
+    this.state.githubPat = localStorage.getItem("githubPat") || '';
+
+    this.elements.filterSelect.value = this.state.filter;
+    this.elements.sortSelect.value = this.state.sort;
+    this.elements.autoRefreshSelect.value = this.state.autoRefreshDelay;
+    this.elements.viewerMin.value = this.state.viewerRange.min;
+    this.elements.viewerMax.value = this.state.viewerRange.max;
+    this.elements.accentColor.value = this.state.accentColor;
+    this.elements.densitySelect.value = this.state.density;
+    this.elements.notificationsToggle.value = this.state.notificationsEnabled ? 'on' : 'off';
+    this.elements.dataSaverToggle.value = this.state.dataSaver ? 'on' : 'off';
+    this.elements.twitchClientIdInput.value = this.state.twitchClientId;
+    this.elements.twitchAccessTokenInput.value = this.state.twitchAccessToken;
+    this.elements.gistIdInput.value = this.state.gistId;
+    this.elements.githubPatInput.value = this.state.githubPat;
+
+    this.applyAccent(this.state.accentColor);
+    this.applyDensity(this.state.density);
+
+    this.updateViewMode(this.state.viewMode);
+    this.updateViewerRangeDisplay();
+    this.updateSettingsPanel();
+    this.startAutoRefresh(this.state.autoRefreshDelay);
+  },
+
+  registerEventListeners(){
+    this.elements.headerCollapse.addEventListener('click', ()=>{
+      this.state.headerCollapsed = !this.state.headerCollapsed;
+      localStorage.setItem('headerCollapsed', this.state.headerCollapsed ? 'true' : 'false');
+      this.applyHeaderCollapsed(this.state.headerCollapsed);
+    });
+
+    document.addEventListener('focusin', e=>{
+      if(e.target.matches('input, textarea, [contenteditable="true"], select')) document.body.classList.add('quickbar-hidden');
+    });
+    document.addEventListener('focusout', ()=>{
+      setTimeout(()=>document.body.classList.remove('quickbar-hidden'), 200);
+    });
+
+    this.elements.settingsToggle.addEventListener('click', ()=>this.toggleSettings());
+
+    this.elements.searchInput.addEventListener('input', Utils.debounce(e=>{
+      this.state.searchQuery = e.target.value.toLowerCase();
+      this.render();
+    },300));
+
+    this.elements.filterSelect.addEventListener('change', e=>{
+      this.state.filter = e.target.value; localStorage.setItem("filter", this.state.filter);
+      this.syncQuickFilters(); this.render();
+    });
+    this.elements.sortSelect.addEventListener('change', e=>{
+      this.state.sort = e.target.value; localStorage.setItem("sort", this.state.sort); this.render();
+    });
+    this.elements.autoRefreshSelect.addEventListener('change', e=>{
+      this.state.autoRefreshDelay = parseInt(e.target.value);
+      localStorage.setItem("autoRefreshDelay", this.state.autoRefreshDelay);
+      this.startAutoRefresh(this.state.autoRefreshDelay);
+    });
+
+    const updMin = Utils.throttle(()=>{ this.state.viewerRange.min=parseInt(this.elements.viewerMin.value); this.updateViewerRangeDisplay(); localStorage.setItem("viewerRange", JSON.stringify(this.state.viewerRange)); this.styleRangeTracks(); this.render(); },100);
+    const updMax = Utils.throttle(()=>{ this.state.viewerRange.max=parseInt(this.elements.viewerMax.value); this.updateViewerRangeDisplay(); localStorage.setItem("viewerRange", JSON.stringify(this.state.viewerRange)); this.styleRangeTracks(); this.render(); },100);
+    this.elements.viewerMin.addEventListener('input',updMin);
+    this.elements.viewerMax.addEventListener('input',updMax);
+
+    document.querySelectorAll('.view-toggle[data-view]').forEach(btn=>{
+      btn.addEventListener('click', e=>this.updateViewMode(e.target.dataset.view));
+    });
+
+    this.elements.selectModeBtn.addEventListener('click', ()=>this.toggleSelectionMode());
+    document.getElementById('bulk-favorite').addEventListener('click', ()=>this.bulkToggleFavorite(true));
+    document.getElementById('bulk-unfavorite').addEventListener('click', ()=>this.bulkToggleFavorite(false));
+    document.getElementById('select-all').addEventListener('click', ()=>this.selectAllStreamers());
+    document.getElementById('clear-selection').addEventListener('click', ()=>this.clearSelection());
+    document.getElementById('bulk-watch-btn').addEventListener('click', ()=>this.showMultistreamModal());
+    document.getElementById('select-live').addEventListener('click', ()=>this.selectLive());
+    document.getElementById('pick-top-4').addEventListener('click', ()=>this.pickTopN(4));
+    document.getElementById('copy-urls-btn').addEventListener('click', ()=>this.copySelectedUrls());
+
+    this.elements.themeBtn.addEventListener('click', ()=>this.toggleTheme());
+    this.elements.refreshBtn.addEventListener('click', ()=>this.fetchStreamerData());
+    this.elements.addBtn.addEventListener('click', ()=>this.addStreamer());
+    this.elements.addInput.addEventListener('keyup', e=>{ if(e.key==='Enter') this.addStreamer(); });
+    this.elements.exportBtn.addEventListener('click', ()=>this.exportList());
+    this.elements.importFile.addEventListener('change', e=>this.importList(e));
+
+    this.elements.accentColor.addEventListener('input', e=>{ this.applyAccent(e.target.value); localStorage.setItem('accentColor', e.target.value); this.styleRangeTracks(); });
+    this.elements.densitySelect.addEventListener('change', e=>{ this.applyDensity(e.target.value); localStorage.setItem('density', e.target.value); });
+
+    this.elements.notificationsToggle.addEventListener('change', e=>{
+      this.state.notificationsEnabled = (e.target.value==='on');
+      localStorage.setItem('notificationsEnabled', this.state.notificationsEnabled ? 'on' : 'off');
+      if(this.state.notificationsEnabled) this.requestNotificationPermission();
+    });
+
+    this.elements.dataSaverToggle.addEventListener('change', e=>{
+      this.state.dataSaver = (e.target.value==='on');
+      localStorage.setItem('dataSaver', this.state.dataSaver ? 'on' : 'off');
+      this.render();
+    });
+
+    this.elements.twitchClientIdInput.addEventListener('input', Utils.debounce(e => {
+        this.state.twitchClientId = e.target.value;
+        localStorage.setItem('twitchClientId', e.target.value);
+    }, 500));
+    this.elements.twitchAccessTokenInput.addEventListener('input', Utils.debounce(e => {
+        this.state.twitchAccessToken = e.target.value;
+        localStorage.setItem('twitchAccessToken', e.target.value);
+    }, 500));
+    this.elements.gistIdInput.addEventListener('input', Utils.debounce(e => {
+        this.state.gistId = e.target.value;
+        localStorage.setItem('gistId', e.target.value);
+    }, 500));
+    this.elements.githubPatInput.addEventListener('input', Utils.debounce(e => {
+        this.state.githubPat = e.target.value;
+        localStorage.setItem('githubPat', e.target.value);
+    }, 500));
+
+    this.elements.qbGrid.addEventListener('click', ()=>this.updateViewMode('grid'));
+    this.elements.qbList.addEventListener('click', ()=>this.updateViewMode('list'));
+    this.elements.qbCompact.addEventListener('click', ()=>this.updateViewMode('compact'));
+    this.elements.qbRefresh.addEventListener('click', ()=>this.fetchStreamerData());
+    this.elements.qbSelect.addEventListener('click', ()=>this.toggleSelectionMode());
+
+    document.getElementById('add-group-btn').addEventListener('click', ()=>this.createGroup());
+    document.getElementById('new-group-input').addEventListener('keyup', e=>{ if(e.key==='Enter') this.createGroup(); });
+    document.getElementById('groups-list').addEventListener('click', e=>{
+      const btn=e.target.closest('button'); if(!btn) return;
+      const item=e.target.closest('.group-item'); const name=item.dataset.groupName;
+      if(btn.classList.contains('delete-group-btn')) this.deleteGroup(name);
+    });
+    document.getElementById('bulk-assign-group').addEventListener('click', ()=>this.showGroupModal(Array.from(this.state.selectedStreamers)));
+
+    this.elements.shortcutsBtn.addEventListener('click', ()=>this.showModal(this.elements.shortcutsModal));
+    this.elements.shortcutsModalClose.addEventListener('click', ()=>this.hideModal(this.elements.shortcutsModal));
+    this.elements.shortcutsModal.addEventListener('click', e=>{ if(e.target===this.elements.shortcutsModal) this.hideModal(this.elements.shortcutsModal); });
+
+    this.elements.container.addEventListener('click', e=>{
+      const checkbox=e.target.closest('.streamer-checkbox');
+      if(checkbox){ const name=checkbox.closest('[data-streamer-name]').dataset.streamerName; this.toggleSelection(name); return; }
+
+      const button=e.target.closest('.action-btn');
+      if(button){
+        const card = button.closest('[data-streamer-name]');
+        const name = card.dataset.streamerName;
+        const platform = card.dataset.streamerPlatform;
+        if(button.classList.contains('favorite')) this.toggleFavorite(name);
+        else if(button.classList.contains('remove')) this.removeStreamer(name, platform);
+        else if(button.classList.contains('assign-group')){ e.preventDefault(); this.showGroupModal([name]); }
+        return;
+      }
+
+      const thumb=e.target.closest('.thumbnail-preview');
+      if(thumb){
+        e.preventDefault();
+        const link=thumb.closest('a');
+        if(link && link.href) this.showEnlargedThumbnail(thumb.src, link.href);
+      }
+    });
+
+    this.elements.quickFilters.addEventListener('click', e => {
+        const chip = e.target.closest('.chip[data-filter]');
+        if (!chip) return;
+
+        this.state.filter = chip.dataset.filter;
+        localStorage.setItem("filter", this.state.filter);
+        
+        if ([...this.elements.filterSelect.options].some(opt => opt.value === this.state.filter)) {
+            this.elements.filterSelect.value = this.state.filter;
         } else {
-          throw new Error('Unknown platform: ' + platform);
+            this.state.filter = 'all';
+            this.elements.filterSelect.value = 'all';
         }
-        log('info', 'Loading stream...', { platform, channel, opts, src });
-        setPlayer(src, `${platform}:${channel}`);
-      } catch (err) {
-        log('error', 'Failed to build embed URL.', { error: err.message, stack: err.stack });
-        alert('Could not load stream. Check logs.');
+
+        this.syncQuickFilters();
+        this.render();
+    });
+
+    document.getElementById('thumbnail-modal-close').addEventListener('click', ()=>this.hideEnlargedThumbnail());
+    document.getElementById('thumbnail-modal').addEventListener('click', e=>{ if(e.target.id==='thumbnail-modal') this.hideEnlargedThumbnail(); });
+    this.elements.enlargedThumbnail.addEventListener('click', e=>{
+      const url=e.target.dataset.streamUrl; if(url){ window.open(url,'_blank','noopener,noreferrer'); this.hideEnlargedThumbnail(); }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && this.state.autoRefreshDelay > 0) this.fetchStreamerData();
+    });
+
+    window.addEventListener('beforeunload', ()=>this.stopAutoRefresh());
+  },
+
+  setupKeyboardNavigation(){
+    document.addEventListener('keydown', e=>{
+      const isModalOpen = ['thumbnail-modal', 'assign-group-modal', 'multistream-modal', 'shortcuts-modal']
+          .some(id => document.getElementById(id).style.display === 'flex');
+      if(e.target.matches('input, select, button, textarea') && e.key!=='Escape') return;
+      const k = e.key.toLowerCase();
+      if(k==='?'){ e.preventDefault(); this.showModal(this.elements.shortcutsModal); return; }
+      switch(k){
+        case 'r': if(!e.ctrlKey && !e.metaKey && !isModalOpen){ e.preventDefault(); this.fetchStreamerData(); } break;
+        case 'f': if(!e.ctrlKey && !e.metaKey && !isModalOpen){ e.preventDefault(); this.elements.searchInput.focus(); } break;
+        case 'g': this.updateViewMode('grid'); break;
+        case 'l': this.updateViewMode('list'); break;
+        case 'c': this.updateViewMode('compact'); break;
+        case 's': this.toggleSelectionMode(); break;
+        case 't': this.toggleTheme(); break;
+        case 'h': this.toggleSettings(); break;
+        case 'escape':
+          if(document.getElementById('multistream-modal').style.display==='flex') this.hideMultistreamModal();
+          else if(document.getElementById('assign-group-modal').style.display==='flex') this.hideGroupModal();
+          else if(document.getElementById('thumbnail-modal').style.display==='flex') this.hideEnlargedThumbnail();
+          else if(document.getElementById('shortcuts-modal').style.display==='flex') this.hideModal(this.elements.shortcutsModal);
+          else if(this.state.selectionMode) this.toggleSelectionMode();
+          else if(this.state.settingsExpanded) this.toggleSettings();
+          else this.elements.searchInput.blur();
+          break;
+      }
+    });
+  },
+
+  requestNotificationPermission(){
+    if('Notification' in window && Notification.permission==='default' && this.state.notificationsEnabled) Notification.requestPermission();
+  },
+  startPeriodicCleanup(){ setInterval(()=>this.cache.cleanup(), 300000); },
+
+  showModal(el){ this.state.lastFocusedElement=document.activeElement; el.style.display='flex'; document.body.style.overflow='hidden'; },
+  hideModal(el){ el.style.display='none'; document.body.style.overflow=''; if(this.state.lastFocusedElement) this.state.lastFocusedElement.focus(); },
+
+  showEnlargedThumbnail(src, url){ this.showModal(document.getElementById('thumbnail-modal')); this.elements.enlargedThumbnail.src=src; this.elements.enlargedThumbnail.dataset.streamUrl=url; setTimeout(()=>this.elements.modalCloseBtn?.focus?.(),100); },
+  hideEnlargedThumbnail(){ this.hideModal(document.getElementById('thumbnail-modal')); this.elements.enlargedThumbnail.src=''; this.elements.enlargedThumbnail.removeAttribute('data-stream-url'); },
+
+  toggleSettings(){
+    this.state.settingsExpanded = !this.state.settingsExpanded;
+    localStorage.setItem("settingsExpanded", JSON.stringify(this.state.settingsExpanded));
+    this.updateSettingsPanel();
+  },
+  updateSettingsPanel(){
+    const p=this.elements.settingsPanel, t=this.elements.settingsToggle;
+    if(this.state.settingsExpanded){ p.classList.add('expanded'); t.setAttribute('aria-expanded','true'); t.textContent='⚙️ Hide Settings'; }
+    else{ p.classList.remove('expanded'); t.setAttribute('aria-expanded','false'); t.textContent='⚙️ Settings'; }
+  },
+
+  async fetchStreamerList(){
+    this.setLoadingState(true,'Loading streamer list...');
+    this.updateConnectionStatus('connecting');
+    if (!this.state.gistId) {
+        this.showToast('⚠️ Please set your Gist ID in settings.', 'warning');
+        this.setLoadingState(false);
+        this.state.streamers = [];
+        this.render();
+        return;
+    }
+    
+    try {
+        const res = await fetch(`https://api.github.com/gists/${this.state.gistId}`);
+        if (!res.ok) throw new Error(`Could not fetch Gist: ${res.statusText}`);
+        const gistData = await res.json();
+        if (gistData.files && gistData.files['streamers.json']) {
+            this.state.streamers = JSON.parse(gistData.files['streamers.json'].content);
+        } else {
+            throw new Error('Gist does not contain a "streamers.json" file.');
+        }
+        this.updateConnectionStatus('connected');
+        this.fetchStreamerData();
+    } catch(err) {
+        console.error('Failed to load streamer list from Gist:', err);
+        this.updateConnectionStatus('error');
+        this.showToast(`❌ Error fetching Gist: ${err.message}`, 'error');
+        this.state.streamers = [];
+        this.setLoadingState(false);
+        this.render();
+    }
+  },
+
+  async fetchStreamerData() {
+    this.setLoadingState(true, 'Updating streamer data...');
+    const reqs = this.state.streamers.map(streamer => {
+        if (streamer.platform === 'twitch') {
+            return this.fetchTwitchStreamer(streamer.name);
+        }
+        return this.fetchKickStreamer(streamer.name);
+    });
+
+    const results = await Promise.allSettled(reqs);
+    let ok = 0;
+
+    results.forEach((r, i) => {
+        const streamer = this.state.streamers[i];
+        const name = streamer.name;
+        const uniqueId = `${streamer.platform}-${name}`;
+
+        if (r.status === 'fulfilled' && r.value) {
+            const data = r.value;
+            const wasLive = this.state.lastLiveStates[uniqueId];
+            if (data.isLive && wasLive === false) {
+                if (this.state.favorites.includes(name)) this.notifyFavoriteStreamerLive(name, data);
+                const card = this.elements.container.querySelector(`[data-streamer-name="${name}"]`);
+                if (card) { card.classList.add('newly-live'); setTimeout(() => card.classList.remove('newly-live'), 2000); }
+            }
+            this.state.lastLiveStates[uniqueId] = data.isLive;
+            this.state.streamerData.set(name, data);
+            ok++;
+        } else {
+            const offlineTime = this.stats.offlineTime(name);
+            this.state.streamerData.set(name, {
+                name,
+                platform: streamer.platform,
+                isLive: false,
+                title: 'Banned / Not Found',
+                viewers: 0,
+                category: null,
+                url: streamer.platform === 'twitch' ? `https://twitch.tv/${name}` : `https://kick.com/${name}`,
+                uptime: 0,
+                offlineTime
+            });
+            if (r.status === 'rejected') {
+                console.error(`Failed to fetch data for ${name} on ${streamer.platform}:`, r.reason);
+            }
+        }
+    });
+
+    this.stats.recordSnapshot(Array.from(this.state.streamerData.values()));
+    this.setLoadingState(false);
+    this.render();
+    this.announceUpdate(ok, this.state.streamers.length);
+  },
+
+  async fetchKickStreamer(name) {
+      const url = `https://kick.com/api/v1/channels/${name}`;
+      const k = `api-kick-${name}`;
+      const c = this.cache.get(k);
+      if (c) return c;
+
+      const d = await this.fetchApi(url);
+      if (!d) return null;
+
+      const isLive = d.livestream !== null;
+      const uptime = isLive ? Utils.calculateUptime(d.livestream?.created_at) : 0;
+      const offlineTime = !isLive ? this.stats.offlineTime(name) : 0;
+
+      const normalizedData = {
+          name, platform: 'kick', isLive, uptime, offlineTime,
+          title: d.livestream?.session_title || "Offline",
+          viewers: d.livestream?.viewer_count || 0,
+          category: d.livestream?.categories?.[0]?.name || null,
+          thumbnail: d.livestream?.thumbnail?.url,
+          url: `https://kick.com/${name}`,
+          profilePic: d.user?.profile_pic,
+      };
+      this.cache.set(k, normalizedData);
+      return normalizedData;
+  },
+
+  async fetchTwitchStreamer(name) {
+      if (!this.state.twitchClientId || !this.state.twitchAccessToken) {
+        console.warn("Twitch API credentials not set.");
+        return { name, platform: 'twitch', isLive: false, title: 'Twitch API keys not set' };
+      }
+      const k = `api-twitch-${name}`;
+      const c = this.cache.get(k);
+      if (c) return c;
+
+      const headers = {
+        'Client-ID': this.state.twitchClientId,
+        'Authorization': `Bearer ${this.state.twitchAccessToken}`
+      };
+
+      const [streamRes, userRes] = await Promise.all([
+          this.fetchApi(`https://api.twitch.tv/helix/streams?user_login=${name}`, headers),
+          this.fetchApi(`https://api.twitch.tv/helix/users?login=${name}`, headers)
+      ]);
+
+      const streamData = streamRes?.data?.[0];
+      const userData = userRes?.data?.[0];
+
+      if (!userData) return null;
+
+      const isLive = !!streamData && streamData.type === 'live';
+      const uptime = isLive ? Utils.calculateUptime(streamData.started_at) : 0;
+      const offlineTime = !isLive ? this.stats.offlineTime(name) : 0;
+
+      const normalizedData = {
+          name, platform: 'twitch', isLive, uptime, offlineTime,
+          title: isLive ? streamData.title : "Offline",
+          viewers: isLive ? streamData.viewer_count : 0,
+          category: isLive ? streamData.game_name : null,
+          thumbnail: isLive ? streamData.thumbnail_url.replace('{width}', '440').replace('{height}', '248') : null,
+          url: `https://twitch.tv/${name}`,
+          profilePic: userData.profile_image_url,
+      };
+      this.cache.set(k, normalizedData);
+      return normalizedData;
+  },
+
+  async fetchApi(url, headers = {}) {
+    const r = await fetch(url, { headers });
+    if (r.status === 404) {
+      return null;
+    }
+    if (!r.ok) {
+      throw new Error(`API responded with status ${r.status}`);
+    }
+    return r.json();
+  },
+
+  getUpperViewerBound(){
+    const sliderMax = parseInt(this.elements.viewerMax?.max || '50000', 10);
+    const rawMax = Number(this.state.viewerRange?.max ?? sliderMax);
+    return rawMax >= sliderMax ? Number.POSITIVE_INFINITY : rawMax;
+  },
+
+  render(){
+    if(this.state.isLoading) return this.renderSkeletons();
+    const prevY = window.scrollY;
+    const filtered = this.getFilteredAndSortedData();
+    this.renderStats();
+    this.elements.container.innerHTML='';
+    if(!filtered.length) return this.renderEmptyState();
+    const frag=document.createDocumentFragment();
+    filtered.forEach(s=>frag.appendChild(this.createStreamerCard(s)));
+    this.elements.container.appendChild(frag);
+    this.elements.lastUpdated.textContent = `${new Date().toLocaleTimeString()}`;
+    this.elements.lastUpdated.title = `Last updated: ${new Date().toLocaleString()}`;
+    this.updateSelectionUI();
+    this.updateDocumentTitle();
+    window.scrollTo(0, prevY);
+  },
+
+  renderStats(){
+    const s=this.stats.stats(); if(!s){ this.elements.statsContainer.innerHTML=''; return; }
+    this.elements.statsContainer.innerHTML = `
+      <section class="stats-panel">
+        <h3>📊 Live Statistics</h3>
+        <div class="stats-grid">
+          <div class="stat"><span class="stat-value">${s.current.liveStreamers}</span><span class="stat-label">Live Now</span></div>
+          <div class="stat"><span class="stat-value">${Utils.formatNumber(s.current.totalViewers)}</span><span class="stat-label">Total Viewers</span></div>
+          <div class="stat"><span class="stat-value">${Utils.formatNumber(s.peakViewers)}</span><span class="stat-label">Peak (24h)</span></div>
+          <div class="stat"><span class="stat-value">${s.averageLive}</span><span class="stat-label">Avg Live (1h)</span></div>
+          ${s.topCategory ? `<div class="stat"><span class="stat-value">${s.topCategory}</span><span class="stat-label">Top Category</span></div>` : ''}
+        </div>
+      </section>`;
+  },
+
+  renderQuickFilters(){
+    const base = [
+      {label:'All', val:'all', emoji:'🌐'},
+      {label:'Live', val:'live', emoji:'🔴'},
+      {label:'Offline', val:'offline', emoji:'⚫'},
+      {label:'Favorites', val:'favorites', emoji:'⭐'}
+    ];
+    const groups = Object.keys(this.state.groups).sort().map(g=>({label:g, val:`group-${g}`, emoji:'📂'}));
+    const items = base.concat(groups);
+    this.elements.quickFilters.innerHTML = items.map(it =>
+      `<button class="chip" data-filter="${it.val}" aria-pressed="${this.state.filter===it.val?'true':'false'}">${it.emoji} ${Utils.sanitizeHTML(it.label)}</button>`).join('');
+  },
+  syncQuickFilters(){ this.renderQuickFilters(); },
+
+  getFilteredAndSortedData(){
+    let data = Array.from(this.state.streamerData.values());
+    const min = Number(this.state.viewerRange.min || 0);
+    const upper = this.getUpperViewerBound();
+
+    data = data.filter(s=>{
+      const q=this.state.searchQuery;
+      const searchMatch = !q || s.name.toLowerCase().includes(q) || (s.title||'').toLowerCase().includes(q) || (s.category||'').toLowerCase().includes(q);
+      if(!searchMatch) return false;
+
+      const viewers = Number(s.viewers || 0);
+      if (viewers < min) return false;
+      if (upper !== Number.POSITIVE_INFINITY && viewers > upper) return false;
+
+      if(this.state.filter.startsWith('group-')){
+        const g=this.state.filter.replace('group-','');
+        return this.state.groups[g]?.includes(s.name);
+      }
+      switch(this.state.filter){
+        case 'live': return s.isLive;
+        case 'offline': return !s.isLive;
+        case 'favorites': return this.state.favorites.includes(s.name);
+        default: return true;
+      }
+    });
+
+    return data.sort((a,b)=>{
+      switch(this.state.sort){
+        case 'viewers': return (b.viewers||0) - (a.viewers||0);
+        case 'name': return a.name.localeCompare(b.name);
+        case 'category': return (a.category||'').localeCompare(b.category||'');
+        case 'uptime': return (b.uptime||0) - (a.uptime||0);
+        case 'status':
+        default:
+          if(a.isLive!==b.isLive) return (b.isLive?1:0) - (a.isLive?1:0);
+          return (b.viewers||0) - (a.viewers||0);
+      }
+    });
+  },
+
+  createStreamerCard(s){
+    const div=document.createElement('div');
+    const isFav=this.state.favorites.includes(s.name);
+    const isSel=this.state.selectedStreamers.has(s.name);
+    div.className=`streamer ${s.platform} ${s.isLive?'live':'offline'} ${isFav?'favorite':''} ${this.state.viewMode}-view ${isSel?'selected':''}`;
+    div.dataset.streamerName=s.name;
+    div.dataset.streamerPlatform=s.platform;
+
+    const platformIcon = s.platform === 'twitch'
+        ? `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #9146FF; margin-right: 6px; flex-shrink: 0;"><title>Twitch</title><path d="M11.571 4.714h1.715v5.143H11.57zm4.714 0h1.715v5.143h-1.715zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0H6zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714v9.429z"/></svg>`
+        : `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #53FC18; margin-right: 6px; flex-shrink: 0;"><title>Kick</title><path d="M19.43 2.57L4.57 17.43V2.57h14.86M19.43 0H4.57C2.05 0 0 2.05 0 4.57v14.86C0 21.95 2.05 24 4.57 24h14.86c2.52 0 4.57-2.05 4.57-4.57V4.57C24 2.05 21.95 0 19.43 0z"/></svg>`;
+
+    const icons = {"Just Chatting":"💬","Slots & Casino":"🎰","Games & Casino":"🎲","Call of Duty":"🎯","Grand Theft Auto V":"🚗","Sports":"🏀","Music":"🎵","Valorant":"🔫","Fortnite":"🛡️","League of Legends":"🧙‍♂️","Minecraft":"⛏️","IRL":"🌍","Poker":"🃏"};
+    const icon = icons[s.category] || '�';
+    const avatar = `<img class="streamer-avatar" src="${s.profilePic||''}" alt="${s.name} avatar" onerror="this.style.display='none'">`;
+    const showThumb = s.isLive && s.thumbnail && !this.state.dataSaver && this.state.viewMode!=='compact';
+
+    div.innerHTML = `
+      ${this.state.selectionMode? `<input type="checkbox" class="streamer-checkbox" ${isSel?'checked':''} aria-label="Select ${s.name}">` : ''}
+      ${showThumb ? this.createThumbnailHTML(s) : ''}
+      <div class="streamer-header">
+        ${avatar}
+        <a href="${s.url}" target="_blank" rel="noopener noreferrer" class="streamer-name">${platformIcon}${Utils.sanitizeHTML(s.name)}</a>
+        <span class="streamer-status"><span class="status-dot"></span>${s.isLive? `LIVE (${Utils.formatNumber(s.viewers)})` : s.title === 'Banned / Not Found' ? 'NOT FOUND' : 'OFFLINE'}</span>
+      </div>
+      <div class="streamer-info">
+        <div class="stream-title">${Utils.sanitizeHTML(s.title)}</div>
+        ${s.category? `<div class="stream-category">${icon} ${Utils.sanitizeHTML(s.category)}</div>`:''}
+        <div class="stream-meta">
+          ${s.isLive && s.uptime>0? `<span class="uptime">⏱️ ${Utils.formatDuration(s.uptime)}</span>`:''}
+          ${!s.isLive && s.offlineTime>0? `<span class="offline-time">💤 ${Utils.formatDuration(s.offlineTime)} offline</span>`:''}
+        </div>
+      </div>
+      <div class="streamer-actions">
+        <button class="action-btn assign-group" title="Assign to Group">📂</button>
+        <button class="action-btn favorite ${isFav?'active':''}" title="${isFav?'Unfavorite':'Favorite'}">${isFav?'⭐':'☆'}</button>
+        <button class="action-btn remove" title="Remove streamer">🗑️</button>
+      </div>`;
+    return div;
+  },
+
+  createThumbnailHTML(s){
+    return `<div class="thumbnail-container">
+      <a href="${s.url}" target="_blank" rel="noopener noreferrer" aria-label="View enlarged thumbnail for ${s.name}">
+        <img class="thumbnail-preview" src="${s.thumbnail}" alt="Stream preview for ${s.name}" loading="lazy"
+             onerror="this.src='${this.PLACEHOLDER_THUMBNAIL}'; this.classList.add('placeholder');">
+        <div class="viewer-overlay" aria-label="Current viewers">${Utils.formatNumber(s.viewers)}</div>
+      </a>
+    </div>`;
+  },
+
+  renderSkeletons(){
+    this.elements.container.innerHTML = Array(12).fill('').map(()=>`
+      <div class="skeleton-card skeleton" aria-label="Loading streamer data">
+        <div class="skeleton-line" style="height:20px;background:var(--skeleton-bg);border-radius:6px;margin-bottom:12px;width:60%;"></div>
+        <div class="skeleton-line" style="height:20px;background:var(--skeleton-bg);border-radius:6px;margin-bottom:12px;width:80%;"></div>
+        <div class="skeleton-thumb" style="width:100%;aspect-ratio:16/9;background:var(--skeleton-bg);border-radius:8px;"></div>
+      </div>`).join('');
+  },
+  renderEmptyState(){
+    const {filter,searchQuery}=this.state;
+    let message,action;
+    if(searchQuery){ message=`No streamers found matching "${searchQuery}"`; action='<button onclick="App.clearSearch()">Clear search</button>'; }
+    else if(filter==='live'){ message='No streamers are currently live'; action='<button onclick="App.showAllStreamers()">View all streamers</button>'; }
+    else if(filter==='favorites'){ message='No favorite streamers yet'; action='<p>Click the ☆ icon on any streamer to add them to favorites</p>'; }
+    else if(filter.startsWith('group-')){ message='This group is empty'; action='<p>Assign streamers to this group using the 📂 icon on their card.</p>'; }
+    else { message='No streamers in your list'; action='<p>Add streamers using the settings panel.</p>'; }
+    this.elements.container.innerHTML = `<div class="empty-state"><h3>${message}</h3>${action||''}</div>`;
+  },
+
+  setLoadingState(isLoading,msg=''){
+    this.state.isLoading=isLoading;
+    this.elements.refreshBtn.disabled=isLoading;
+    this.elements.refreshBtn.textContent = isLoading ? `🔄 ${msg||'Loading...'}` : '🔄 Refresh';
+    if(!isLoading) this.render();
+  },
+
+  updateConnectionStatus(st){ const el=this.elements.statusIndicator; el.className=`status-indicator ${st}`; const label={connected:'Connected',connecting:'Connecting…',error:'Error'}[st]||'Idle'; el.setAttribute('aria-label',`Connection: ${label}`); el.title=`Connection: ${label}`; },
+
+  updateViewMode(mode){
+    this.state.viewMode=mode; localStorage.setItem("viewMode", mode);
+    document.querySelectorAll('.view-toggle[data-view]').forEach(btn=>btn.classList.toggle('active', btn.dataset.view===mode));
+    this.elements.qbGrid.setAttribute('aria-pressed', mode==='grid');
+    this.elements.qbList.setAttribute('aria-pressed', mode==='list');
+    this.elements.qbCompact.setAttribute('aria-pressed', mode==='compact');
+    this.elements.container.className = `${mode}-view`;
+    this.render();
+  },
+  updateViewerRangeDisplay(){
+    const { min } = this.state.viewerRange;
+    const upper = this.getUpperViewerBound();
+    const maxDisplay = upper === Number.POSITIVE_INFINITY ? '∞' : Utils.formatNumber(this.state.viewerRange.max);
+    this.elements.viewerRangeDisplay.textContent = `${Utils.formatNumber(min)} - ${maxDisplay}`;
+  },
+  styleRangeTracks(){
+    const fill = el => { const val=(el.value-el.min)/(el.max-el.min)*100; el.style.background=`linear-gradient(to right, var(--accent) ${val}%, var(--border) ${val}%)`; };
+    fill(this.elements.viewerMin); fill(this.elements.viewerMax);
+  },
+
+  toggleSelectionMode(){
+    this.state.selectionMode=!this.state.selectionMode;
+    this.state.selectedStreamers.clear();
+    this.elements.selectModeBtn.classList.toggle('active', this.state.selectionMode);
+    this.elements.qbSelect.setAttribute('aria-pressed', this.state.selectionMode?'true':'false');
+    this.elements.bulkActions.classList.toggle('visible', this.state.selectionMode);
+    this.render();
+    this.showToast(`Selection mode ${this.state.selectionMode?'enabled':'disabled'}.`,'info');
+  },
+  toggleSelection(name){ this.state.selectedStreamers.has(name)? this.state.selectedStreamers.delete(name) : this.state.selectedStreamers.add(name); this.updateSelectionUI(); this.render(); },
+  selectAllStreamers(){ this.getFilteredAndSortedData().forEach(s=>this.state.selectedStreamers.add(s.name)); this.updateSelectionUI(); this.render(); },
+  clearSelection(){ this.state.selectedStreamers.clear(); this.updateSelectionUI(); this.render(); },
+  selectLive(){ this.state.selectedStreamers.clear(); this.getFilteredAndSortedData().filter(s=>s.isLive).forEach(s=>this.state.selectedStreamers.add(s.name)); this.updateSelectionUI(); this.render(); },
+  pickTopN(n){ this.state.selectedStreamers.clear(); this.getFilteredAndSortedData().filter(s=>s.isLive).sort((a,b)=>b.viewers-a.viewers).slice(0,n).forEach(s=>this.state.selectedStreamers.add(s.name)); this.updateSelectionUI(); this.render(); },
+  copySelectedUrls(){
+    const urls = Array.from(this.state.selectedStreamers).map(n=>{
+        const s = this.state.streamerData.get(n);
+        return s ? s.url : '';
+    }).filter(Boolean).join('\n');
+    if(!urls){ this.showToast('⚠️ Nothing selected.','warning'); return; }
+    navigator.clipboard?.writeText(urls).then(()=> this.showToast('🔗 URLs copied to clipboard','success'))
+      .catch(()=> this.showToast('⚠️ Could not copy URLs','error'));
+  },
+
+  updateSelectionUI(){
+    const count=this.state.selectedStreamers.size;
+    this.elements.selectionCount.textContent=`${count} selected`;
+    const liveSelected = Array.from(this.state.selectedStreamers).some(n=>this.state.streamerData.get(n)?.isLive);
+    this.elements.bulkWatchBtn.disabled = count===0 || !liveSelected;
+    this.elements.bulkFavorite.disabled = count===0;
+    this.elements.bulkUnfavorite.disabled = count===0;
+    this.elements.bulkAssignGroup.disabled = count===0;
+  },
+
+  bulkToggleFavorite(add){
+    let changed=0;
+    this.state.selectedStreamers.forEach(n=>{
+      const isFav=this.state.favorites.includes(n);
+      if(add && !isFav){ this.state.favorites.push(n); changed++; }
+      else if(!add && isFav){ this.state.favorites=this.state.favorites.filter(x=>x!==n); changed++; }
+    });
+    if(changed){
+      localStorage.setItem('favorites', JSON.stringify(this.state.favorites));
+      this.render();
+      this.showToast(`⭐ ${changed} streamers ${add?'added to':'removed from'} favorites`,'success');
+    }
+  },
+
+  async updateGist(newList) {
+    if (!this.state.gistId || !this.state.githubPat) {
+        this.showToast('❌ Gist ID and GitHub PAT must be set in settings to save changes.', 'error');
+        return false;
+    }
+    this.setLoadingState(true, 'Saving to Gist...');
+    try {
+        const res = await fetch(`https://api.github.com/gists/${this.state.gistId}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `token ${this.state.githubPat}`,
+                'Accept': 'application/vnd.github.v3+json',
+            },
+            body: JSON.stringify({
+                files: {
+                    'streamers.json': {
+                        content: JSON.stringify(newList, null, 2)
+                    }
+                }
+            })
+        });
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || 'Failed to update Gist.');
+        }
+        this.setLoadingState(false);
+        return true;
+    } catch (e) {
+        this.showToast(`❌ Gist update failed: ${e.message}`, 'error');
+        this.setLoadingState(false);
+        return false;
+    }
+  },
+
+  async addStreamer(){
+    const name = this.elements.addInput.value.trim().toLowerCase();
+    const platform = this.elements.platformSelect.value;
+    if(!name) return this.showToast('⚠️ Please enter a streamer name.','warning');
+    if(this.state.streamers.some(s => s.name === name && s.platform === platform)) return this.showToast('⚠️ Streamer is already in the list.','warning');
+
+    const newList = [...this.state.streamers, { name, platform }];
+    const success = await this.updateGist(newList);
+    
+    if (success) {
+        this.state.streamers = newList;
+        this.showToast(`✅ Added ${name} and saved to Gist.`, 'success');
+        this.elements.addInput.value = '';
+        this.fetchStreamerData();
+    }
+  },
+
+  async removeStreamer(name, platform){
+    if(!confirm(`Are you sure you want to remove ${name} from ${platform}?`)) return;
+    
+    const newList = this.state.streamers.filter(s => !(s.name === name && s.platform === platform));
+    const success = await this.updateGist(newList);
+
+    if (success) {
+        this.state.streamers = newList;
+        this.state.streamerData.delete(name);
+        this.state.favorites = this.state.favorites.filter(favName => favName !== name);
+        localStorage.setItem('favorites', JSON.stringify(this.state.favorites));
+        Object.keys(this.state.groups).forEach(groupName => {
+            this.state.groups[groupName] = this.state.groups[groupName].filter(streamerName => streamerName !== name);
+        });
+        this.saveGroups();
+        this.showToast(`🗑️ Removed ${name} and saved to Gist.`, 'success');
+        this.render();
+    }
+  },
+
+  toggleFavorite(name){
+    const set=new Set(this.state.favorites);
+    const added = !set.has(name);
+    added? set.add(name) : set.delete(name);
+    this.state.favorites = Array.from(set);
+    localStorage.setItem('favorites', JSON.stringify(this.state.favorites));
+    this.render();
+    const msg = added ? `⭐ ${name} added to favorites!` : `☆ ${name} removed from favorites.`;
+    this.showToast(msg,'success'); this.announceToScreenReader(msg);
+  },
+
+  toggleTheme(){
+    const next = document.body.getAttribute('data-theme')==='dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    this.updateThemeColorMeta();
+    this.styleRangeTracks();
+    this.showToast(`🌗 Switched to ${next} theme`,'success');
+  },
+  updateThemeColorMeta(){
+    const meta=document.querySelector('meta[name="theme-color"]');
+    if(meta){ const theme=document.body.getAttribute('data-theme'); meta.setAttribute('content', theme==='dark' ? '#111111' : '#f8fafc'); }
+  },
+
+  applyAccent(hex){
+    this.state.accentColor = hex;
+    const light = Utils.lighten(hex, 28);
+    document.documentElement.style.setProperty('--accent', hex);
+    document.documentElement.style.setProperty('--accent-2', light);
+    document.documentElement.style.setProperty('--live-glow', hex);
+  },
+  applyDensity(val){
+    document.body.setAttribute('data-density', val);
+    this.state.density = val;
+  },
+
+  exportList() {
+    try {
+        const data = JSON.stringify(this.state.streamers, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'streamers.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showToast('📤 Exported successfully!', 'success');
+    } catch (e) {
+        this.showToast('❌ Export failed.', 'error');
+    }
+  },
+  async importList(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+          try {
+              const imported = JSON.parse(e.target.result);
+              if (!Array.isArray(imported) || !imported.every(item => item.name && item.platform)) {
+                  throw new Error('Invalid file format.');
+              }
+              const success = await this.updateGist(imported);
+              if (success) {
+                this.state.streamers = imported;
+                this.fetchStreamerData();
+                this.showToast('📥 Imported and saved to Gist successfully!', 'success');
+              }
+          } catch (err) {
+              this.showToast(`❌ Import failed: ${err.message}`, 'error');
+          }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+  },
+
+  createGroup(){
+    const name=document.getElementById('new-group-input').value.trim();
+    if(!name) return this.showToast('⚠️ Please enter a group name.','warning');
+    if(this.state.groups[name]) return this.showToast('⚠️ Group already exists.','warning');
+    this.state.groups[name]=[];
+    this.saveGroups(); this.renderGroupsList(); this.populateFilterDropdown(); this.renderQuickFilters();
+    document.getElementById('new-group-input').value=''; this.showToast(`✅ Group "${name}" created.`,'success');
+  },
+  deleteGroup(name){
+    if(!confirm(`Are you sure you want to delete the group "${name}"?`)) return;
+    delete this.state.groups[name];
+    this.saveGroups(); this.renderGroupsList(); this.populateFilterDropdown(); this.renderQuickFilters();
+    if(this.state.filter===`group-${name}`){ this.state.filter='all'; this.elements.filterSelect.value='all'; this.render(); }
+    this.showToast(`🗑️ Group "${name}" deleted.`,'success');
+  },
+  renderGroupsList(){
+    document.getElementById('groups-list').innerHTML = Object.keys(this.state.groups).sort().map(n=>`
+      <div class="group-item" data-group-name="${n}">
+        <span>${Utils.sanitizeHTML(n)}</span>
+        <div class="group-item-actions"><button class="delete-group-btn" title="Delete Group">🗑️</button></div>
+      </div>`).join('');
+  },
+  saveGroups(){ localStorage.setItem('groups', JSON.stringify(this.state.groups)); },
+  populateFilterDropdown(){
+    const defs = `<option value="all">All</option><option value="live">Live</option><option value="offline">Offline</option><option value="favorites">Favorites</option>`;
+    const groups = Object.keys(this.state.groups).sort().map(n=>`<option value="group-${n}">📂 ${Utils.sanitizeHTML(n)}</option>`).join('');
+    this.elements.filterSelect.innerHTML = defs + (groups? '<option disabled>-----</option>'+groups : '');
+    this.elements.filterSelect.value = this.state.filter;
+  },
+
+  showGroupModal(names){
+    this.showModal(document.getElementById('assign-group-modal'));
+    document.getElementById('assign-group-modal-list').innerHTML = Object.keys(this.state.groups).sort().map(g=>{
+      const allIn = names.length>0 && names.every(n=>this.state.groups[g]?.includes(n));
+      return `<label class="assign-group-item"><input type="checkbox" data-group-name="${g}" ${allIn?'checked':''}>${Utils.sanitizeHTML(g)}</label>`;
+    }).join('');
+
+    this.elements.assignGroupSaveBtn.onclick = ()=>{
+      document.querySelectorAll('#assign-group-modal-list input[type="checkbox"]').forEach(cb=>{
+        const g=cb.dataset.groupName;
+        names.forEach(n=>{
+          const arr=this.state.groups[g]; const idx=arr.indexOf(n);
+          if(cb.checked && idx===-1) arr.push(n);
+          else if(!cb.checked && idx!==-1) arr.splice(idx,1);
+        });
+      });
+      this.saveGroups(); this.hideGroupModal(); this.showToast('✅ Groups updated.','success');
+      this.renderQuickFilters();
+    };
+    setTimeout(()=>this.elements.assignGroupSaveBtn.focus(),100);
+  },
+  hideGroupModal(){ this.hideModal(document.getElementById('assign-group-modal')); },
+
+  showMultistreamModal(){
+    const liveSel = Array.from(this.state.selectedStreamers).filter(n=>this.state.streamerData.get(n)?.isLive);
+    if(!liveSel.length) return this.showToast('⚠️ No live streamers selected.','warning');
+    const grid=document.getElementById('multistream-grid');
+    grid.innerHTML = liveSel.map(n=>{
+        const s = this.state.streamerData.get(n);
+        if (!s) return '';
+        const src = s.platform === 'twitch'
+            ? `https://player.twitch.tv/?channel=${n}&parent=${window.location.hostname}&autoplay=true&muted=true`
+            : `https://player.kick.com/${n}?autoplay=true&muted=true`;
+        return `<iframe src="${src}" title="Player for ${n}" style="width:100%;height:100%;border:none;"></iframe>`;
+    }).join('');
+
+    const cols=Math.ceil(Math.sqrt(liveSel.length)); const rows=Math.ceil(liveSel.length/cols);
+    grid.style.display='grid'; grid.style.gap='4px'; grid.style.padding='4px';
+    grid.style.gridTemplateColumns=`repeat(${cols},1fr)`; grid.style.gridTemplateRows=`repeat(${rows},1fr)`;
+    this.showModal(document.getElementById('multistream-modal'));
+  },
+  hideMultistreamModal(){ this.hideModal(document.getElementById('multistream-modal')); document.getElementById('multistream-grid').innerHTML=''; },
+
+  notifyFavoriteStreamerLive(name, data){
+    if('Notification' in window && Notification.permission==='granted' && this.state.notificationsEnabled){
+      const n=new Notification(`${name} is now live on ${data.platform}!`,{ body:data.title||`Streaming now on ${data.platform}!`, icon:data.profilePic, tag:`streamer-${name}` });
+      n.onclick=()=>{ window.open(data.url,'_blank'); n.close(); }; setTimeout(()=>n.close(),5000);
+    }
+    this.announceToScreenReader(`${name} is now live!`);
+  },
+  showToast(msg,type='info'){ const t=this.elements.toast; t.textContent=msg; t.className=type; t.style.visibility="visible"; t.style.opacity="1"; setTimeout(()=>{ t.style.opacity="0"; setTimeout(()=>{ t.style.visibility="hidden"; t.className=''; },300); },3000); },
+  announceToScreenReader(m){ this.elements.announcements.textContent=m; setTimeout(()=>{ this.elements.announcements.textContent=''; },1000); },
+  announceUpdate(ok,total){ this.announceToScreenReader(`Updated ${ok} of ${total} streamers`); },
+  clearSearch(){ this.elements.searchInput.value=''; this.state.searchQuery=''; this.render(); this.elements.searchInput.focus(); },
+  showAllStreamers(){ this.elements.filterSelect.value = 'all'; this.state.filter = 'all'; localStorage.setItem("filter", this.state.filter); this.render(); },
+
+  enableQuickbar(){ document.body.classList.add('has-quickbar'); this.syncQuickFilters(); },
+
+  attachLongPressSelection(){
+    let timer=null, targetName=null;
+    const start = (e)=>{
+      const card = e.target.closest('.streamer'); if(!card) return;
+      if(e.target.closest('a, button, .streamer-actions')) return;
+      targetName = card.dataset.streamerName;
+      timer=setTimeout(()=>{
+        if(!App.state.selectionMode) App.toggleSelectionMode();
+        if(targetName) App.toggleSelection(targetName);
+      }, 450);
+    };
+    const cancel = ()=>{ if(timer){ clearTimeout(timer); timer=null; } };
+    this.elements.container.addEventListener('touchstart', start, {passive:true});
+    this.elements.container.addEventListener('touchend', cancel);
+    this.elements.container.addEventListener('touchcancel', cancel);
+    this.elements.container.addEventListener('touchmove', cancel, {passive:true});
+  },
+
+  updateDocumentTitle(){
+    const s=this.stats.stats(); if(!s) return;
+    const base='Kick & Twitch Monitor';
+    document.title = s.current.liveStreamers>0 ? `Live ${s.current.liveStreamers} — ${base}` : base;
+  },
+
+  startAutoRefresh(delay){
+    this.stopAutoRefresh();
+    const ms = Number(delay) || 0;
+    if (ms > 0) {
+      this.state.autoRefreshInterval = setInterval(() => {
+        if (!document.hidden) this.fetchStreamerData();
+      }, ms);
+    }
+  },
+  stopAutoRefresh(){
+    if (this.state.autoRefreshInterval) {
+      clearInterval(this.state.autoRefreshInterval);
+      this.state.autoRefreshInterval = null;
+    }
+  },
+  applyHeaderCollapsed(collapsed){
+    this.elements.header.classList.toggle('collapsed', collapsed);
+    document.getElementById('header-collapse').setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+  },
+};
+
+// Error boundary wrapper
+function withErrorBoundary(fn, name='Unknown'){
+  return async function(...a){
+    try{ return await fn.apply(this,a); }
+    catch(e){
+      console.error(`Error in ${name}:`, e);
+      App.showToast(`⚠️ Error in ${name}: ${e.message}`,'error');
+      if(name==='fetchStreamerList' || name==='fetchStreamerData'){
+        App.elements.container.innerHTML = `<div class="error-boundary" style="background:var(--card);border:2px solid var(--error);border-radius:12px;padding:32px;text-align:center;margin:16px 0;">
+          <h3 style="color:var(--error);margin:0 0 16px 0;">Something went wrong</h3>
+          <p>We're having trouble loading the streamers. Please try refreshing the page.</p>
+          <button onclick="location.reload()">Refresh Page</button>
+          <button onclick="App.fetchStreamerData()">Try Again</button>
+        </div>`;
       }
     }
+  };
+}
+App.fetchStreamerList = withErrorBoundary(App.fetchStreamerList,'fetchStreamerList');
+App.fetchStreamerData = withErrorBoundary(App.fetchStreamerData,'fetchStreamerData');
 
-    els.load.addEventListener('click', loadStream);
-    els.swap.addEventListener('click', () => {
-      els.platform.value = els.platform.value === 'twitch' ? 'kick' : 'twitch';
-      loadStream();
-    });
+/* Boot: build PWA first (manifest & SW), then init app */
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try{
+    await PWA.init();
+    App.init();
 
-    // Logs: download and clear
-    els.download.addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const stamp = new Date().toISOString().replace(/[:.]/g,'-');
-      a.download = `stream-embed-logs-${stamp}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      log('info', 'Logs downloaded.');
-    });
-
-    els.clear.addEventListener('click', () => {
-      logs = [];
-      localStorage.removeItem(LOGS_KEY);
-      els.loglist.innerHTML = '';
-      log('info', 'Logs cleared.');
-    });
-
-    // Quick deep-link support: ?platform=twitch&channel=foobar&autoplay=1&muted=1
-    (function handleQuery() {
-      const params = new URLSearchParams(location.search);
-      const p = params.get('platform');
-      const c = params.get('channel');
-      const a = params.get('autoplay');
-      const m = params.get('muted');
-      if (p) els.platform.value = p;
-      if (c) els.channel.value = c;
-      if (a !== null) els.autoplay.checked = a === '1' || a === 'true';
-      if (m !== null) els.muted.checked = m === '1' || m === 'true';
-      if (p && c) loadStream();
-    })();
-  </script>
+    if (window.innerWidth <= 640 && !localStorage.getItem('headerCollapsed')) {
+      App.state.headerCollapsed = true; localStorage.setItem('headerCollapsed','true'); App.applyHeaderCollapsed(true);
+    }
+  }
+  catch(e){
+    console.error('Failed to initialize:', e);
+    document.body.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;">
+      <h1>Failed to load Monitor</h1>
+      <p>An unexpected error occurred: ${e.message}</p>
+      <button onclick="location.reload()" style="padding:10px 20px;margin-top:20px;">Refresh Page</button>
+    </div>`;
+  }
+});
+</script>
 </body>
 </html>
+�
