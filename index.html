@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor Ultra v5.7</title>
+  <title>Kick & Twitch Monitor Ultra v5.8</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
   <!-- PWA and Mobile App hints -->
@@ -1252,14 +1252,18 @@ const App = {
   },
 
   async fetchApi(url, headers = {}) {
-    const r = await fetch(url, { headers });
-    if (r.status === 404) {
-      return null;
+    for (let i = 0; i < 3; i++) {
+        try {
+            const r = await fetch(url, { headers });
+            if (r.status === 404) return null;
+            if (!r.ok) throw new Error(`API responded with status ${r.status}`);
+            return r.json();
+        } catch (e) {
+            console.warn(`Fetch attempt ${i + 1} for ${url} failed. Retrying...`);
+            if (i < 2) await new Promise(res => setTimeout(res, 1000));
+            else throw e;
+        }
     }
-    if (!r.ok) {
-      throw new Error(`API responded with status ${r.status}`);
-    }
-    return r.json();
   },
 
   getUpperViewerBound(){
