@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Kick & Twitch Monitor Ultra v5.7</title>
-  <meta name="description" content="Monitor your favorite Kick and Twitch streamers with real-time updates, notifications, and enhanced accessibility">
+  <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
   <!-- PWA and Mobile App hints -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -110,6 +110,7 @@
     .streamer.list-view,.streamer.compact-view{flex-direction:row;align-items:center;gap:12px;padding:10px 12px}
     .streamer.kick.live{border-color:rgba(74,222,128,.45)}
     .streamer.twitch.live{border-color:rgba(145, 70, 255, .45)}
+    .streamer.youtube.live{border-color:rgba(255, 0, 0, .45)}
     .streamer.favorite{border-left:4px solid gold}
     @keyframes go-live-pulse{0%{box-shadow:0 0 0 0 rgba(76,222,128,.7)}70%{box-shadow:0 0 0 10px rgba(76,222,128,0)}100%{box-shadow:0 0 0 0 rgba(76,222,128,0)}}
     .newly-live{animation:go-live-pulse 2s ease-out;border-color:var(--accent)}
@@ -122,6 +123,7 @@
     .streamer-name{font-weight:800;text-decoration:none;font-size:14px;line-height:1.2; display: inline-flex; align-items: center;}
     .streamer.kick .streamer-name{color:var(--accent);}
     .streamer.twitch .streamer-name{color:#9146FF;}
+    .streamer.youtube .streamer-name{color:#FF0000;}
     .streamer-name:hover{text-decoration:underline}
     .streamer-status{font-weight:900;font-size:.78em;display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:var(--panel-bg);border:1px solid var(--panel-border)}
     .live .streamer-status{color:var(--success);background:rgba(16,185,129,.1)}
@@ -144,8 +146,10 @@
     .viewer-overlay{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.82);color:#fff;padding:4px 8px;border-radius:999px;font-size:.8em;font-weight:900;border:1px solid rgba(255,255,255,.08)}
     .live.kick .thumbnail-container::after{content:"";position:absolute;inset:-2px;border-radius:12px;pointer-events:none;box-shadow:0 0 0 0 rgba(74,222,128,.28);animation:liveGlowKick 3s ease-out infinite}
     .live.twitch .thumbnail-container::after{content:"";position:absolute;inset:-2px;border-radius:12px;pointer-events:none;box-shadow:0 0 0 0 rgba(145, 70, 255, .28);animation:liveGlowTwitch 3s ease-out infinite}
+    .live.youtube .thumbnail-container::after{content:"";position:absolute;inset:-2px;border-radius:12px;pointer-events:none;box-shadow:0 0 0 0 rgba(255, 0, 0, .28);animation:liveGlowYoutube 3s ease-out infinite}
     @keyframes liveGlowKick{0%{box-shadow:0 0 0 0 rgba(74,222,128,.28)}70%{box-shadow:0 0 0 10px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
     @keyframes liveGlowTwitch{0%{box-shadow:0 0 0 0 rgba(145, 70, 255, .28)}70%{box-shadow:0 0 0 10px rgba(145, 70, 255,0)}100%{box-shadow:0 0 0 0 rgba(145, 70, 255,0)}}
+    @keyframes liveGlowYoutube{0%{box-shadow:0 0 0 0 rgba(255, 0, 0, .28)}70%{box-shadow:0 0 0 10px rgba(255, 0, 0,0)}100%{box-shadow:0 0 0 0 rgba(255, 0, 0,0)}}
     .streamer-actions{display:flex;justify-content:flex-end;align-items:center;gap:4px;z-index:5}
     .streamer.grid-view .streamer-actions{position:absolute;bottom:8px;right:8px;background:rgba(26,26,26,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:4px;border-radius:999px;opacity:0;transform:translateY(5px);transition:opacity .2s,transform .2s}
     .streamer.grid-view:hover .streamer-actions,.streamer.grid-view:focus-within .streamer-actions{opacity:1;transform:translateY(0)}
@@ -279,7 +283,7 @@
     <!-- FLOATING HEADER -->
     <header class="app-header" id="app-header" role="region" aria-label="App toolbar">
       <button id="header-collapse" class="icon-btn header-collapse" title="Collapse/Expand toolbar" aria-pressed="false">◧</button>
-      <h1 class="app-title">Kick & Twitch Monitor <small>v5.6</small></h1>
+      <h1 class="app-title">Kick & Twitch Monitor <small>v5.7</small></h1>
       <div class="spacer" aria-hidden="true"></div>
       <div class="header-controls">
         <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
@@ -375,6 +379,7 @@
                 <select id="platform-select" style="flex-basis: 100px;">
                     <option value="kick" selected>Kick</option>
                     <option value="twitch">Twitch</option>
+                    <option value="youtube">YouTube</option>
                 </select>
                 <button id="add-btn" style="flex-basis: 80px;">➕ Add</button>
             </div>
@@ -410,33 +415,8 @@
               <option value="on">On</option>
             </select>
           </div>
-          
-          <div class="setting-group">
-            <label for="gist-id">GitHub Gist ID</label>
-            <input type="password" id="gist-id" placeholder="Enter your Gist ID" disabled>
-            <p class="help-text">Your streamer list is synced using a Gist.</p>
-          </div>
-          
-          <div class="setting-group">
-            <label for="github-pat">GitHub Personal Access Token</label>
-            <input type="password" id="github-pat" placeholder="Enter your GitHub PAT" disabled>
-            <p class="help-text">Required to update your Gist. Needs the `gist` scope. <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer">Create one here</a>.</p>
-          </div>
-
-          <div class="setting-group">
-            <label for="twitch-client-id">Twitch Client ID</label>
-            <input type="password" id="twitch-client-id" placeholder="Enter your Twitch Client ID" disabled>
-          </div>
-          
-          <div class="setting-group">
-            <label for="twitch-access-token">Twitch App Access Token</label>
-            <input type="password" id="twitch-access-token" placeholder="Enter your Twitch App Access Token" disabled>
-            <p class="help-text">Required for Twitch API. <a href="https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow" target="_blank" rel="noopener noreferrer">How to get credentials</a>.</p>
-          </div>
-
         </div>
         <div class="action-buttons">
-          <button id="unlock-credentials-btn" class="secondary">🔓 Unlock Credentials</button>
           <button id="refresh-btn">🔄 Refresh</button>
           <button id="theme-toggle-btn">🌗 Toggle Theme</button>
           <button id="export-btn">📤 Export</button>
@@ -733,7 +713,7 @@ const App = {
     notificationsEnabled:true, accentColor:'#4ade80', density:'comfortable',
     dataSaver:false, headerCollapsed:false,
     twitchClientId: '', twitchAccessToken: '',
-    gistId: '', githubPat: '',
+    youtubeApiKey: '',
     PIN: '02134'
   },
 
@@ -828,11 +808,6 @@ const App = {
       quickFilters: document.getElementById('quickbar-chips'),
       dataSaverToggle: document.getElementById('data-saver-toggle'),
       installBtn: document.getElementById('install-btn'),
-      twitchClientIdInput: document.getElementById('twitch-client-id'),
-      twitchAccessTokenInput: document.getElementById('twitch-access-token'),
-      gistIdInput: document.getElementById('gist-id'),
-      githubPatInput: document.getElementById('github-pat'),
-      unlockCredentialsBtn: document.getElementById('unlock-credentials-btn'),
     };
   },
 
@@ -948,25 +923,6 @@ const App = {
       localStorage.setItem('dataSaver', this.state.dataSaver ? 'on' : 'off');
       this.render();
     });
-
-    this.elements.twitchClientIdInput.addEventListener('input', Utils.debounce(e => {
-        this.state.twitchClientId = e.target.value;
-        this.saveConfig();
-    }, 500));
-    this.elements.twitchAccessTokenInput.addEventListener('input', Utils.debounce(e => {
-        this.state.twitchAccessToken = e.target.value;
-        this.saveConfig();
-    }, 500));
-    this.elements.gistIdInput.addEventListener('input', Utils.debounce(e => {
-        this.state.gistId = e.target.value;
-        this.saveConfig();
-    }, 500));
-    this.elements.githubPatInput.addEventListener('input', Utils.debounce(e => {
-        this.state.githubPat = e.target.value;
-        this.saveConfig();
-    }, 500));
-
-    this.elements.unlockCredentialsBtn.addEventListener('click', () => this.unlockCredentials());
 
     this.elements.qbGrid.addEventListener('click', ()=>this.updateViewMode('grid'));
     this.elements.qbList.addEventListener('click', ()=>this.updateViewMode('list'));
@@ -1103,13 +1059,7 @@ const App = {
       this.state.streamers = data.streamers || [];
       this.state.twitchClientId = data.config.twitchClientId || '';
       this.state.twitchAccessToken = data.config.twitchAccessToken || '';
-      this.state.gistId = data.config.gistId || '';
-      this.state.githubPat = data.config.githubPat || '';
-      
-      this.elements.twitchClientIdInput.value = this.state.twitchClientId;
-      this.elements.twitchAccessTokenInput.value = this.state.twitchAccessToken;
-      this.elements.gistIdInput.value = this.state.gistId;
-      this.elements.githubPatInput.value = this.state.githubPat;
+      this.state.youtubeApiKey = data.config.youtubeApiKey || '';
 
       this.updateConnectionStatus('connected');
       this.fetchStreamerData();
@@ -1128,6 +1078,9 @@ const App = {
     const reqs = this.state.streamers.map(streamer => {
         if (streamer.platform === 'twitch') {
             return this.fetchTwitchStreamer(streamer.name);
+        }
+        if (streamer.platform === 'youtube') {
+            return this.fetchYouTubeStreamer(streamer.name);
         }
         return this.fetchKickStreamer(streamer.name);
     });
@@ -1243,6 +1196,60 @@ const App = {
       this.cache.set(k, normalizedData);
       return normalizedData;
   },
+  
+  async fetchYouTubeStreamer(name) {
+    if (!this.state.youtubeApiKey) {
+        console.warn("YouTube API key not set.");
+        return { name, platform: 'youtube', isLive: false, title: 'YouTube API key not set' };
+    }
+    const k = `api-youtube-${name}`;
+    const c = this.cache.get(k);
+    if (c) return c;
+
+    // 1. Search for channel ID by username
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${name}&type=channel&key=${this.state.youtubeApiKey}`;
+    const searchData = await this.fetchApi(searchUrl);
+    const channelId = searchData?.items?.[0]?.id?.channelId;
+    if (!channelId) return null; // Channel not found
+
+    // 2. Search for live stream on that channel
+    const liveSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${this.state.youtubeApiKey}`;
+    const liveData = await this.fetchApi(liveSearchUrl);
+    const liveStream = liveData?.items?.[0];
+    
+    let viewers = 0;
+    const isLive = !!liveStream;
+
+    if (isLive) {
+        // 3. Get viewer count if live
+        const videoId = liveStream.id.videoId;
+        const videoDetailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${videoId}&key=${this.state.youtubeApiKey}`;
+        const videoData = await this.fetchApi(videoDetailsUrl);
+        viewers = videoData?.items?.[0]?.liveStreamingDetails?.concurrentViewers || 0;
+    }
+
+    // 4. Get channel profile picture
+    const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${this.state.youtubeApiKey}`;
+    const channelData = await this.fetchApi(channelUrl);
+    const profilePic = channelData?.items?.[0]?.snippet?.thumbnails?.default?.url;
+
+    const normalizedData = {
+        name,
+        platform: 'youtube',
+        isLive,
+        uptime: isLive ? Utils.calculateUptime(liveStream.snippet.publishedAt) : 0,
+        offlineTime: !isLive ? this.stats.offlineTime(name) : 0,
+        title: isLive ? liveStream.snippet.title : "Offline",
+        viewers,
+        category: null, // YouTube API doesn't provide a simple game category here
+        thumbnail: isLive ? liveStream.snippet.thumbnails.high.url : null,
+        url: `https://www.youtube.com/channel/${channelId}`,
+        profilePic,
+        channelId: channelId // Store channelId for multistream embed
+    };
+    this.cache.set(k, normalizedData);
+    return normalizedData;
+  },
 
   async fetchApi(url, headers = {}) {
     const r = await fetch(url, { headers });
@@ -1357,6 +1364,8 @@ const App = {
 
     const platformIcon = s.platform === 'twitch'
         ? `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #9146FF; margin-right: 6px; flex-shrink: 0;"><title>Twitch</title><path d="M11.571 4.714h1.715v5.143H11.57zm4.714 0h1.715v5.143h-1.715zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0H6zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714v9.429z"/></svg>`
+        : s.platform === 'youtube'
+        ? `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #FF0000; margin-right: 6px; flex-shrink: 0;"><title>YouTube</title><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`
         : `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #53FC18; margin-right: 6px; flex-shrink: 0;"><title>Kick</title><path d="M19.43 2.57L4.57 17.43V2.57h14.86M19.43 0H4.57C2.05 0 0 2.05 0 4.57v14.86C0 21.95 2.05 24 4.57 24h14.86c2.52 0 4.57-2.05 4.57-4.57V4.57C24 2.05 21.95 0 19.43 0z"/></svg>`;
 
     const icons = {"Just Chatting":"💬","Slots & Casino":"🎰","Games & Casino":"🎲","Call of Duty":"🎯","Grand Theft Auto V":"🚗","Sports":"🏀","Music":"🎵","Valorant":"🔫","Fortnite":"🛡️","League of Legends":"🧙‍♂️","Minecraft":"⛏️","IRL":"🌍","Poker":"🃏"};
@@ -1540,51 +1549,6 @@ const App = {
     }
   },
 
-  async saveConfig() {
-    const pin = prompt("Enter PIN to save credentials:");
-    if (pin !== this.state.PIN) {
-        if (pin !== null) this.showToast('❌ Incorrect PIN. Save cancelled.', 'error');
-        return;
-    }
-
-    const config = {
-        twitchClientId: this.state.twitchClientId,
-        twitchAccessToken: this.state.twitchAccessToken,
-        gistId: this.state.gistId,
-        githubPat: this.state.githubPat
-    };
-
-    const result = await this.postToWorker({ action: 'save_config', config, pin });
-    if (result) {
-        this.showToast('✅ Configuration saved successfully.', 'success');
-    }
-  },
-
-  unlockCredentials() {
-    const pin = prompt("Enter PIN to unlock credentials:");
-    if (pin === this.state.PIN) {
-        this.elements.gistIdInput.disabled = false;
-        this.elements.githubPatInput.disabled = false;
-        this.elements.twitchClientIdInput.disabled = false;
-        this.elements.twitchAccessTokenInput.disabled = false;
-        this.showToast('✅ Credentials unlocked.', 'success');
-        this.elements.unlockCredentialsBtn.textContent = '🔒 Lock Credentials';
-        this.elements.unlockCredentialsBtn.onclick = () => this.lockCredentials();
-    } else if (pin) {
-        this.showToast('❌ Incorrect PIN.', 'error');
-    }
-  },
-
-  lockCredentials() {
-    this.elements.gistIdInput.disabled = true;
-    this.elements.githubPatInput.disabled = true;
-    this.elements.twitchClientIdInput.disabled = true;
-    this.elements.twitchAccessTokenInput.disabled = true;
-    this.showToast('🔒 Credentials locked.', 'info');
-    this.elements.unlockCredentialsBtn.textContent = '🔓 Unlock Credentials';
-    this.elements.unlockCredentialsBtn.onclick = () => this.unlockCredentials();
-  },
-
   toggleFavorite(name){
     const set=new Set(this.state.favorites);
     const added = !set.has(name);
@@ -1722,6 +1686,8 @@ const App = {
         if (!s) return '';
         const src = s.platform === 'twitch'
             ? `https://player.twitch.tv/?channel=${n}&parent=${window.location.hostname}&autoplay=true&muted=true`
+            : s.platform === 'youtube'
+            ? `https://www.youtube.com/embed/live_stream?channel=${s.channelId}&autoplay=1`
             : `https://player.kick.com/${n}?autoplay=true&muted=true`;
         return `<iframe src="${src}" title="Player for ${n}" style="width:100%;height:100%;border:none;"></iframe>`;
     }).join('');
