@@ -418,6 +418,7 @@
         </div>
         <div class="action-buttons">
           <button id="refresh-btn">🔄 Refresh</button>
+          <button id="deep-refresh-btn" class="secondary">🔄 Deep Refresh</button>
           <button id="theme-toggle-btn">🌗 Toggle Theme</button>
           <button id="export-btn">📤 Export</button>
           <button onclick="document.getElementById('import-file').click()">📥 Import</button>
@@ -757,6 +758,7 @@ const App = {
       platformSelect: document.getElementById('platform-select'),
       addBtn: document.getElementById('add-btn'),
       refreshBtn: document.getElementById('refresh-btn'),
+      deepRefreshBtn: document.getElementById('deep-refresh-btn'),
       themeBtn: document.getElementById('theme-toggle-btn'),
       exportBtn: document.getElementById('export-btn'),
       importFile: document.getElementById('import-file'),
@@ -904,6 +906,7 @@ const App = {
 
     this.elements.themeBtn.addEventListener('click', ()=>this.toggleTheme());
     this.elements.refreshBtn.addEventListener('click', ()=>this.fetchStreamerData());
+    this.elements.deepRefreshBtn.addEventListener('click', ()=>this.deepRefresh());
     this.elements.addBtn.addEventListener('click', ()=>this.addStreamer());
     this.elements.addInput.addEventListener('keyup', e=>{ if(e.key==='Enter') this.addStreamer(); });
     this.elements.exportBtn.addEventListener('click', ()=>this.exportList());
@@ -1260,7 +1263,7 @@ const App = {
             return r.json();
         } catch (e) {
             console.warn(`Fetch attempt ${i + 1} for ${url} failed. Retrying...`);
-            if (i < 2) await new Promise(res => setTimeout(res, 1000));
+            if (i < 2) await new Promise(res => setTimeout(res, 1500));
             else throw e;
         }
     }
