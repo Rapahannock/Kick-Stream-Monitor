@@ -6,11 +6,9 @@
   <title>Kick & Twitch Monitor Ultra v5.8</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, notifications, and enhanced accessibility">
   <meta name="theme-color" content="#111111">
-  <!-- PWA and Mobile App hints -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <!-- We’ll inject icons + manifest dynamically so install works from a single HTML file -->
 
   <style>
     :root{
@@ -48,7 +46,6 @@
     *::-webkit-scrollbar-thumb:hover{background:var(--accent)}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     #app-container{max-width:1600px;margin:0 auto}
-    /* FLOATING HEADER (top-right) */
     .app-header{
       position:fixed; top:12px; right:12px; z-index:1200;
       display:flex; align-items:center; gap:8px;
@@ -93,9 +90,7 @@
     .app-header.collapsed .settings-toggle::after{content:"⚙️"; font-size:18px}
     .app-header .spacer{width:1px;height:20px;background:var(--panel-border);border-radius:1px}
     @media (max-width:640px){ .app-header{top:10px;right:10px} }
-    /* MAIN: grid starts at the very top; header floats and takes no space */
     main#main-content{ margin-top:0; padding-top:0; }
-    /* Grid/cards */
     #streamers{display:grid;gap:12px; margin-top:0;}
     #streamers.grid-view{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
     #streamers.list-view,#streamers.compact-view{grid-template-columns:1fr}
@@ -158,7 +153,6 @@
     .action-btn:focus-visible{outline:none;box-shadow:var(--ring)}
     .action-btn.remove{color:var(--error)}
     .action-btn.favorite.active{color:gold}
-    /* COMPACT VIEW: single row, tidy */
     .streamer.compact-view{padding:8px 10px;gap:10px;align-items:center}
     .streamer.compact-view .thumbnail-container{display:none}
     .streamer.compact-view .streamer-info{display:none}
@@ -167,14 +161,12 @@
     .streamer.compact-view .streamer-name{font-size:.95em}
     .streamer.compact-view .streamer-status{margin-left:auto;background:transparent;border:0;padding:0;font-size:.92em}
     .streamer.compact-view .streamer-actions{margin-left:8px}
-    /* Controls under grid */
     .view-controls{display:flex;gap:8px;align-items:center;margin:12px 0 12px 0}
     .view-toggle{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700}
     .view-toggle.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
     .bulk-actions{display:none;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:10px;padding:16px;margin:0 0 16px 0;gap:12px;align-items:center}
     .bulk-actions.visible{display:flex}
     .selection-count{font-size:14px;color:var(--accent);font-weight:800}
-    /* Stats & settings (below grid) */
     .stats-panel,.groups-panel{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:12px;padding:20px;margin:0 0 16px 0}
     .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:20px}
     .stat{text-align:center;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow-1)}
@@ -202,7 +194,6 @@
     .action-buttons button{flex:1;min-width:120px}
     .empty-state{text-align:center;padding:60px 20px;color:var(--border)}
     .empty-state h3{margin:0 0 16px 0;color:var(--text);font-size:1.3em}
-    /* Toast & Modals */
     #toast{visibility:hidden;background:var(--toast-bg);color:var(--toast-text);text-align:center;border-radius:12px;padding:16px 24px;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:3001;box-shadow:0 8px 32px rgba(0,0,0,.3);opacity:0;transition:opacity .3s,visibility .3s;max-width:420px;border:1px solid var(--border)}
     #toast.success{background:var(--success);color:#fff}
     #toast.error{background:var(--error);color:#fff}
@@ -215,7 +206,6 @@
     #thumbnail-modal .modal-content{background:transparent;border:none;box-shadow:none;padding:0;width:auto}
     .enlarged-thumbnail{display:block;max-width:100%;max-height:85vh;border-radius:12px;cursor:pointer;transition:transform .2s;border:2px solid var(--border)}
     .enlarged-thumbnail:hover{transform:scale(1.02)}
-    /* Sticky QUICKBAR (bottom) */
     .sticky-quickbar{
       position:fixed; z-index:1400;
       left:12px; right:12px;
@@ -247,7 +237,6 @@
     .chip:hover{ transform:translateY(-1px); }
     .setting-group .help-text { font-size: 0.8em; color: var(--text-secondary); margin-top: -4px; }
     .setting-group .help-text a { color: var(--accent); }
-    /* Responsive */
     @media (max-width:768px){
       body{padding:16px}
       .settings-grid{grid-template-columns:1fr}
@@ -266,12 +255,10 @@
       .streamer.list-view .thumbnail-container{width:100%}
       .streamer.list-view .streamer-list-view .thumbnail-preview{width:100%;height:auto}
     }
-    /* Reduced motion */
     @media (prefers-reduced-motion: reduce){
       *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
       .streamer:hover,.action-btn:hover,button:hover:not(:disabled){transform:none}
     }
-    /* Skip link */
     .skip-link{position:absolute;top:-40px;left:6px;background:var(--accent);color:var(--bg);padding:8px;text-decoration:none;border-radius:8px;z-index:1500}
     .skip-link:focus{top:6px}
   </style>
@@ -280,10 +267,9 @@
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <div id="app-container">
-    <!-- FLOATING HEADER -->
     <header class="app-header" id="app-header" role="region" aria-label="App toolbar">
       <button id="header-collapse" class="icon-btn header-collapse" title="Collapse/Expand toolbar" aria-pressed="false">◧</button>
-      <h1 class="app-title">Kick & Twitch Monitor <small>v5.7</small></h1>
+      <h1 class="app-title">Kick & Twitch Monitor <small>v5.8</small></h1>
       <div class="spacer" aria-hidden="true"></div>
       <div class="header-controls">
         <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
@@ -294,12 +280,10 @@
       </div>
     </header>
 
-    <!-- MAIN: Tiles first -->
     <main id="main-content" aria-label="Streamer monitoring dashboard">
       <div id="streamers" class="grid-view" role="grid" aria-describedby="streamers-help"></div>
       <div id="streamers-help" class="sr-only">Grid of streamer cards showing live status, viewer count, and stream information</div>
 
-      <!-- Controls BELOW the grid -->
       <div class="view-controls">
         <button class="view-toggle active" data-view="grid" aria-label="Grid view">📱 Grid</button>
         <button class="view-toggle" data-view="list" aria-label="List view">📋 List</button>
@@ -320,11 +304,9 @@
         <button id="clear-selection">Clear</button>
       </div>
 
-      <!-- Stats -->
       <div id="stats-container"></div>
     </main>
 
-    <!-- Settings Panel -->
     <section class="settings-panel" id="settings-panel">
       <div class="settings-content">
         <div class="settings-grid">
@@ -436,7 +418,6 @@
     </section>
   </div>
 
-  <!-- Sticky Quickbar -->
   <div class="sticky-quickbar" id="quickbar" role="region" aria-label="Quick actions and filters">
     <div class="quick-actions" role="group" aria-label="View & actions">
       <button class="qb-btn" id="qb-grid" title="Grid view" aria-pressed="true">📱</button>
@@ -449,11 +430,9 @@
     <div class="quick-scroll" id="quickbar-chips" aria-label="Quick filters"></div>
   </div>
 
-  <!-- Toast + SR live region -->
   <div id="toast" role="alert" aria-live="assertive"></div>
   <div id="status-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
-  <!-- Thumbnail Modal -->
   <div id="thumbnail-modal" class="modal-overlay">
     <div class="modal-content">
       <button id="thumbnail-modal-close" class="modal-close" title="Close (Esc)" aria-label="Close enlarged view">&times;</button>
@@ -461,7 +440,6 @@
     </div>
   </div>
 
-  <!-- Assign Group Modal -->
   <div id="assign-group-modal" class="modal-overlay">
     <div class="modal-content">
       <button id="assign-group-modal-close" class="modal-close" title="Close (Esc)" aria-label="Close group assignment">&times;</button>
@@ -471,13 +449,11 @@
     </div>
   </div>
 
-  <!-- Multistream Modal -->
   <div id="multistream-modal" class="modal-overlay">
     <button id="multistream-modal-close" class="modal-close" title="Close (Esc)" aria-label="Close multistream view">&times;</button>
     <div id="multistream-grid"></div>
   </div>
 
-  <!-- Shortcuts Modal -->
   <div id="shortcuts-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-labelledby="shortcuts-title" aria-modal="true">
       <button id="shortcuts-modal-close" class="modal-close" title="Close (Esc)" aria-label="Close">&times;</button>
@@ -518,11 +494,11 @@ const PWA = {
 
     const theme = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4ade80';
     const baseUrl = new URL('.', window.location.href).href;
-    
+
     const manifest = {
       name: 'Kick & Twitch Monitor',
       short_name: 'KTM',
-      description: 'Monitor your favorite Kick and Twitch streamers.',
+      description: 'Monitor your favorite Kick, Twitch and YouTube streamers.',
       start_url: baseUrl,
       scope: baseUrl,
       display: 'standalone',
@@ -612,9 +588,7 @@ const PWA = {
       }
       this.deferredPrompt.prompt();
       const { outcome } = await this.deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        console.log('PWA install accepted');
-      }
+      if (outcome === 'accepted') console.log('PWA install accepted');
       this.deferredPrompt = null;
       showInstall(false);
     };
@@ -831,7 +805,7 @@ const App = {
     this.state.notificationsEnabled = (localStorage.getItem("notificationsEnabled") || 'on') === 'on';
     this.state.dataSaver = (localStorage.getItem("dataSaver") || 'off') === 'on';
     this.state.headerCollapsed = (localStorage.getItem("headerCollapsed") || 'false') === 'true';
-    
+
     this.elements.filterSelect.value = this.state.filter;
     this.elements.sortSelect.value = this.state.sort;
     this.elements.autoRefreshSelect.value = this.state.autoRefreshDelay;
@@ -841,7 +815,7 @@ const App = {
     this.elements.densitySelect.value = this.state.density;
     this.elements.notificationsToggle.value = this.state.notificationsEnabled ? 'on' : 'off';
     this.elements.dataSaverToggle.value = this.state.dataSaver ? 'on' : 'off';
-    
+
     this.applyAccent(this.state.accentColor);
     this.applyDensity(this.state.density);
 
@@ -970,21 +944,21 @@ const App = {
     });
 
     this.elements.quickFilters.addEventListener('click', e => {
-        const chip = e.target.closest('.chip[data-filter]');
-        if (!chip) return;
+      const chip = e.target.closest('.chip[data-filter]');
+      if (!chip) return;
 
-        this.state.filter = chip.dataset.filter;
-        localStorage.setItem("filter", this.state.filter);
-        
-        if ([...this.elements.filterSelect.options].some(opt => opt.value === this.state.filter)) {
-            this.elements.filterSelect.value = this.state.filter;
-        } else {
-            this.state.filter = 'all';
-            this.elements.filterSelect.value = 'all';
-        }
+      this.state.filter = chip.dataset.filter;
+      localStorage.setItem("filter", this.state.filter);
 
-        this.syncQuickFilters();
-        this.render();
+      if ([...this.elements.filterSelect.options].some(opt => opt.value === this.state.filter)) {
+        this.elements.filterSelect.value = this.state.filter;
+      } else {
+        this.state.filter = 'all';
+        this.elements.filterSelect.value = 'all';
+      }
+
+      this.syncQuickFilters();
+      this.render();
     });
 
     document.getElementById('thumbnail-modal-close').addEventListener('click', ()=>this.hideEnlargedThumbnail());
@@ -1051,6 +1025,9 @@ const App = {
     else{ p.classList.remove('expanded'); t.setAttribute('aria-expanded','false'); t.textContent='⚙️ Settings'; }
   },
 
+  /** Fetch the list + API keys from the Worker, then try to fetch live data.
+   *  If the Worker implements an 'aggregate' action, we use it. Otherwise, we fall back to direct per-platform calls.
+   */
   async fetchStreamerList(){
     this.setLoadingState(true,'Loading streamer list...');
     this.updateConnectionStatus('connecting');
@@ -1058,14 +1035,14 @@ const App = {
       const res = await fetch(`${this.state.workerEndpoint}?t=${Date.now()}`);
       if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
       const data = await res.json();
-      
-      this.state.streamers = data.streamers || [];
-      this.state.twitchClientId = data.config.twitchClientId || '';
-      this.state.twitchAccessToken = data.config.twitchAccessToken || '';
-      this.state.youtubeApiKey = data.config.youtubeApiKey || '';
+
+      this.state.streamers = Array.isArray(data.streamers) ? data.streamers : [];
+      this.state.twitchClientId = data?.config?.twitchClientId || '';
+      this.state.twitchAccessToken = data?.config?.twitchAccessToken || '';
+      this.state.youtubeApiKey = data?.config?.youtubeApiKey || '';
 
       this.updateConnectionStatus('connected');
-      this.fetchStreamerData();
+      await this.fetchStreamerData();
     } catch(err) {
       console.error('Failed to load data from worker:', err);
       this.updateConnectionStatus('error');
@@ -1076,54 +1053,88 @@ const App = {
     }
   },
 
+  async tryWorkerAggregate(){
+    // Optional: if your Worker supports POST {action:'aggregate'} returning [{ name, platform, ...normalizedData }]
+    try {
+      const payload = { action: 'aggregate', streamers: this.state.streamers };
+      const res = await fetch(this.state.workerEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) return false;
+      const arr = await res.json();
+      if (!Array.isArray(arr)) return false;
+      arr.forEach(d => {
+        const name = d?.name;
+        if (!name) return;
+        this.state.streamerData.set(name, d);
+        this.state.lastLiveStates[`${d.platform}-${name}`] = !!d.isLive;
+      });
+      this.stats.recordSnapshot(Array.from(this.state.streamerData.values()));
+      this.setLoadingState(false);
+      this.render();
+      this.announceUpdate(arr.length, this.state.streamers.length);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
   async fetchStreamerData() {
     this.setLoadingState(true, 'Updating streamer data...');
+
+    // First preference: if Worker supports aggregate fetch, use it
+    const usedWorker = await this.tryWorkerAggregate();
+    if (usedWorker) return;
+
+    // Fallback: client-side calls (Kick via corsproxy, Twitch/YouTube via keys from worker config)
     const reqs = this.state.streamers.map(streamer => {
-        if (streamer.platform === 'twitch') {
-            return this.fetchTwitchStreamer(streamer.name);
-        }
-        if (streamer.platform === 'youtube') {
-            return this.fetchYouTubeStreamer(streamer.name);
-        }
-        return this.fetchKickStreamer(streamer.name);
+      if (streamer.platform === 'twitch') return this.fetchTwitchStreamer(streamer.name);
+      if (streamer.platform === 'youtube') return this.fetchYouTubeStreamer(streamer.name);
+      return this.fetchKickStreamer(streamer.name);
     });
 
     const results = await Promise.allSettled(reqs);
     let ok = 0;
 
     results.forEach((r, i) => {
-        const streamer = this.state.streamers[i];
-        const name = streamer.name;
-        const uniqueId = `${streamer.platform}-${name}`;
+      const streamer = this.state.streamers[i];
+      const name = streamer.name;
+      const uniqueId = `${streamer.platform}-${name}`;
 
-        if (r.status === 'fulfilled' && r.value) {
-            const data = r.value;
-            const wasLive = this.state.lastLiveStates[uniqueId];
-            if (data.isLive && wasLive === false) {
-                if (this.state.favorites.includes(name)) this.notifyFavoriteStreamerLive(name, data);
-                const card = this.elements.container.querySelector(`[data-streamer-name="${name}"]`);
-                if (card) { card.classList.add('newly-live'); setTimeout(() => card.classList.remove('newly-live'), 2000); }
-            }
-            this.state.lastLiveStates[uniqueId] = data.isLive;
-            this.state.streamerData.set(name, data);
-            ok++;
-        } else {
-            const offlineTime = this.stats.offlineTime(name);
-            this.state.streamerData.set(name, {
-                name,
-                platform: streamer.platform,
-                isLive: false,
-                title: 'Banned / Not Found',
-                viewers: 0,
-                category: null,
-                url: streamer.platform === 'twitch' ? `https://twitch.tv/${name}` : `https://kick.com/${name}`,
-                uptime: 0,
-                offlineTime
-            });
-            if (r.status === 'rejected') {
-                console.error(`Failed to fetch data for ${name} on ${streamer.platform}:`, r.reason);
-            }
+      if (r.status === 'fulfilled' && r.value) {
+        const data = r.value;
+        const wasLive = this.state.lastLiveStates[uniqueId];
+        if (data.isLive && wasLive === false) {
+          if (this.state.favorites.includes(name)) this.notifyFavoriteStreamerLive(name, data);
+          const card = this.elements.container.querySelector(`[data-streamer-name="${name}"]`);
+          if (card) { card.classList.add('newly-live'); setTimeout(() => card.classList.remove('newly-live'), 2000); }
         }
+        this.state.lastLiveStates[uniqueId] = !!data.isLive;
+        this.state.streamerData.set(name, data);
+        ok++;
+      } else {
+        const offlineTime = this.stats.offlineTime(name);
+        let url = '';
+        if (streamer.platform === 'twitch') url = `https://twitch.tv/${name}`;
+        else if (streamer.platform === 'youtube') url = name.startsWith('@') ? `https://www.youtube.com/${name}` : `https://www.youtube.com/c/${name}`;
+        else url = `https://kick.com/${name}`;
+        this.state.streamerData.set(name, {
+          name,
+          platform: streamer.platform,
+          isLive: false,
+          title: 'Banned / Not Found',
+          viewers: 0,
+          category: null,
+          url,
+          uptime: 0,
+          offlineTime
+        });
+        if (r.status === 'rejected') {
+          console.error(`Failed to fetch data for ${name} on ${streamer.platform}:`, r.reason);
+        }
+      }
     });
 
     this.stats.recordSnapshot(Array.from(this.state.streamerData.values()));
@@ -1133,122 +1144,129 @@ const App = {
   },
 
   async fetchKickStreamer(name) {
-      const kickApiUrl = `https://kick.com/api/v1/channels/${name}`;
-      const url = `https://corsproxy.io/?${encodeURIComponent(kickApiUrl)}`;
-      const k = `api-kick-${name}`;
-      const c = this.cache.get(k);
-      if (c) return c;
+    const k = `api-kick-${name}`;
+    const c = this.cache.get(k); if (c) return c;
 
-      const d = await this.fetchApi(url);
-      if (!d) return null;
+    const kickApiUrl = `https://kick.com/api/v1/channels/${encodeURIComponent(name)}`;
+    const url = `https://corsproxy.io/?${encodeURIComponent(kickApiUrl)}`;
+    const d = await this.fetchApi(url);
+    if (!d) return null;
 
-      const isLive = d.livestream !== null;
-      const uptime = isLive ? Utils.calculateUptime(d.livestream?.created_at) : 0;
-      const offlineTime = !isLive ? this.stats.offlineTime(name) : 0;
+    const isLive = d.livestream !== null;
+    const uptime = isLive ? Utils.calculateUptime(d.livestream?.created_at) : 0;
+    const offlineTime = !isLive ? this.stats.offlineTime(name) : 0;
 
-      const normalizedData = {
-          name, platform: 'kick', isLive, uptime, offlineTime,
-          title: d.livestream?.session_title || "Offline",
-          viewers: d.livestream?.viewer_count || 0,
-          category: d.livestream?.categories?.[0]?.name || null,
-          thumbnail: d.livestream?.thumbnail?.url,
-          url: `https://kick.com/${name}`,
-          profilePic: d.user?.profile_pic,
-      };
-      this.cache.set(k, normalizedData);
-      return normalizedData;
+    const normalizedData = {
+      name, platform: 'kick', isLive, uptime, offlineTime,
+      title: d.livestream?.session_title || "Offline",
+      viewers: d.livestream?.viewer_count || 0,
+      category: d.livestream?.categories?.[0]?.name || null,
+      thumbnail: d.livestream?.thumbnail?.url || null,
+      url: `https://kick.com/${name}`,
+      profilePic: d.user?.profile_pic || ''
+    };
+    this.cache.set(k, normalizedData);
+    return normalizedData;
   },
 
   async fetchTwitchStreamer(name) {
-      if (!this.state.twitchClientId || !this.state.twitchAccessToken) {
-        console.warn("Twitch API credentials not set.");
-        return { name, platform: 'twitch', isLive: false, title: 'Twitch API keys not set' };
-      }
-      const k = `api-twitch-${name}`;
-      const c = this.cache.get(k);
-      if (c) return c;
+    if (!this.state.twitchClientId || !this.state.twitchAccessToken) {
+      console.warn("Twitch API credentials not set.");
+      return { name, platform: 'twitch', isLive: false, title: 'Twitch API keys not set', url:`https://twitch.tv/${name}` };
+    }
+    const k = `api-twitch-${name}`;
+    const c = this.cache.get(k); if (c) return c;
 
-      const headers = {
-        'Client-ID': this.state.twitchClientId,
-        'Authorization': `Bearer ${this.state.twitchAccessToken}`
+    const headers = {
+      'Client-ID': this.state.twitchClientId,
+      'Authorization': `Bearer ${this.state.twitchAccessToken}`
+    };
+
+    const [streamRes, userRes] = await Promise.all([
+      this.fetchApi(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(name)}`, headers),
+      this.fetchApi(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(name)}`, headers)
+    ]);
+
+    const streamData = streamRes?.data?.[0];
+    const userData = userRes?.data?.[0];
+    if (!userData) {
+      return {
+        name, platform:'twitch', isLive:false, title: 'Not Found',
+        viewers:0, category:null, thumbnail:null, url:`https://twitch.tv/${name}`, profilePic:''
       };
+    }
 
-      const [streamRes, userRes] = await Promise.all([
-          this.fetchApi(`https://api.twitch.tv/helix/streams?user_login=${name}`, headers),
-          this.fetchApi(`https://api.twitch.tv/helix/users?login=${name}`, headers)
-      ]);
+    const isLive = !!streamData && streamData.type === 'live';
+    const uptime = isLive ? Utils.calculateUptime(streamData.started_at) : 0;
+    const offlineTime = !isLive ? this.stats.offlineTime(name) : 0;
 
-      const streamData = streamRes?.data?.[0];
-      const userData = userRes?.data?.[0];
-
-      if (!userData) return null;
-
-      const isLive = !!streamData && streamData.type === 'live';
-      const uptime = isLive ? Utils.calculateUptime(streamData.started_at) : 0;
-      const offlineTime = !isLive ? this.stats.offlineTime(name) : 0;
-
-      const normalizedData = {
-          name, platform: 'twitch', isLive, uptime, offlineTime,
-          title: isLive ? streamData.title : "Offline",
-          viewers: isLive ? streamData.viewer_count : 0,
-          category: isLive ? streamData.game_name : null,
-          thumbnail: isLive ? streamData.thumbnail_url.replace('{width}', '440').replace('{height}', '248') : null,
-          url: `https://twitch.tv/${name}`,
-          profilePic: userData.profile_image_url,
-      };
-      this.cache.set(k, normalizedData);
-      return normalizedData;
+    const normalizedData = {
+      name, platform: 'twitch', isLive, uptime, offlineTime,
+      title: isLive ? streamData.title : "Offline",
+      viewers: isLive ? streamData.viewer_count : 0,
+      category: isLive ? streamData.game_name : null,
+      thumbnail: isLive ? streamData.thumbnail_url.replace('{width}', '440').replace('{height}', '248') : null,
+      url: `https://twitch.tv/${name}`,
+      profilePic: userData.profile_image_url || ''
+    };
+    this.cache.set(k, normalizedData);
+    return normalizedData;
   },
-  
+
   async fetchYouTubeStreamer(name) {
     if (!this.state.youtubeApiKey) {
-        console.warn("YouTube API key not set.");
-        return { name, platform: 'youtube', isLive: false, title: 'YouTube API key not set' };
+      console.warn("YouTube API key not set.");
+      return { name, platform: 'youtube', isLive: false, title: 'YouTube API key not set', url: name.startsWith('@') ? `https://www.youtube.com/${name}` : `https://www.youtube.com/c/${name}` };
     }
     const k = `api-youtube-${name}`;
-    const c = this.cache.get(k);
-    if (c) return c;
+    const c = this.cache.get(k); if (c) return c;
 
-    // 1. Search for channel ID by username
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${name}&type=channel&key=${this.state.youtubeApiKey}`;
+    // 1) Find channelId from handle or query
+    const query = encodeURIComponent(name);
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=channel&key=${this.state.youtubeApiKey}`;
     const searchData = await this.fetchApi(searchUrl);
     const channelId = searchData?.items?.[0]?.id?.channelId;
-    if (!channelId) return null; // Channel not found
 
-    // 2. Search for live stream on that channel
+    if (!channelId) {
+      return {
+        name, platform:'youtube', isLive:false, title:'Channel not found',
+        viewers:0, category:null, thumbnail:null,
+        url: name.startsWith('@') ? `https://www.youtube.com/${name}` : `https://www.youtube.com/c/${name}`,
+        profilePic:'', channelId: null
+      };
+    }
+
+    // 2) Check live
     const liveSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${this.state.youtubeApiKey}`;
     const liveData = await this.fetchApi(liveSearchUrl);
     const liveStream = liveData?.items?.[0];
-    
+
     let viewers = 0;
     const isLive = !!liveStream;
 
     if (isLive) {
-        // 3. Get viewer count if live
-        const videoId = liveStream.id.videoId;
-        const videoDetailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${videoId}&key=${this.state.youtubeApiKey}`;
-        const videoData = await this.fetchApi(videoDetailsUrl);
-        viewers = videoData?.items?.[0]?.liveStreamingDetails?.concurrentViewers || 0;
+      const videoId = liveStream.id.videoId;
+      const videoDetailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${videoId}&key=${this.state.youtubeApiKey}`;
+      const videoData = await this.fetchApi(videoDetailsUrl);
+      viewers = Number(videoData?.items?.[0]?.liveStreamingDetails?.concurrentViewers || 0);
     }
 
-    // 4. Get channel profile picture
+    // 3) Profile pic
     const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${this.state.youtubeApiKey}`;
     const channelData = await this.fetchApi(channelUrl);
-    const profilePic = channelData?.items?.[0]?.snippet?.thumbnails?.default?.url;
+    const profilePic = channelData?.items?.[0]?.snippet?.thumbnails?.default?.url || '';
 
     const normalizedData = {
-        name,
-        platform: 'youtube',
-        isLive,
-        uptime: isLive ? Utils.calculateUptime(liveStream.snippet.publishedAt) : 0,
-        offlineTime: !isLive ? this.stats.offlineTime(name) : 0,
-        title: isLive ? liveStream.snippet.title : "Offline",
-        viewers,
-        category: null, // YouTube API doesn't provide a simple game category here
-        thumbnail: isLive ? liveStream.snippet.thumbnails.high.url : null,
-        url: `https://www.youtube.com/channel/${channelId}`,
-        profilePic,
-        channelId: channelId // Store channelId for multistream embed
+      name, platform: 'youtube', isLive,
+      uptime: isLive ? Utils.calculateUptime(liveStream.snippet.publishedAt) : 0,
+      offlineTime: !isLive ? this.stats.offlineTime(name) : 0,
+      title: isLive ? liveStream.snippet.title : "Offline",
+      viewers,
+      category: null,
+      thumbnail: isLive ? (liveStream.snippet.thumbnails.high?.url || liveStream.snippet.thumbnails.medium?.url || null) : null,
+      url: `https://www.youtube.com/channel/${channelId}`,
+      profilePic,
+      channelId
     };
     this.cache.set(k, normalizedData);
     return normalizedData;
@@ -1256,16 +1274,16 @@ const App = {
 
   async fetchApi(url, headers = {}) {
     for (let i = 0; i < 3; i++) {
-        try {
-            const r = await fetch(url, { headers });
-            if (r.status === 404) return null;
-            if (!r.ok) throw new Error(`API responded with status ${r.status}`);
-            return r.json();
-        } catch (e) {
-            console.warn(`Fetch attempt ${i + 1} for ${url} failed. Retrying...`);
-            if (i < 2) await new Promise(res => setTimeout(res, 1500));
-            else throw e;
-        }
+      try {
+        const r = await fetch(url, { headers });
+        if (r.status === 404) return null;
+        if (!r.ok) throw new Error(`API responded with status ${r.status}`);
+        return r.json();
+      } catch (e) {
+        console.warn(`Fetch attempt ${i + 1} for ${url} failed. Retrying...`);
+        if (i < 2) await new Promise(res => setTimeout(res, 1200));
+        else throw e;
+      }
     }
   },
 
@@ -1370,10 +1388,10 @@ const App = {
     div.dataset.streamerPlatform=s.platform;
 
     const platformIcon = s.platform === 'twitch'
-        ? `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #9146FF; margin-right: 6px; flex-shrink: 0;"><title>Twitch</title><path d="M11.571 4.714h1.715v5.143H11.57zm4.714 0h1.715v5.143h-1.715zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0H6zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714v9.429z"/></svg>`
-        : s.platform === 'youtube'
-        ? `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #FF0000; margin-right: 6px; flex-shrink: 0;"><title>YouTube</title><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`
-        : `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #53FC18; margin-right: 6px; flex-shrink: 0;"><title>Kick</title><path d="M19.43 2.57L4.57 17.43V2.57h14.86M19.43 0H4.57C2.05 0 0 2.05 0 4.57v14.86C0 21.95 2.05 24 4.57 24h14.86c2.52 0 4.57-2.05 4.57-4.57V4.57C24 2.05 21.95 0 19.43 0z"/></svg>`;
+      ? `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #9146FF; margin-right: 6px; flex-shrink: 0;"><title>Twitch</title><path d="M11.571 4.714h1.715v5.143H11.57zm4.714 0h1.715v5.143h-1.715zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0H6zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714v9.429z"/></svg>`
+      : s.platform === 'youtube'
+      ? `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #FF0000; margin-right: 6px; flex-shrink: 0;"><title>YouTube</title><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`
+      : `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:14px; height:14px; fill: #53FC18; margin-right: 6px; flex-shrink: 0;"><title>Kick</title><path d="M19.43 2.57L4.57 17.43V2.57h14.86M19.43 0H4.57C2.05 0 0 2.05 0 4.57v14.86C0 21.95 2.05 24 4.57 24h14.86c2.52 0 4.57-2.05 4.57-4.57V4.57C24 2.05 21.95 0 19.43 0z"/></svg>`;
 
     const icons = {"Just Chatting":"💬","Slots & Casino":"🎰","Games & Casino":"🎲","Call of Duty":"🎯","Grand Theft Auto V":"🚗","Sports":"🏀","Music":"🎵","Valorant":"🔫","Fortnite":"🛡️","League of Legends":"🧙‍♂️","Minecraft":"⛏️","IRL":"🌍","Poker":"🃏"};
     const icon = icons[s.category] || '🎮';
@@ -1445,9 +1463,9 @@ const App = {
   updateViewMode(mode){
     this.state.viewMode=mode; localStorage.setItem("viewMode", mode);
     document.querySelectorAll('.view-toggle[data-view]').forEach(btn=>btn.classList.toggle('active', btn.dataset.view===mode));
-    this.elements.qbGrid.setAttribute('aria-pressed', mode==='grid');
-    this.elements.qbList.setAttribute('aria-pressed', mode==='list');
-    this.elements.qbCompact.setAttribute('aria-pressed', mode==='compact');
+    this.elements.qbGrid.setAttribute('aria-pressed', mode==='grid' ? 'true':'false');
+    this.elements.qbList.setAttribute('aria-pressed', mode==='list' ? 'true':'false');
+    this.elements.qbCompact.setAttribute('aria-pressed', mode==='compact' ? 'true':'false');
     this.elements.container.className = `${mode}-view`;
     this.render();
   },
@@ -1478,8 +1496,8 @@ const App = {
   pickTopN(n){ this.state.selectedStreamers.clear(); this.getFilteredAndSortedData().filter(s=>s.isLive).sort((a,b)=>b.viewers-a.viewers).slice(0,n).forEach(s=>this.state.selectedStreamers.add(s.name)); this.updateSelectionUI(); this.render(); },
   copySelectedUrls(){
     const urls = Array.from(this.state.selectedStreamers).map(n=>{
-        const s = this.state.streamerData.get(n);
-        return s ? s.url : '';
+      const s = this.state.streamerData.get(n);
+      return s ? s.url : '';
     }).filter(Boolean).join('\n');
     if(!urls){ this.showToast('⚠️ Nothing selected.','warning'); return; }
     navigator.clipboard?.writeText(urls).then(()=> this.showToast('🔗 URLs copied to clipboard','success'))
@@ -1517,11 +1535,11 @@ const App = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
+      const txt = await res.text();
       if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || `Worker responded with status ${res.status}`);
+        throw new Error(txt || `Worker responded with status ${res.status}`);
       }
-      return await res.text();
+      return txt;
     } catch (e) {
       this.showToast(`❌ Action failed: ${e.message}`, 'error');
       return null;
@@ -1529,30 +1547,30 @@ const App = {
   },
 
   async addStreamer(){
-    const name = this.elements.addInput.value.trim().toLowerCase();
+    const name = this.elements.addInput.value.trim();
     const platform = this.elements.platformSelect.value;
     if(!name) return this.showToast('⚠️ Please enter a streamer name.','warning');
-    if(this.state.streamers.some(s => s.name === name && s.platform === platform)) return this.showToast('⚠️ Streamer is already in the list.','warning');
+    const exists = this.state.streamers.some(s=>s.name.toLowerCase()===name.toLowerCase() && s.platform===platform);
+    if (exists) return this.showToast('⚠️ Streamer is already in the list.','warning');
 
     const result = await this.postToWorker({ action: 'add', name, platform });
     if (result) {
-        this.showToast(`✅ ${result}`, 'success');
-        this.elements.addInput.value = '';
-        this.fetchStreamerList();
+      this.showToast(`✅ ${result}`, 'success');
+      this.elements.addInput.value = '';
+      await this.fetchStreamerList();
     }
   },
 
   async removeStreamer(name, platform){
     const pin = prompt("Enter PIN to confirm removal:");
     if (pin !== this.state.PIN) {
-        if (pin !== null) this.showToast('❌ Incorrect PIN. Removal cancelled.', 'error');
-        return;
+      if (pin !== null) this.showToast('❌ Incorrect PIN. Removal cancelled.', 'error');
+      return;
     }
-    
     const result = await this.postToWorker({ action: 'remove', name, platform, pin });
     if (result) {
-        this.showToast(`🗑️ ${result}`, 'success');
-        this.fetchStreamerList();
+      this.showToast(`🗑️ ${result}`, 'success');
+      await this.fetchStreamerList();
     }
   },
 
@@ -1577,7 +1595,10 @@ const App = {
   },
   updateThemeColorMeta(){
     const meta=document.querySelector('meta[name="theme-color"]');
-    if(meta){ const theme=document.body.getAttribute('data-theme'); meta.setAttribute('content', theme==='dark' ? '#111111' : '#f8fafc'); }
+    if(meta){
+      const theme=document.body.getAttribute('data-theme');
+      meta.setAttribute('content', theme==='dark' ? '#111111' : '#f8fafc');
+    }
   },
 
   applyAccent(hex){
@@ -1594,41 +1615,78 @@ const App = {
 
   exportList() {
     try {
-        const data = JSON.stringify(this.state.streamers, null, 2);
-        const blob = new Blob([data], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'streamers1455.json';
-        a.click();
-        URL.revokeObjectURL(url);
-        this.showToast('📤 Exported successfully!', 'success');
+      const data = JSON.stringify(this.state.streamers, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'streamers1455.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      this.showToast('📤 Exported successfully!', 'success');
     } catch (e) {
-        this.showToast('❌ Export failed.', 'error');
+      this.showToast('❌ Export failed.', 'error');
     }
   },
+
   async importList(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-          try {
-              const imported = JSON.parse(e.target.result);
-              if (!Array.isArray(imported) || !imported.every(item => item.name && item.platform)) {
-                  throw new Error('Invalid file format.');
-              }
-              const success = await this.updateGist(imported);
-              if (success) {
-                this.state.streamers = imported;
-                this.fetchStreamerData();
-                this.showToast('📥 Imported and saved to Gist successfully!', 'success');
-              }
-          } catch (err) {
-              this.showToast(`❌ Import failed: ${err.message}`, 'error');
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (!Array.isArray(imported) || !imported.every(item => item.name && item.platform)) {
+          throw new Error('Invalid file format.');
+        }
+        const success = await this.bulkImportList(imported);
+        if (success) {
+          await this.fetchStreamerList();
+          this.showToast('📥 Imported successfully!', 'success');
+        }
+      } catch (err) {
+        this.showToast(`❌ Import failed: ${err.message}`, 'error');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  },
+
+  async bulkImportList(imported){
+    // Try Worker bulk replace if implemented
+    try {
+      const r = await fetch(this.state.workerEndpoint, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'bulkReplace', list: imported })
+      });
+      if (r.ok) return true;
+    } catch(_) { /* ignore */ }
+
+    // Fallback: add new ones; optionally remove missing ones
+    const curr = this.state.streamers.map(s => `${s.platform}:${s.name.toLowerCase()}`);
+    const next = imported.map(s => `${s.platform}:${(s.name||'').toLowerCase()}`);
+    const toAdd = imported.filter(s => !curr.includes(`${s.platform}:${s.name.toLowerCase()}`));
+    const toRemove = this.state.streamers.filter(s => !next.includes(`${s.platform}:${s.name.toLowerCase()}`));
+
+    for (const s of toAdd) {
+      await this.postToWorker({ action:'add', name: s.name, platform: s.platform });
+    }
+
+    if (toRemove.length) {
+      const confirmRemove = confirm(`Remove ${toRemove.length} streamers not present in the import file?`);
+      if (confirmRemove) {
+        const pin = prompt('Enter PIN to confirm removal:');
+        if (pin === this.state.PIN) {
+          for (const s of toRemove) {
+            await this.postToWorker({ action:'remove', name: s.name, platform: s.platform, pin });
           }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
+        } else {
+          this.showToast('❌ Incorrect PIN. Skipped removals.', 'error');
+        }
+      }
+    }
+    return true;
   },
 
   createGroup(){
@@ -1689,14 +1747,14 @@ const App = {
     if(!liveSel.length) return this.showToast('⚠️ No live streamers selected.','warning');
     const grid=document.getElementById('multistream-grid');
     grid.innerHTML = liveSel.map(n=>{
-        const s = this.state.streamerData.get(n);
-        if (!s) return '';
-        const src = s.platform === 'twitch'
-            ? `https://player.twitch.tv/?channel=${n}&parent=${window.location.hostname}&autoplay=true&muted=true`
-            : s.platform === 'youtube'
-            ? `https://www.youtube.com/embed/live_stream?channel=${s.channelId}&autoplay=1`
-            : `https://player.kick.com/${n}?autoplay=true&muted=true`;
-        return `<iframe src="${src}" title="Player for ${n}" style="width:100%;height:100%;border:none;"></iframe>`;
+      const s = this.state.streamerData.get(n);
+      if (!s) return '';
+      const src = s.platform === 'twitch'
+        ? `https://player.twitch.tv/?channel=${encodeURIComponent(n)}&parent=${window.location.hostname}&autoplay=true&muted=true`
+        : s.platform === 'youtube'
+        ? `https://www.youtube.com/embed/live_stream?channel=${s.channelId}&autoplay=1`
+        : `https://player.kick.com/${encodeURIComponent(n)}?autoplay=true&muted=true`;
+      return `<iframe src="${src}" title="Player for ${n}" style="width:100%;height:100%;border:none;"></iframe>`;
     }).join('');
 
     const cols=Math.ceil(Math.sqrt(liveSel.length)); const rows=Math.ceil(liveSel.length/cols);
@@ -1764,6 +1822,13 @@ const App = {
     this.elements.header.classList.toggle('collapsed', collapsed);
     document.getElementById('header-collapse').setAttribute('aria-pressed', collapsed ? 'true' : 'false');
   },
+
+  deepRefresh(){
+    this.cache.clear();
+    this.state.streamerData.clear();
+    this.stats.cleanup();
+    this.fetchStreamerData().then(()=> this.showToast('🔄 Deep refresh complete','success')).catch(()=>{});
+  },
 };
 
 // Error boundary wrapper
@@ -1787,7 +1852,7 @@ function withErrorBoundary(fn, name='Unknown'){
 App.fetchStreamerList = withErrorBoundary(App.fetchStreamerList,'fetchStreamerList');
 App.fetchStreamerData = withErrorBoundary(App.fetchStreamerData,'fetchStreamerData');
 
-/* Boot: build PWA first (manifest & SW), then init app */
+/* Boot */
 document.addEventListener('DOMContentLoaded', async ()=>{
   try{
     await PWA.init();
