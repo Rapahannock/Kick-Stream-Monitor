@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor v6.9</title>
+  <title>Kick & Twitch Monitor v7.1</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
-  <meta name="theme-color" content="#1a1d21">
+  <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,19 +13,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #111315;
-      --bg-secondary: #1a1d21;
-      --bg-tertiary: #23272d;
-      --text-primary: #f0f2f5;
-      --text-secondary: #a0a7b3;
-      --border-primary: #303640;
-      --border-secondary: #49515e;
-      --accent-primary: #ea580c; /* Vibrant Orange */
-      --accent-secondary: #fb923c; /* Lighter Orange */
+      --bg-primary: #0a0a0a; /* Flat, deep black */
+      --bg-secondary: rgba(22, 27, 34, 0.75); /* Semi-transparent for glass effect */
+      --bg-tertiary: #21262d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --border-primary: rgba(48, 54, 61, 0.8);
+      --border-secondary: #8b949e;
+      --accent-primary: #22d3ee; /* Vibrant Cyan */
+      --accent-secondary: #67e8f9; /* Lighter Cyan */
       --live: #22c55e;
       --twitch: #9146ff; /* Twitch Purple */
       --youtube: #ff0000; /* YouTube Red */
-      --offline: #ef4444;
+      --offline: #f85149;
       --warning: #f59e0b;
       --info: #3b82f6;
       --shadow-sm: 0 1px 2px rgba(0,0,0,.15);
@@ -35,20 +35,20 @@
       --radius-lg: 16px;
       --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       --transition-fast: 0.15s ease;
-      --transition-slow: 0.3s ease;
+      --transition-slow: 0.3s ease-out;
       --ring: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 25%, transparent);
     }
 
     [data-theme="light"] {
-      --bg-primary: #f8fafc;
-      --bg-secondary: #ffffff;
-      --bg-tertiary: #f1f5f9;
-      --text-primary: #1a1d21;
-      --text-secondary: #64748b;
-      --border-primary: #e2e8f0;
-      --border-secondary: #cbd5e1;
-      --accent-primary: #c2410c; /* Darker Orange for light theme */
-      --accent-secondary: #f97316; /* Vibrant Orange for light theme */
+      --bg-primary: #f0f2f5;
+      --bg-secondary: rgba(255, 255, 255, 0.7);
+      --bg-tertiary: #e1e4e8;
+      --text-primary: #24292e;
+      --text-secondary: #586069;
+      --border-primary: rgba(209, 213, 218, 0.8);
+      --border-secondary: #959da5;
+      --accent-primary: #0366d6;
+      --accent-secondary: #2188ff;
       --shadow-sm: 0 1px 2px rgba(10,10,10,.04);
       --shadow-md: 0 4px 12px rgba(10,10,10,.08);
       --shadow-lg: 0 10px 30px rgba(10,10,10,.1);
@@ -59,82 +59,49 @@
     body {
       color-scheme: light dark;
       font-family: var(--font-family);
-      background: var(--bg-primary);
+      background-color: var(--bg-primary);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
       color: var(--text-primary);
       margin: 0;
       line-height: 1.5;
-      padding: 80px 20px 100px 20px; /* Added top/bottom padding for floating controls */
+      padding: 20px 20px 120px 20px;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       transition: background var(--transition-slow), color var(--transition-slow);
     }
 
     #app-container { max-width: 1800px; margin: 0 auto; }
-
-    /* Header */
-    .app-header {
-      position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 1200;
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px; margin: 0;
-      border: 1px solid var(--border-primary);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-lg);
-      background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      transition: all var(--transition-slow);
-      width: max-content;
-    }
-    .app-header .app-title {
-      margin: 0 8px; font-weight: 800;
-      font-size: 1.1rem;
-      background-image: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      white-space: nowrap;
-    }
-    .app-title small { color: var(--text-secondary); font-weight: 600; font-size: 0.7em; }
-    .header-controls { display: flex; align-items: center; gap: 6px; }
-    .status-indicator { width: 10px; height: 10px; border-radius: 50%; transition: background-color var(--transition-slow); }
-    .status-indicator.connected { background-color: var(--live); }
-    .status-indicator.connecting { background-color: var(--warning); animation: pulse 1.5s infinite; }
-    .status-indicator.error { background-color: var(--offline); }
-    #last-updated { font-size: .8em; color: var(--text-secondary); white-space: nowrap; margin: 0 4px; }
-    
-    .icon-btn {
-      display: inline-grid; place-items: center; width: 38px; height: 38px;
-      border: none; background: var(--bg-tertiary); color: var(--text-secondary);
-      border-radius: 10px; cursor: pointer; transition: all var(--transition-fast);
-    }
-    .icon-btn:hover { color: var(--text-primary); background: var(--border-primary); transform: translateY(-1px); }
-    .icon-btn:focus-visible { outline: none; box-shadow: var(--ring); }
-    .icon-btn svg { width: 20px; height: 20px; }
-
-    .settings-toggle {
-      background: var(--accent-primary); color: white;
-      padding: 0 16px; font-weight: 700; cursor: pointer;
-      white-space: nowrap; height: 38px;
-      border-radius: 10px; border: none;
-      transition: all var(--transition-fast);
-    }
-    .settings-toggle:hover { background: var(--accent-secondary); transform: translateY(-1px); }
     
     main#main-content { margin-top: 0; }
-    #streamers { display: grid; gap: 16px; }
+    #streamers { display: grid; gap: 20px; }
     #streamers.grid-view { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
     #streamers.list-view, #streamers.compact-view { grid-template-columns: 1fr; }
 
     /* Streamer Card */
     .streamer {
       background: var(--bg-secondary);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--border-primary);
+      border-left: 4px solid transparent;
       border-radius: var(--radius-lg);
       display: flex; flex-direction: column;
       transition: transform var(--transition-slow), box-shadow var(--transition-slow), border-color var(--transition-slow);
       position: relative;
-      overflow: hidden;
-      box-shadow: var(--shadow-md);
+      overflow: hidden; /* Changed from visible to fix corner bug */
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent), 0 2px 8px rgba(0,0,0,0.2);
     }
+    .streamer.live.kick { border-left-color: var(--live); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent), -5px 0 30px -8px color-mix(in srgb, var(--live) 75%, transparent), 0 2px 8px rgba(0,0,0,0.2); }
+    .streamer.live.twitch { border-left-color: var(--twitch); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent), -5px 0 30px -8px color-mix(in srgb, var(--twitch) 75%, transparent), 0 2px 8px rgba(0,0,0,0.2); }
+    .streamer.live.youtube { border-left-color: var(--youtube); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent), -5px 0 30px -8px color-mix(in srgb, var(--youtube) 75%, transparent), 0 2px 8px rgba(0,0,0,0.2); }
+    
+    .streamer.actions-open {
+        z-index: 100; /* Bring card to front when drawer is open */
+        overflow: visible; /* Temporarily allow overflow when open */
+    }
+
     .streamer:hover {
-      transform: translateY(-4px);
+      transform: translateY(-5px);
       box-shadow: var(--shadow-lg);
       border-color: var(--border-secondary);
     }
@@ -151,7 +118,7 @@
     }
      .streamer-checkbox{position:absolute;top:12px;right:12px;width:24px;height:24px;cursor:pointer;z-index:10;}
 
-    .thumbnail-container { position: relative; cursor: pointer; }
+    .thumbnail-container { position: relative; cursor: pointer; border-radius: var(--radius-lg) var(--radius-lg) 0 0; overflow:hidden;}
     .thumbnail-preview {
       display: block; width: 100%; aspect-ratio: 16/9;
       object-fit: cover; background: var(--bg-tertiary);
@@ -181,7 +148,7 @@
       box-shadow: 0 0 10px color-mix(in srgb, var(--youtube) 50%, transparent);
     }
 
-    .streamer-content { padding: 16px; background: var(--bg-secondary); }
+    .streamer-content { padding: 16px; background: transparent; position: relative;}
     .streamer-header { display: flex; align-items: center; gap: 12px; }
     .streamer-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--border-primary); }
     .streamer-name-wrapper { flex: 1; }
@@ -209,63 +176,97 @@
     .streamer.list-view { flex-direction: row; align-items: center; padding: 12px; }
     .streamer.list-view .thumbnail-container { flex-basis: 160px; flex-shrink: 0; border-radius: var(--radius-md); overflow: hidden; }
     .streamer.list-view .streamer-content { padding: 0 16px; flex: 1; }
-    .streamer.list-view .streamer-actions { margin-left: auto; display: flex; margin-top: 0; }
+    .streamer.list-view .streamer-actions-wrapper { margin-left: auto; display: flex; margin-top: 0; }
     
-    .streamer-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 16px; }
+    /* Action Drawer */
+    .streamer-actions-wrapper { position: absolute; top: 16px; right: 16px; }
+    .action-menu-toggle {
+        width: 36px; height: 36px; border-radius: 50%;
+        background: var(--bg-tertiary); color: var(--text-secondary);
+        border: 1px solid var(--border-primary);
+        cursor: pointer; font-size: 1.2rem; line-height: 1;
+        transition: all var(--transition-fast);
+    }
+    .action-menu-toggle:hover { background: var(--border-primary); color: var(--text-primary); }
+    .actions-drawer {
+        position: absolute; right: 0; top: 42px; z-index: 10;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+        pointer-events: none;
+        transition: all var(--transition-fast);
+    }
+    .streamer.actions-open .actions-drawer {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
     .action-btn {
-        display: flex; justify-content: center; align-items: center; gap: 6px;
-        height: 36px; background: var(--bg-tertiary); color: var(--text-secondary);
-        border: 1px solid var(--border-primary); border-radius: 10px;
-        font-weight: 600; font-size: 0.85rem;
+        display: flex; align-items: center; gap: 8px;
+        width: 100%;
+        padding: 8px 12px;
+        background: transparent; color: var(--text-secondary);
+        border: none; border-radius: 8px;
+        font-weight: 600; font-size: 0.85rem; text-align: left;
         cursor: pointer; transition: all var(--transition-fast);
     }
-    .action-btn:hover { background: var(--border-primary); color: var(--text-primary); }
-    .action-btn.favorite.active { color: gold; border-color: gold; }
+    .action-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    .action-btn.favorite.active { color: gold; }
     .action-btn.remove { color: var(--offline); }
-    .action-btn.remove:hover { border-color: var(--offline); background: color-mix(in srgb, var(--offline) 15%, transparent); }
 
-    .bottom-controls {
+    /* Floating Bar */
+    .floating-bar {
       position: fixed;
-      bottom: 16px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1100;
       background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      padding: 8px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 12px;
       border-radius: var(--radius-lg);
       border: 1px solid var(--border-primary);
-      box-shadow: var(--shadow-lg);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent), var(--shadow-lg);
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
       width: max-content;
+      max-width: calc(100% - 32px);
     }
-    .view-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+    .floating-bar-section { display: flex; align-items: center; gap: 8px; }
+    .app-title {
+      margin: 0 8px; font-weight: 800;
+      font-size: 1.1rem;
+      background-image: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      white-space: nowrap;
+    }
+    .app-title small { color: var(--text-secondary); font-weight: 600; font-size: 0.7em; }
     .view-controls .button, .view-controls button, .view-controls .view-toggle {
-        background: var(--bg-secondary); border: 1px solid var(--border-primary);
-        color: var(--text-secondary); padding: 10px 16px;
+        background: var(--bg-tertiary); border: 1px solid transparent;
+        color: var(--text-secondary); padding: 8px 14px;
         border-radius: 10px; font-weight: 600; cursor: pointer;
         transition: all var(--transition-fast);
     }
-    .view-controls button:hover, .view-controls .view-toggle:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+    .view-controls button:hover, .view-controls .view-toggle:hover { background: var(--border-primary); color: var(--text-primary); }
     .view-controls button.active, .view-controls .view-toggle.active {
         background: var(--accent-primary); color: white;
-        border-color: var(--accent-primary);
     }
-    #gemini-choice-btn { background-color: var(--accent-primary); color: white; }
-    #gemini-choice-btn:hover { background-color: var(--accent-secondary); }
 
     .bulk-actions {display: none; background: transparent; border: none; padding: 0; gap: 8px; align-items: center; flex-wrap: wrap;}
     .bulk-actions.visible {display: flex;}
     .selection-count {font-size: 1rem; color: var(--accent-primary); font-weight: 700;}
 
     .settings-panel {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
+      position: fixed; top: 0; right: 0; bottom: 0;
       width: clamp(320px, 40vw, 450px);
       background: var(--bg-secondary); 
       padding: 24px;
@@ -346,36 +347,16 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     @keyframes modal-fade-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     
-    #toast {
-      visibility: hidden;
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      text-align: center;
-      border-radius: var(--radius-md);
-      padding: 16px 24px;
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translate(-50%, calc(100% + 24px)); /* Start below screen */
-      z-index: 3001;
-      box-shadow: var(--shadow-lg);
-      opacity: 0;
-      transition: transform var(--transition-slow), opacity var(--transition-slow);
-      max-width: 90%;
-      width: 420px;
-      border: 1px solid var(--border-primary);
-      cursor: pointer;
-    }
-    #toast.show {
-        visibility: visible;
-        opacity: 1;
-        transform: translate(-50%, 0);
-    }
-    #toast.success{background:var(--live);color:#fff}
-    #toast.error{background:var(--offline);color:#fff}
-    #toast.warning{background:var(--warning);color:#fff}
-    #toast.info{background:var(--info);color:#fff}
+     #toast{visibility:hidden;background:var(--bg-tertiary);color:var(--text-primary);text-align:center;border-radius:var(--radius-md);padding:16px 24px;position:fixed;bottom:24px;left:50%;transform:translate(-50%, calc(100% + 24px));z-index:3001;box-shadow:var(--shadow-lg);opacity:0;transition:transform .3s ease, opacity .3s ease;max-width:90%;width:420px;border:1px solid var(--border-primary);cursor:pointer;}
+     #toast.show{visibility:visible;opacity:1;transform:translate(-50%, 0);}
+     #toast.success{background:var(--live);color:#fff}
+     #toast.error{background:var(--offline);color:#fff}
+     #toast.warning{background:var(--warning);color:#fff}
+     #toast.info{background:var(--info);color:#fff}
     
+     @media (max-width: 768px) {
+        .app-title, #last-updated { display: none; }
+     }
   </style>
 </head>
 <body data-theme="dark">
@@ -384,35 +365,6 @@
     <main id="main-content">
       <div id="streamers" class="grid-view" role="grid"></div>
     </main>
-
-    <header class="app-header" id="app-header" role="region" aria-label="App toolbar">
-      <h1 class="app-title">Stream Monitor <small>v6.9</small></h1>
-      <div class="header-controls">
-        <div id="last-updated" aria-live="polite" title="Last updated time"></div>
-        <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
-        <button class="icon-btn" id="install-btn" title="Install app" aria-label="Install app" style="display:none">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
-        </button>
-        <button class="settings-toggle" id="settings-toggle" aria-expanded="false">Settings</button>
-      </div>
-    </header>
-
-     <div class="bottom-controls">
-        <div class="view-controls">
-            <button id="gemini-choice-btn">✨ Help Me Choose</button>
-            <div style="flex:1;"></div>
-            <button class="view-toggle active" data-view="grid" aria-label="Grid view">Grid</button>
-            <button class="view-toggle" data-view="list" aria-label="List view">List</button>
-            <button class="view-toggle" id="select-mode-btn" aria-label="Selection mode">Select</button>
-        </div>
-        <div class="bulk-actions" id="bulk-actions">
-            <span class="selection-count" id="selection-count">0 selected</span>
-            <button id="bulk-favorite" class="button">⭐ Favorite</button>
-            <button id="bulk-unfavorite" class="button">☆ Unfavorite</button>
-            <button id="select-all" class="button">Select All</button>
-            <button id="clear-selection" class="button">Clear</button>
-        </div>
-     </div>
     
     <div id="settings-overlay" class="modal-overlay"></div>
     <section class="settings-panel" id="settings-panel">
@@ -467,6 +419,34 @@
             <input type="file" id="import-file" accept=".json" style="display:none">
         </div>
     </section>
+
+    <div class="floating-bar">
+        <div class="floating-bar-section">
+            <h1 class="app-title">Stream Monitor <small>v7.2</small></h1>
+            <div id="last-updated" aria-live="polite" title="Last updated time"></div>
+            <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
+        </div>
+        <div class="floating-bar-section view-controls">
+            <button id="gemini-choice-btn">✨ Help Me Choose</button>
+            <div style="flex:1;"></div>
+            <button class="view-toggle active" data-view="grid" aria-label="Grid view">Grid</button>
+            <button class="view-toggle" data-view="list" aria-label="List view">List</button>
+            <button class="view-toggle" id="select-mode-btn" aria-label="Selection mode">Select</button>
+        </div>
+        <div class="floating-bar-section">
+             <button class="icon-btn" id="install-btn" title="Install app" aria-label="Install app" style="display:none">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+            </button>
+            <button class="settings-toggle" id="settings-toggle" aria-expanded="false">Settings</button>
+        </div>
+     </div>
+     <div class="bulk-actions" id="bulk-actions">
+            <span class="selection-count" id="selection-count">0 selected</span>
+            <button id="bulk-favorite" class="button">⭐ Favorite</button>
+            <button id="bulk-unfavorite" class="button">☆ Unfavorite</button>
+            <button id="select-all" class="button">Select All</button>
+            <button id="clear-selection" class="button">Clear</button>
+    </div>
   </div>
     
   <!-- Modals -->
@@ -1087,11 +1067,14 @@ const App = {
         </div>
         <p class="stream-title">${Utils.sanitizeHTML(s.title)}</p>
         ${s.category ? `<div class="stream-category">${Utils.sanitizeHTML(s.category)}</div>` : ''}
-        <div class="streamer-actions">
-          <button class="action-btn summarize" data-name="${s.name}" ${!s.isLive ? 'disabled' : ''}>✨ Sum'ize</button>
-          <button class="action-btn favorite ${isFav ? 'active' : ''}" data-name="${s.name}">Favorite</button>
-          <button class="action-btn assign-group" data-name="${s.name}">📂 Group</button>
-          <button class="action-btn remove" data-name="${s.name}" data-platform="${s.platform}">Remove</button>
+        <div class="streamer-actions-wrapper">
+            <button class="action-menu-toggle" aria-label="More actions">•••</button>
+            <div class="actions-drawer">
+                <button class="action-btn summarize" data-name="${s.name}" ${!s.isLive ? 'disabled' : ''}>✨ Summarize</button>
+                <button class="action-btn favorite ${isFav ? 'active' : ''}" data-name="${s.name}">⭐ Favorite</button>
+                <button class="action-btn assign-group" data-name="${s.name}">📂 Group</button>
+                <button class="action-btn remove" data-name="${s.name}" data-platform="${s.platform}">🗑️ Remove</button>
+            </div>
         </div>
       </div>
     `;
@@ -1101,10 +1084,25 @@ const App = {
             if (thumb.dataset.src) this.showEnlargedThumbnail(thumb.dataset.src, thumb.dataset.url);
             return;
         }
-        if (this.state.selectionMode && !e.target.closest('a, button')) {
+        if (this.state.selectionMode && !e.target.closest('a, button, .streamer-actions-wrapper')) {
             this.toggleSelection(e.currentTarget.dataset.name);
         }
     });
+
+    const menuToggle = div.querySelector('.action-menu-toggle');
+    menuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const parentCard = e.currentTarget.closest('.streamer');
+        
+        // Close other open drawers
+        document.querySelectorAll('.streamer.actions-open').forEach(openCard => {
+            if(openCard !== parentCard) {
+                openCard.classList.remove('actions-open');
+            }
+        });
+        parentCard.classList.toggle('actions-open');
+    });
+
     div.querySelector('.summarize').addEventListener('click', (e) => { e.stopPropagation(); this.handleStreamSummary(e.currentTarget.dataset.name); });
     div.querySelector('.favorite').addEventListener('click', (e) => { e.stopPropagation(); this.toggleFavorite(e.currentTarget.dataset.name); });
     div.querySelector('.assign-group').addEventListener('click', (e) => { e.stopPropagation(); this.showToast("Group functionality not yet re-implemented.", "info"); });
