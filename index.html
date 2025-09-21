@@ -269,19 +269,18 @@
       left: 20px;
       z-index: 5;
       font-size: 24px;
-      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
-      animation: starPulse 2s ease-in-out infinite;
+      filter: brightness(1.2); /* Subtle brightness for visibility without heavy shadow */
+      animation: starGlow 3s ease-in-out infinite; /* Slower, gentler animation */
     }
 
-    @keyframes starPulse {
-      0%, 100% { transform: scale(1) rotate(0deg); }
-      50% { transform: scale(1.1) rotate(10deg); }
-    }
-
-    @keyframes cardEntry {
-      from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.9);
+    @keyframes starGlow {
+      0%, 100% { 
+        opacity: 0.8; 
+        transform: scale(1); 
+      }
+      50% { 
+        opacity: 1; 
+        transform: scale(1.05); /* Very slight scale for subtle effect */
       }
     }
 
@@ -1401,8 +1400,6 @@ const App = {
 
   initMouseTracking() {
     document.addEventListener('mousemove', (e) => {
-      // This is a global listener, might be intensive.
-      // A better approach might be to add/remove listeners on card hover.
       const cards = document.querySelectorAll('.streamer');
       cards.forEach(card => {
         const rect = card.getBoundingClientRect();
@@ -2027,7 +2024,7 @@ const App = {
               this.showToast(`Import failed: ${err.message}`, 'error');
           }
       };
-      reader.readAsText(file);
+      reader.readText(file);
       event.target.value = ''; // Reset file input
   },
   
@@ -2092,7 +2089,7 @@ const App = {
       this.render();
   },
   renderSkeletons(){
-    this.elements.container.innerHTML = Array(8).fill('').map((_, i) => ` tony is upset
+    this.elements.container.innerHTML = Array(8).fill('').map((_, i) => `
       <div class="streamer skeleton" style="animation-delay: ${i * 0.05}s;">
         <div style="width:100%; aspect-ratio:16/9; background: var(--bg-tertiary); border-radius: var(--radius-lg) var(--radius-lg) 0 0;"></div>
         <div class="streamer-content">
