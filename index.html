@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor v7.4</title>
+  <title>Kick & Twitch Monitor v7.5</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -115,8 +115,7 @@
       background: var(--bg-primary);
       background-image: 
         radial-gradient(ellipse at top left, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(ellipse at bottom right, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
-        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.01'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        radial-gradient(ellipse at bottom right, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
       color: var(--text-primary);
       line-height: 1.6;
       padding: 24px 24px 140px 24px;
@@ -169,7 +168,6 @@
       gap: 16px;
     }
 
-    /* Enhanced Streamer Card */
     .streamer {
       background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
       backdrop-filter: var(--blur-md);
@@ -268,12 +266,12 @@
       left: 20px;
       z-index: 5;
       font-size: 24px;
-      animation: starTwinkle 3s ease-in-out infinite;
+      animation: starPulse 2s ease-in-out infinite;
     }
 
-    @keyframes starTwinkle {
-      0%, 100% { transform: rotate(0deg); }
-      50% { transform: rotate(10deg); }
+    @keyframes starPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
     }
 
     .streamer-checkbox {
@@ -1042,38 +1040,196 @@
       }
     }
 
+    /* Mobile Optimizations */
     @media (max-width: 768px) {
       body {
-        padding: 16px 16px 120px 16px;
+        padding: 12px 12px 100px 12px;
       }
 
       #streamers {
-        gap: 16px;
+        gap: 12px;
       }
 
       #streamers.grid-view {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .streamer {
+        border-radius: var(--radius-md);
+      }
+
+      .streamer-content {
+        padding: 12px !important;
+      }
+
+      .streamer-header {
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .streamer-avatar {
+        width: 36px;
+        height: 36px;
+        border-width: 2px;
+      }
+
+      .streamer-name {
+        font-size: 0.875rem;
+        gap: 6px;
+      }
+
+      .platform-icon {
+        width: 16px;
+        height: 16px;
+      }
+
+      .stream-meta {
+        font-size: 0.75rem;
+      }
+
+      .stream-title {
+        font-size: 0.8125rem;
+        margin: 4px 0 8px 0;
+        -webkit-line-clamp: 1;
+      }
+
+      .stream-category {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+      }
+
+      .thumbnail-preview {
+        aspect-ratio: 16/9;
+      }
+
+      .streamer-actions-wrapper {
+        top: 12px;
+        right: 12px;
+      }
+
+      .action-menu-toggle {
+        width: 32px;
+        height: 32px;
+        font-size: 1.2rem;
+      }
+
+      .actions-drawer {
+        min-width: 140px;
+        padding: 4px;
+        top: 36px;
+      }
+
+      .action-btn {
+        padding: 8px 12px;
+        font-size: 0.8125rem;
+        gap: 8px;
+      }
+
+      .live-indicator {
+        top: 12px;
+        right: 12px;
+        padding: 4px 8px;
+        font-size: 0.625rem;
+      }
+
+      .live-indicator::before {
+        width: 6px;
+        height: 6px;
+      }
+
+      .streamer.favorite::before {
+        font-size: 18px;
+        top: 12px;
+        left: 12px;
+      }
+
+      .streamer-checkbox {
+        top: 12px;
+        right: 12px;
+        width: 24px;
+        height: 24px;
       }
 
       .floating-bar {
-        bottom: 16px;
-        padding: 12px 16px;
-        gap: 12px;
-        border-radius: var(--radius-lg);
-        width: calc(100% - 32px);
+        bottom: 12px;
+        padding: 10px 12px;
+        gap: 8px;
+        border-radius: var(--radius-md);
+        width: calc(100% - 24px);
+      }
+
+      .floating-bar-section {
+        gap: 6px;
+      }
+
+      .view-controls button,
+      .button {
+        padding: 8px 12px;
+        font-size: 0.8125rem;
       }
 
       .app-title {
         display: none;
       }
 
+      #last-updated {
+        font-size: 0.75rem;
+      }
+
       .settings-panel {
         width: 100%;
+        padding: 20px;
       }
 
       .modal-content {
-        width: calc(100% - 32px);
-        padding: 24px;
+        width: calc(100% - 24px);
+        padding: 20px;
+      }
+
+      .bulk-actions {
+        bottom: 80px !important;
+        padding: 8px 12px !important;
+        gap: 8px !important;
+      }
+
+      .bulk-actions button {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+      }
+
+      #selection-count {
+        font-size: 0.8125rem;
+      }
+    }
+
+    /* Extra small devices (phones in portrait) */
+    @media (max-width: 480px) {
+      #streamers.grid-view {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .stream-title {
+        display: none;
+      }
+      
+      .stream-category {
+        display: none;
+      }
+    }
+
+    /* Landscape mode optimization */
+    @media (max-width: 768px) and (orientation: landscape) {
+      #streamers.grid-view {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      body {
+        padding-bottom: 90px;
+      }
+      
+      .floating-bar {
+        padding: 8px 12px;
       }
     }
 
@@ -1151,7 +1307,7 @@
 
     <div class="floating-bar">
         <div class="floating-bar-section">
-            <h1 class="app-title">Stream Monitor <small>v7.4</small></h1>
+            <h1 class="app-title">Stream Monitor <small>v7.5</small></h1>
             <div id="last-updated" aria-live="polite" title="Last updated time" style="font-size: 0.875rem; color: var(--text-secondary);"></div>
             <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
         </div>
