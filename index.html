@@ -705,8 +705,10 @@ const App = {
                  const result = d.livestream ? {
                      isLive: true, title: d.livestream.session_title, 
                      viewers: d.livestream.viewer_count, category: d.livestream.categories[0].name,
-                     thumb: d.livestream.thumbnail.url, url
-                 } : { isLive: false, title: 'Banned / Not Found', url, thumb: d.user.profile_pic };
+                     // NEW: Append timestamp to force refresh the image
+                     thumb: `${d.livestream.thumbnail.url}?t=${Date.now()}`, 
+                     url
+                 } : { isLive: false, title: 'Offline', url, thumb: d.user.profile_pic };
                  streamCache.set(k, result);
                  return result;
             }
@@ -727,7 +729,8 @@ const App = {
                     title: isLive ? streamData.title : 'Offline',
                     viewers: isLive ? streamData.viewer_count : 0,
                     category: isLive ? streamData.game_name : '',
-                    thumb: isLive ? streamData.thumbnail_url.replace('{width}', '640').replace('{height}', '360') : userData.profile_image_url,
+                    // NEW: Append timestamp to force refresh the image
+                    thumb: isLive ? `${streamData.thumbnail_url.replace('{width}', '640').replace('{height}', '360')}?t=${Date.now()}` : userData.profile_image_url,
                     url
                  };
                  streamCache.set(k, result);
@@ -770,7 +773,8 @@ const App = {
                     title: details.snippet.title,
                     viewers: parseInt(details.liveStreamingDetails.concurrentViewers || 0),
                     category: 'YouTube Live',
-                    thumb: details.snippet.thumbnails.medium.url,
+                    // NEW: Append timestamp to force refresh the image
+                    thumb: `${details.snippet.thumbnails.medium.url}?t=${Date.now()}`,
                     url: channelUrl
                  };
                  streamCache.set(k, result);
