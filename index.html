@@ -10,1219 +10,353 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #050505;
-      --bg-secondary: rgba(15, 15, 18, 0.95);
-      --bg-tertiary: #1a1a1f;
-      --bg-hover: #252530;
-      --text-primary: #ffffff;
-      --text-secondary: #a0a0a8;
-      --text-tertiary: #707078;
-      --border-primary: rgba(255, 255, 255, 0.08);
-      --border-secondary: rgba(255, 255, 255, 0.12);
-      --border-hover: rgba(255, 255, 255, 0.16);
-      --accent-primary: #00d4ff;
-      --accent-secondary: #00ff88;
-      --accent-gradient: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
-      --live: #10b981;
-      --live-glow: #34d399;
-      --twitch: #9146ff;
-      --twitch-glow: #a970ff;
-      --youtube: #ff0000;
-      --youtube-glow: #ff4444;
-      --kick: #53fc18;
-      --kick-glow: #6bff33;
-      --offline: #6b7280;
+      --bg-primary: #0a0a0a; /* Flat, deep black */
+      --bg-secondary: rgba(22, 27, 34, 0.75); /* Semi-transparent for glass effect */
+      --bg-tertiary: #21262d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --border-primary: rgba(48, 54, 61, 0.8);
+      --border-secondary: #8b949e;
+      --accent-primary: #22d3ee; /* Vibrant Cyan */
+      --accent-secondary: #67e8f9; /* Lighter Cyan */
+      --live: #22c55e;
+      --twitch: #9146ff; /* Twitch Purple */
+      --youtube: #ff0000; /* YouTube Red */
+      --offline: #f85149;
       --warning: #f59e0b;
-      --error: #ef4444;
       --info: #3b82f6;
-      --shadow-sm: 0 2px 4px rgba(0,0,0,.3);
-      --shadow-md: 0 8px 16px rgba(0,0,0,.4);
-      --shadow-lg: 0 16px 40px rgba(0,0,0,.5);
-      --shadow-xl: 0 24px 60px rgba(0,0,0,.6);
-      --shadow-glow: 0 0 40px rgba(0, 212, 255, 0.15);
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-      --radius-xl: 28px;
-      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      --transition-medium: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-      --transition-spring: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      --blur-sm: blur(8px);
-      --blur-md: blur(16px);
-      --blur-lg: blur(24px);
-      --blur-xl: blur(40px);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.15);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.25);
+      --shadow-lg: 0 10px 30px rgba(0,0,0,.35);
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --transition-fast: 0.15s ease;
+      --transition-slow: 0.3s ease-out;
+      --ring: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 25%, transparent);
     }
 
     [data-theme="light"] {
-      --bg-primary: #ffffff;
-      --bg-secondary: rgba(250, 250, 252, 0.95);
-      --bg-tertiary: #f3f4f6;
-      --bg-hover: #e5e7eb;
-      --text-primary: #111827;
-      --text-secondary: #6b7280;
-      --text-tertiary: #9ca3af;
-      --border-primary: rgba(0, 0, 0, 0.08);
-      --border-secondary: rgba(0, 0, 0, 0.12);
-      --border-hover: rgba(0, 0, 0, 0.16);
-      --accent-primary: #0891b2;
-      --accent-secondary: #10b981;
-      --accent-gradient: linear-gradient(135deg, #0891b2 0%, #10b981 100%);
-      --shadow-sm: 0 2px 4px rgba(0,0,0,.06);
-      --shadow-md: 0 8px 16px rgba(0,0,0,.08);
-      --shadow-lg: 0 16px 40px rgba(0,0,0,.1);
-      --shadow-xl: 0 24px 60px rgba(0,0,0,.12);
-      --shadow-glow: 0 0 40px rgba(8, 145, 178, 0.1);
+      --bg-primary: #f0f2f5;
+      --bg-secondary: rgba(255, 255, 255, 0.7);
+      --bg-tertiary: #e1e4e8;
+      --text-primary: #24292e;
+      --text-secondary: #586069;
+      --border-primary: rgba(209, 213, 218, 0.8);
+      --border-secondary: #959da5;
+      --accent-primary: #0366d6;
+      --accent-secondary: #2188ff;
+      --shadow-sm: 0 1px 2px rgba(10,10,10,.04);
+      --shadow-md: 0 4px 12px rgba(10,10,10,.08);
+      --shadow-lg: 0 10px 30px rgba(10,10,10,.1);
     }
 
-    *, *::before, *::after { 
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    ::selection {
-      background: var(--accent-primary);
-      color: var(--bg-primary);
-    }
-
-    ::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--bg-tertiary);
-      border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--border-secondary);
-      border-radius: 10px;
-      transition: background var(--transition-fast);
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--accent-primary);
-    }
+    *, *::before, *::after { box-sizing: border-box; }
 
     body {
+      color-scheme: light dark;
       font-family: var(--font-family);
-      background: var(--bg-primary);
-      background-image: 
-        radial-gradient(ellipse at top left, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(ellipse at bottom right, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
+      background-color: var(--bg-primary);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
       color: var(--text-primary);
-      line-height: 1.6;
-      padding: 24px 24px 140px 24px;
+      margin: 0;
+      line-height: 1.5;
+      padding: 20px 20px 120px 20px;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       transition: background var(--transition-slow), color var(--transition-slow);
-      min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
     }
 
-    body::before {
-      content: '';
-      position: fixed;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle at 30% 50%, rgba(0, 212, 255, 0.03), transparent 40%),
-                  radial-gradient(circle at 70% 80%, rgba(0, 255, 136, 0.03), transparent 40%);
-      animation: floatBackground 20s ease-in-out infinite;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    @keyframes floatBackground {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      33% { transform: translate(-20px, -20px) rotate(120deg); }
-      66% { transform: translate(20px, -10px) rotate(240deg); }
-    }
-
-    #app-container { 
-      max-width: 1920px; 
-      margin: 0 auto;
-      position: relative;
-    }
+    #app-container { max-width: 1800px; margin: 0 auto; }
     
-    #streamers { 
-      display: grid; 
-      gap: 28px;
-      animation: fadeIn 0.6s ease-out;
-    }
-    
-    #streamers.grid-view { 
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); 
-    }
-    
-    #streamers.list-view { 
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
+    main#main-content { margin-top: 0; }
+    #streamers { display: grid; gap: 20px; }
+    #streamers.grid-view { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    #streamers.list-view, #streamers.compact-view { grid-template-columns: 1fr; }
 
+    /* Streamer Card */
     .streamer {
-      background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
-      backdrop-filter: var(--blur-md);
-      -webkit-backdrop-filter: var(--blur-md);
+      background: var(--bg-secondary);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--border-primary);
+      border-left: 4px solid transparent;
       border-radius: var(--radius-lg);
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
+      transition: transform var(--transition-slow), box-shadow var(--transition-slow), border-color var(--transition-slow);
       position: relative;
-      overflow: hidden;
-      transition: all var(--transition-medium);
-      animation: cardEntry 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-      transform-origin: center;
-      will-change: transform;
+      overflow: hidden; 
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent), 0 2px 8px rgba(0,0,0,0.2);
     }
-
-    .streamer::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: var(--accent-gradient);
-      opacity: 0;
-      transition: opacity var(--transition-medium);
-    }
-
-    .streamer::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-                  rgba(255, 255, 255, 0.06), transparent 40%);
-      opacity: 0;
-      transition: opacity var(--transition-fast);
-      pointer-events: none;
-    }
-
-    .streamer:hover::after {
-      opacity: 1;
-    }
-
-    .streamer.live::before {
-      opacity: 1;
-    }
-
-    .streamer.live.kick {
-      border-color: rgba(83, 252, 24, 0.3);
-      box-shadow: 
-        inset 0 0 20px rgba(83, 252, 24, 0.05),
-        0 0 40px rgba(83, 252, 24, 0.1),
-        var(--shadow-lg);
-    }
-
-    .streamer.live.twitch {
-      border-color: rgba(145, 70, 255, 0.3);
-      box-shadow: 
-        inset 0 0 20px rgba(145, 70, 255, 0.05),
-        0 0 40px rgba(145, 70, 255, 0.1),
-        var(--shadow-lg);
-    }
-
-    .streamer.live.youtube {
-      border-color: rgba(255, 0, 0, 0.3);
-      box-shadow: 
-        inset 0 0 20px rgba(255, 0, 0, 0.05),
-        0 0 40px rgba(255, 0, 0, 0.1),
-        var(--shadow-lg);
+    .streamer.live.kick { border-left-color: var(--live); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent), -5px 0 30px -8px color-mix(in srgb, var(--live) 75%, transparent), 0 2px 8px rgba(0,0,0,0.2); }
+    .streamer.live.twitch { border-left-color: var(--twitch); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent), -5px 0 30px -8px color-mix(in srgb, var(--twitch) 75%, transparent), 0 2px 8px rgba(0,0,0,0.2); }
+    .streamer.live.youtube { border-left-color: var(--youtube); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent), -5px 0 30px -8px color-mix(in srgb, var(--youtube) 75%, transparent), 0 2px 8px rgba(0,0,0,0.2); }
+    
+    .streamer.actions-open {
+        z-index: 100;
+        overflow: visible;
     }
 
     .streamer:hover {
-      transform: translateY(-8px) scale(1.02);
-      border-color: var(--border-hover);
-      box-shadow: var(--shadow-xl), var(--shadow-glow);
-      z-index: 10;
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--border-secondary);
+    }
+    .streamer.selected { border-color: var(--accent-primary); box-shadow: var(--ring); }
+    .streamer.favorite::before {
+        content: '★';
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 3;
+        color: gold;
+        font-size: 20px;
+        text-shadow: 0 0 8px rgba(0,0,0,0.7);
+    }
+     .streamer-checkbox{position:absolute;top:12px;right:12px;width:24px;height:24px;cursor:pointer;z-index:10;}
+
+    .thumbnail-container { position: relative; cursor: pointer; border-radius: var(--radius-lg) var(--radius-lg) 0 0; overflow:hidden;}
+    .thumbnail-preview {
+      display: block; width: 100%; aspect-ratio: 16/9;
+      object-fit: cover; background: var(--bg-tertiary);
+      transition: transform var(--transition-slow);
+    }
+    .streamer:hover .thumbnail-preview { transform: scale(1.05); }
+    
+    .live-indicator {
+      position: absolute; top: 12px; right: 12px;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--live); color: white;
+      padding: 4px 10px; border-radius: 99px;
+      font-size: 0.8rem; font-weight: 700;
+      box-shadow: 0 0 10px color-mix(in srgb, var(--live) 50%, transparent);
+    }
+    .live-indicator::before {
+      content: ''; display: block; width: 8px; height: 8px;
+      background: white; border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    .streamer.twitch .live-indicator {
+      background: var(--twitch);
+      box-shadow: 0 0 10px color-mix(in srgb, var(--twitch) 50%, transparent);
+    }
+    .streamer.youtube .live-indicator {
+      background: var(--youtube);
+      box-shadow: 0 0 10px color-mix(in srgb, var(--youtube) 50%, transparent);
+    }
+
+    .streamer-content { padding: 16px; background: transparent; position: relative;}
+    .streamer-header { display: flex; align-items: center; gap: 12px; }
+    .streamer-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--border-primary); }
+    .streamer-name-wrapper { flex: 1; }
+    .streamer-name {
+      font-weight: 700; font-size: 1.1rem; line-height: 1.2;
+      color: var(--text-primary); text-decoration: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .streamer-name:hover { color: var(--accent-primary); }
+    .platform-icon { width: 16px; height: 16px; opacity: 0.8; }
+    .stream-meta { font-size: 0.8rem; color: var(--text-secondary); }
+    .stream-title {
+      font-size: 0.9rem; color: var(--text-secondary);
+      margin-top: 8px; line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .stream-category {
+      display: inline-block; margin-top: 12px;
+      font-size: 0.8rem; font-weight: 600; color: var(--accent-primary);
+      background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+      padding: 4px 12px; border-radius: 99px;
     }
     
-    .streamer.actions-open {
-      overflow: visible;
-      z-index: 30;
-    }
-
-    .streamer.selected {
-      border-color: var(--accent-primary);
-      box-shadow: 
-        inset 0 0 0 2px var(--accent-primary),
-        0 0 30px rgba(0, 212, 255, 0.3),
-        var(--shadow-lg);
-    }
-
-    .streamer.favorite::before {
-      content: '⭐';
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      z-index: 5;
-      font-size: 24px;
-      animation: starPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes starPulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-
-    .streamer-checkbox {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-      z-index: 10;
-      accent-color: var(--accent-primary);
-      transform: scale(1.2);
-      opacity: 0.8;
-      transition: all var(--transition-fast);
-    }
-
-    .streamer-checkbox:hover {
-      opacity: 1;
-      transform: scale(1.3);
-    }
-
-    .thumbnail-container {
-      position: relative;
-      cursor: pointer;
-      overflow: hidden;
-      background: var(--bg-tertiary);
-      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    }
-
-    .thumbnail-preview {
-      display: block;
-      width: 100%;
-      aspect-ratio: 16/9;
-      object-fit: cover;
-      transition: all var(--transition-slow);
-      filter: brightness(0.9);
-    }
-
-    .streamer:hover .thumbnail-preview {
-      transform: scale(1.1);
-      filter: brightness(1.1) saturate(1.2);
-    }
-
-    .thumbnail-container::after {
-      content: '🔍';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      font-size: 48px;
-      opacity: 0;
-      transition: all var(--transition-medium);
-      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.8));
-    }
-
-    .thumbnail-container:hover::after {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-
-    .live-indicator {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 999px;
-      font-size: 0.875rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      backdrop-filter: var(--blur-sm);
-      -webkit-backdrop-filter: var(--blur-sm);
-      animation: liveFloat 3s ease-in-out infinite;
-      transition: all var(--transition-fast);
-    }
-
-    .streamer.kick .live-indicator {
-      background: linear-gradient(135deg, var(--kick), var(--kick-glow));
-      box-shadow: 0 0 30px rgba(83, 252, 24, 0.6);
-      color: #000;
-    }
-
-    .streamer.twitch .live-indicator {
-      background: linear-gradient(135deg, var(--twitch), var(--twitch-glow));
-      box-shadow: 0 0 30px rgba(145, 70, 255, 0.6);
-      color: #fff;
-    }
-
-    .streamer.youtube .live-indicator {
-      background: linear-gradient(135deg, var(--youtube), var(--youtube-glow));
-      box-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
-      color: #fff;
-    }
-
-    @keyframes liveFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
-    }
-
-    .live-indicator::before {
-      content: '';
-      width: 10px;
-      height: 10px;
-      background: currentColor;
-      border-radius: 50%;
-      animation: livePulse 2s ease-in-out infinite;
-    }
-
-    @keyframes livePulse {
-      0%, 100% { 
-        transform: scale(1);
-        opacity: 1;
-      }
-      50% { 
-        transform: scale(1.5);
-        opacity: 0.5;
-      }
-    }
-
-    .streamer-content {
-      padding: 24px;
-      position: relative;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .streamer-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 12px;
-    }
-
-    .streamer-avatar {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      border: 3px solid var(--border-primary);
-      transition: all var(--transition-medium);
-      position: relative;
-    }
-
-    .streamer-avatar::after {
-      content: '';
-      position: absolute;
-      inset: -6px;
-      border-radius: 50%;
-      background: var(--accent-gradient);
-      opacity: 0;
-      z-index: -1;
-      transition: opacity var(--transition-medium);
-    }
-
-    .streamer:hover .streamer-avatar::after {
-      opacity: 0.5;
-    }
-
-    .streamer:hover .streamer-avatar {
-      border-color: var(--accent-primary);
-      transform: scale(1.05);
-    }
-
-    .streamer-name-wrapper {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .streamer-name {
-      font-weight: 700;
-      font-size: 1.125rem;
-      color: var(--text-primary);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: color var(--transition-fast);
-      position: relative;
-    }
-
-    .streamer-name:hover {
-      color: var(--accent-primary);
-    }
-
-    .platform-icon {
-      width: 20px;
-      height: 20px;
-      opacity: 0.8;
-      transition: all var(--transition-fast);
-    }
-
-    .streamer-name:hover .platform-icon {
-      opacity: 1;
-      transform: scale(1.1);
-    }
-
-    .stream-meta {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-      margin-top: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .stream-title {
-      font-size: 0.9375rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      margin: 8px 0 12px 0;
-    }
-
-    .stream-category {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: auto;
-      padding: 8px 16px;
-      background: linear-gradient(135deg, 
-                  rgba(0, 212, 255, 0.1), 
-                  rgba(0, 255, 136, 0.1));
-      border: 1px solid var(--border-primary);
-      border-radius: 999px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--accent-primary);
-      transition: all var(--transition-fast);
-    }
-
-    .stream-category:hover {
-      background: linear-gradient(135deg, 
-                  rgba(0, 212, 255, 0.2), 
-                  rgba(0, 255, 136, 0.2));
-      border-color: var(--accent-primary);
-      transform: translateY(-2px);
-    }
-
-    .streamer-actions-wrapper {
-      position: absolute;
-      top: 24px;
-      right: 24px;
-    }
-
+    .streamer.list-view { flex-direction: row; align-items: center; padding: 12px; }
+    .streamer.list-view .thumbnail-container { flex-basis: 160px; flex-shrink: 0; border-radius: var(--radius-md); overflow: hidden; }
+    .streamer.list-view .streamer-content { padding: 0 16px; flex: 1; }
+    .streamer.list-view .streamer-actions-wrapper { margin-left: auto; display: flex; margin-top: 0; }
+    
+    /* Action Drawer */
+    .streamer-actions-wrapper { position: absolute; top: 16px; right: 16px; }
     .action-menu-toggle {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: var(--bg-tertiary);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-primary);
-      cursor: pointer;
-      font-size: 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all var(--transition-fast);
-      position: relative;
+        width: 36px; height: 36px; border-radius: 50%;
+        background: var(--bg-tertiary); color: var(--text-secondary);
+        border: 1px solid var(--border-primary);
+        cursor: pointer; font-size: 1.2rem; line-height: 1;
+        transition: all var(--transition-fast);
     }
-
-    .action-menu-toggle::after {
-      content: '';
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      background: var(--accent-gradient);
-      opacity: 0;
-      z-index: -1;
-      transition: opacity var(--transition-fast);
-    }
-
-    .action-menu-toggle:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
-      transform: scale(1.1);
-    }
-
-    .action-menu-toggle:hover::after {
-      opacity: 0.3;
-    }
-
+    .action-menu-toggle:hover { background: var(--border-primary); color: var(--text-primary); }
     .actions-drawer {
-      position: absolute;
-      right: 0;
-      top: 54px;
-      z-index: 20;
-      background: var(--bg-secondary);
-      backdrop-filter: var(--blur-lg);
-      -webkit-backdrop-filter: var(--blur-lg);
-      border: 1px solid var(--border-primary);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-xl);
-      padding: 8px;
-      min-width: 180px;
-      opacity: 0;
-      transform: translateY(-10px) scale(0.95);
-      pointer-events: none;
-      transition: all var(--transition-spring);
+        position: absolute; right: 0; top: 42px; z-index: 10;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+        pointer-events: none;
+        transition: all var(--transition-fast);
     }
-
     .streamer.actions-open .actions-drawer {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      pointer-events: auto;
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
     }
-
     .action-btn {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-      padding: 12px 16px;
-      background: transparent;
-      color: var(--text-secondary);
-      border: none;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.9375rem;
-      text-align: left;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      position: relative;
-      overflow: hidden;
+        display: flex; align-items: center; gap: 8px;
+        width: 100%;
+        padding: 8px 12px;
+        background: transparent; color: var(--text-secondary);
+        border: none; border-radius: 8px;
+        font-weight: 600; font-size: 0.85rem; text-align: left;
+        cursor: pointer; transition: all var(--transition-fast);
     }
+    .action-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    .action-btn.favorite.active { color: gold; }
+    .action-btn.remove { color: var(--offline); }
 
-    .action-btn::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--accent-gradient);
-      opacity: 0;
-      transition: opacity var(--transition-fast);
-    }
-
-    .action-btn:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
-      transform: translateX(4px);
-    }
-
-    .action-btn:hover::before {
-      opacity: 0.1;
-    }
-
-    .action-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .action-btn.favorite.active {
-      color: gold;
-    }
-
-    .action-btn.remove:hover {
-      color: var(--error);
-    }
-
+    /* Floating Bar */
     .floating-bar {
       position: fixed;
-      bottom: 32px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1100;
-      background: linear-gradient(135deg, 
-                  rgba(15, 15, 18, 0.95),
-                  rgba(25, 25, 30, 0.95));
-      backdrop-filter: var(--blur-xl);
-      -webkit-backdrop-filter: var(--blur-xl);
-      padding: 16px 24px;
-      border-radius: var(--radius-xl);
+      background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 12px;
+      border-radius: var(--radius-lg);
       border: 1px solid var(--border-primary);
-      box-shadow: 
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 20px 40px rgba(0, 0, 0, 0.5),
-        0 0 60px rgba(0, 212, 255, 0.1);
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translate(-50%, 100px);
-      }
-    }
-
-    .floating-bar-section {
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent), var(--shadow-lg);
       display: flex;
       align-items: center;
       gap: 12px;
+      width: max-content;
+      max-width: calc(100% - 32px);
     }
-
+    .floating-bar-section { display: flex; align-items: center; gap: 8px; }
     .app-title {
-      margin: 0 12px;
-      font-weight: 900;
-      font-size: 1.25rem;
-      background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      margin: 0 8px; font-weight: 800;
+      font-size: 1.1rem;
+      background-image: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
       white-space: nowrap;
-      position: relative;
+    }
+    .app-title small { color: var(--text-secondary); font-weight: 600; font-size: 0.7em; }
+    .view-controls .button, .view-controls button, .view-controls .view-toggle {
+        background: var(--bg-tertiary); border: 1px solid transparent;
+        color: var(--text-secondary); padding: 8px 14px;
+        border-radius: 10px; font-weight: 600; cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    .view-controls button:hover, .view-controls .view-toggle:hover { background: var(--border-primary); color: var(--text-primary); }
+    .view-controls button.active, .view-controls .view-toggle.active {
+        background: var(--accent-primary); color: white;
     }
 
-    .app-title small {
-      color: var(--text-tertiary);
-      font-weight: 600;
-      font-size: 0.7em;
-      margin-left: 4px;
-    }
-
-    .view-controls button,
-    .button {
-      background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-hover));
-      border: 1px solid var(--border-primary);
-      color: var(--text-secondary);
-      padding: 10px 18px;
-      border-radius: var(--radius-md);
-      font-weight: 600;
-      font-size: 0.9375rem;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .view-controls button::before,
-    .button::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--accent-gradient);
-      opacity: 0;
-      transition: opacity var(--transition-fast);
-    }
-
-    .view-controls button:hover,
-    .button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      color: var(--text-primary);
-      border-color: var(--border-hover);
-    }
-
-    .view-controls button:hover::before,
-    .button:hover::before {
-      opacity: 0.1;
-    }
-
-    .view-controls button.active,
-    .button.active {
-      background: var(--accent-gradient);
-      color: var(--bg-primary);
-      font-weight: 700;
-      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
-    }
+    .bulk-actions {display: none; background: transparent; border: none; padding: 0; gap: 8px; align-items: center; flex-wrap: wrap;}
+    .bulk-actions.visible {display: flex;}
+    .selection-count {font-size: 1rem; color: var(--accent-primary); font-weight: 700;}
 
     .settings-panel {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: clamp(360px, 35vw, 480px);
-      background: linear-gradient(180deg,
-                  rgba(15, 15, 18, 0.98),
-                  rgba(10, 10, 13, 0.98));
-      backdrop-filter: var(--blur-xl);
-      -webkit-backdrop-filter: var(--blur-xl);
-      padding: 32px;
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: clamp(320px, 40vw, 450px);
+      background: var(--bg-secondary); 
+      padding: 24px;
       border-left: 1px solid var(--border-primary);
-      box-shadow: -20px 0 40px rgba(0, 0, 0, 0.5);
+      box-shadow: var(--shadow-lg);
       transform: translateX(100%);
-      transition: transform var(--transition-medium);
+      transition: transform var(--transition-slow);
       z-index: 1300;
       overflow-y: auto;
     }
+    .settings-panel.expanded { transform: translateX(0); }
+    .settings-grid {display: grid; grid-template-columns: 1fr; gap: 24px;}
+    .setting-group {display: flex; flex-direction: column; gap: 8px;}
+    .setting-group label {font-weight: 600; font-size: 0.9rem;}
 
-    .settings-panel.expanded {
-      transform: translateX(0);
+    input, select {
+        background: var(--bg-tertiary); color: var(--text-primary);
+        border: 1px solid var(--border-primary); border-radius: 10px;
+        padding: 12px; font-size: 1rem; width: 100%;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
-
-    .settings-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
-    }
-
-    .setting-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .setting-group label {
-      font-weight: 600;
-      font-size: 0.9375rem;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    input,
-    select {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      border: 1px solid var(--border-primary);
-      border-radius: var(--radius-md);
-      padding: 14px 16px;
-      font-size: 1rem;
-      width: 100%;
-      transition: all var(--transition-fast);
-    }
-
-    input:hover,
-    select:hover {
-      border-color: var(--border-secondary);
-      background: var(--bg-hover);
-    }
-
-    input:focus,
-    select:focus {
-      outline: none;
-      border-color: var(--accent-primary);
-      box-shadow: 
-        inset 0 0 0 1px var(--accent-primary),
-        0 0 20px rgba(0, 212, 255, 0.2);
-      background: var(--bg-hover);
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: var(--blur-md);
-      -webkit-backdrop-filter: var(--blur-md);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-    }
+    input:focus-visible, select:focus-visible { outline: none; border-color: var(--accent-primary); box-shadow: var(--ring); }
     
-    #settings-overlay {
-      z-index: 1290;
-    }
+    @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .6; transform: scale(0.9); } }
+    
+    .empty-state, .error-state { text-align:center; padding: 60px 20px; background: var(--bg-secondary); border-radius: var(--radius-lg); margin-top: 16px; border: 1px solid var(--border-primary); }
+    .empty-state h3, .error-state h3 { margin: 0 0 16px 0; font-size: 1.5rem; }
+    .error-state h3 { color: var(--offline); }
 
-    .modal-overlay.visible {
-      display: flex;
-      animation: fadeIn 0.3s ease-out;
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      display: none; align-items: center; justify-content: center;
+      z-index: 2000; backdrop-filter: blur(8px);
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-    }
-
+    .modal-overlay.visible { display: flex; }
+    #settings-overlay { z-index: 1250; }
     .modal-content {
-      background: linear-gradient(135deg,
-                  rgba(15, 15, 18, 0.98),
-                  rgba(25, 25, 30, 0.98));
-      backdrop-filter: var(--blur-xl);
-      -webkit-backdrop-filter: var(--blur-xl);
-      padding: 32px;
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--border-primary);
-      box-shadow: var(--shadow-xl);
-      max-width: 90vw;
-      width: 560px;
+      background: var(--bg-secondary); padding: 24px;
+      border-radius: var(--radius-lg); border: 1px solid var(--border-primary);
+      box-shadow: var(--shadow-lg); max-width: 90vw; width: 500px;
       position: relative;
-      animation: modalSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-
-    @keyframes modalSlide {
-      from {
-        opacity: 0;
-        transform: translateY(-40px) scale(0.9);
-      }
+    #thumbnail-modal .modal-content {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        width: auto;
+        animation: modal-fade-in 0.3s ease;
+    }
+    #enlarged-thumbnail {
+        display: block;
+        max-width: 85vw;
+        max-height: 85vh;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        border: 2px solid var(--border-primary);
     }
 
     .modal-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border-primary);
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--text-secondary);
-      transition: all var(--transition-fast);
+      position: absolute; top: 12px; right: 12px; background: none; border: none;
+      font-size: 24px; cursor: pointer; color: var(--text-secondary);
+      padding: 4px; line-height: 1; border-radius: 8px;
     }
+    .modal-close:hover { color: var(--text-primary); }
+    #gemini-modal-content { margin-top: 16px; min-height: 80px; }
 
-    .modal-close:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
-      transform: rotate(90deg);
-    }
-
-    #toast {
-      visibility: hidden;
-      background: linear-gradient(135deg,
-                  rgba(15, 15, 18, 0.98),
-                  rgba(25, 25, 30, 0.98));
-      backdrop-filter: var(--blur-lg);
-      -webkit-backdrop-filter: var(--blur-lg);
-      color: var(--text-primary);
-      text-align: center;
-      border-radius: var(--radius-lg);
-      padding: 20px 32px;
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
-      transform: translate(-50%, calc(100% + 32px));
-      z-index: 3001;
-      box-shadow: var(--shadow-xl);
-      opacity: 0;
-      transition: all var(--transition-spring);
-      max-width: 90%;
-      width: 480px;
-      border: 1px solid var(--border-primary);
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    #toast.show {
-      visibility: visible;
-      opacity: 1;
-      transform: translate(-50%, 0);
-    }
-
-    #toast.success {
-      background: linear-gradient(135deg, var(--live), var(--live-glow));
-      color: #fff;
-      border-color: var(--live);
-    }
-
-    #toast.error {
-      background: linear-gradient(135deg, var(--error), #ff6b6b);
-      color: #fff;
-      border-color: var(--error);
-    }
-
-    #toast.warning {
-      background: linear-gradient(135deg, var(--warning), #fbbf24);
-      color: #000;
-      border-color: var(--warning);
-    }
-
-    #toast.info {
-      background: linear-gradient(135deg, var(--info), #60a5fa);
-      color: #fff;
-      border-color: var(--info);
-    }
-
+    /* Spinner for Gemini Loading */
     .spinner {
-      border: 3px solid var(--border-primary);
-      border-top: 3px solid transparent;
+      border: 4px solid var(--border-primary);
+      border-top: 4px solid var(--accent-primary);
       border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      margin: 24px auto;
-      background: conic-gradient(from 0deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
-      -webkit-mask: radial-gradient(circle, transparent 40%, black 40%);
-      mask: radial-gradient(circle, transparent 40%, black 40%);
+      width: 40px; height: 40px;
       animation: spin 1s linear infinite;
+      margin: 20px auto;
     }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .empty-state,
-    .error-state {
-      text-align: center;
-      padding: 80px 40px;
-      background: linear-gradient(135deg,
-                  rgba(15, 15, 18, 0.6),
-                  rgba(25, 25, 30, 0.6));
-      backdrop-filter: var(--blur-md);
-      -webkit-backdrop-filter: var(--blur-md);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--border-primary);
-      box-shadow: var(--shadow-lg);
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    .empty-state h3,
-    .error-state h3 {
-      margin: 0 0 16px 0;
-      font-size: 1.875rem;
-      font-weight: 800;
-      background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .error-state h3 {
-      background: linear-gradient(135deg, var(--error), #ff6b6b);
-      -webkit-background-clip: text;
-      background-clip: text;
-    }
-
-    .empty-state p,
-    .error-state p {
-      color: var(--text-secondary);
-      font-size: 1.125rem;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    .status-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--offline);
-      position: relative;
-      animation: statusPulse 2s ease-in-out infinite;
-    }
-
-    .status-indicator.connected {
-      background: var(--live);
-    }
-
-    .status-indicator.connecting {
-      background: var(--warning);
-    }
-
-    .status-indicator.error {
-      background: var(--error);
-    }
-
-    @keyframes statusPulse {
-      0%, 100% {
-        box-shadow: 0 0 0 0 currentColor;
-      }
-      50% {
-        box-shadow: 0 0 0 8px rgba(currentColor, 0.1);
-      }
-    }
-
-    @media (max-width: 768px) {
-      body {
-        padding: 12px 12px 100px 12px;
-      }
-
-      #streamers {
-        gap: 12px;
-      }
-
-      #streamers.grid-view {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-      }
-
-      .streamer {
-        border-radius: var(--radius-md);
-      }
-
-      .streamer-content {
-        padding: 12px !important;
-      }
-
-      .streamer-header {
-        gap: 10px;
-        margin-bottom: 8px;
-      }
-
-      .streamer-avatar {
-        width: 36px;
-        height: 36px;
-        border-width: 2px;
-      }
-
-      .streamer-name {
-        font-size: 0.875rem;
-        gap: 6px;
-      }
-
-      .platform-icon {
-        width: 16px;
-        height: 16px;
-      }
-
-      .stream-meta {
-        font-size: 0.75rem;
-      }
-
-      .stream-title {
-        font-size: 0.8125rem;
-        margin: 4px 0 8px 0;
-        -webkit-line-clamp: 1;
-      }
-
-      .stream-category {
-        padding: 6px 10px;
-        font-size: 0.75rem;
-      }
-
-      .thumbnail-preview {
-        aspect-ratio: 16/9;
-      }
-
-      .streamer-actions-wrapper {
-        top: 12px;
-        right: 12px;
-      }
-
-      .action-menu-toggle {
-        width: 32px;
-        height: 32px;
-        font-size: 1.2rem;
-      }
-
-      .actions-drawer {
-        min-width: 140px;
-        padding: 4px;
-        top: 36px;
-      }
-
-      .action-btn {
-        padding: 8px 12px;
-        font-size: 0.8125rem;
-        gap: 8px;
-      }
-
-      .live-indicator {
-        top: 12px;
-        right: 12px;
-        padding: 4px 8px;
-        font-size: 0.625rem;
-      }
-
-      .live-indicator::before {
-        width: 6px;
-        height: 6px;
-      }
-
-      .streamer.favorite::before {
-        font-size: 18px;
-        top: 12px;
-        left: 12px;
-      }
-
-      .streamer-checkbox {
-        top: 12px;
-        right: 12px;
-        width: 24px;
-        height: 24px;
-      }
-
-      .floating-bar {
-        bottom: 12px;
-        padding: 10px 12px;
-        gap: 8px;
-        border-radius: var(--radius-md);
-        width: calc(100% - 24px);
-      }
-
-      .floating-bar-section {
-        gap: 6px;
-      }
-
-      .view-controls button,
-      .button {
-        padding: 8px 12px;
-        font-size: 0.8125rem;
-      }
-
-      .app-title {
-        display: none;
-      }
-
-      #last-updated {
-        font-size: 0.75rem;
-      }
-
-      .settings-panel {
-        width: 100%;
-        padding: 20px;
-      }
-
-      .modal-content {
-        width: calc(100% - 24px);
-        padding: 20px;
-      }
-
-      .bulk-actions {
-        bottom: 80px !important;
-        padding: 8px 12px !important;
-        gap: 8px !important;
-      }
-
-      .bulk-actions button {
-        padding: 6px 10px;
-        font-size: 0.75rem;
-      }
-
-      #selection-count {
-        font-size: 0.8125rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      #streamers.grid-view {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      .stream-title {
-        display: none;
-      }
-      
-      .stream-category {
-        display: none;
-      }
-    }
-
-    @media (max-width: 768px) and (orientation: landscape) {
-      #streamers.grid-view {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      
-      body {
-        padding-bottom: 90px;
-      }
-      
-      .floating-bar {
-        padding: 8px 12px;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes modal-fade-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    
+     #toast{visibility:hidden;background:var(--bg-tertiary);color:var(--text-primary);text-align:center;border-radius:var(--radius-md);padding:16px 24px;position:fixed;bottom:24px;left:50%;transform:translate(-50%, calc(100% + 24px));z-index:3001;box-shadow:var(--shadow-lg);opacity:0;transition:transform .3s ease, opacity .3s ease;max-width:90%;width:420px;border:1px solid var(--border-primary);cursor:pointer;}
+     #toast.show{visibility:visible;opacity:1;transform:translate(-50%, 0);}
+     #toast.success{background:var(--live);color:#fff}
+     #toast.error{background:var(--offline);color:#fff}
+     #toast.warning{background:var(--warning);color:#fff}
+     #toast.info{background:var(--info);color:#fff}
+    
+     @media (max-width: 768px) {
+        .app-title, #last-updated { display: none; }
+     }
   </style>
 </head>
 <body data-theme="dark">
@@ -1260,8 +394,7 @@
                     <option value="5000">5 seconds</option>
                     <option value="30000">30 seconds</option>
                     <option value="60000">1 minute</option>
-                    <option value="120000" selected>2 minutes</option>
-                    <option value="300000">5 minutes</option>
+                    <option value="300000" selected>5 minutes</option>
                     <option value="600000">10 minutes</option>
                 </select>
             </div>
@@ -1278,7 +411,7 @@
             </div>
             </div>
         </div>
-        <div class="action-buttons" style="margin-top: 32px; border-top: 1px solid var(--border-primary); padding-top: 32px; display: flex; flex-wrap: wrap; gap: 12px;">
+        <div class="action-buttons" style="margin-top: 24px; border-top: 1px solid var(--border-primary); padding-top: 24px;">
             <button id="refresh-btn" class="button">Refresh</button>
             <button id="theme-toggle-btn" class="button">Toggle Theme</button>
             <button id="export-btn" class="button">Export</button>
@@ -1290,7 +423,7 @@
     <div class="floating-bar">
         <div class="floating-bar-section">
             <h1 class="app-title">Stream Monitor <small>v7.5</small></h1>
-            <div id="last-updated" aria-live="polite" title="Last updated time" style="font-size: 0.875rem; color: var(--text-secondary);"></div>
+            <div id="last-updated" aria-live="polite" title="Last updated time"></div>
             <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
         </div>
         <div class="floating-bar-section view-controls">
@@ -1301,14 +434,17 @@
             <button class="view-toggle" id="select-mode-btn" aria-label="Selection mode">Select</button>
         </div>
         <div class="floating-bar-section">
-             <button class="icon-btn" id="install-btn" title="Install app" aria-label="Install app" style="display:none">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 20px; height: 20px;"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+             <button class="icon-btn" id="youtube-refresh-btn" title="Refresh YouTube" aria-label="Refresh YouTube">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FF0000" style="width: 24px; height: 24px;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
             </button>
-            <button class="settings-toggle" id="settings-toggle" aria-expanded="false">⚙️ Settings</button>
+             <button class="icon-btn" id="install-btn" title="Install app" aria-label="Install app" style="display:none">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+            </button>
+            <button class="settings-toggle" id="settings-toggle" aria-expanded="false">Settings</button>
         </div>
      </div>
-     <div class="bulk-actions" id="bulk-actions" style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--bg-secondary); backdrop-filter: var(--blur-lg); padding: 12px 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-primary); box-shadow: var(--shadow-lg); display: none; gap: 12px; align-items: center; z-index: 1000;">
-            <span class="selection-count" id="selection-count" style="font-weight: 700; color: var(--accent-primary);">0 selected</span>
+     <div class="bulk-actions" id="bulk-actions">
+            <span class="selection-count" id="selection-count">0 selected</span>
             <button id="bulk-favorite" class="button">⭐ Favorite</button>
             <button id="bulk-unfavorite" class="button">☆ Unfavorite</button>
             <button id="select-all" class="button">Select All</button>
@@ -1316,22 +452,24 @@
     </div>
   </div>
     
+  <!-- Modals -->
   <div id="toast" role="alert" aria-live="assertive"></div>
   <div id="gemini-modal" class="modal-overlay">
     <div class="modal-content">
       <button id="gemini-modal-close" class="modal-close" title="Close">&times;</button>
-      <h3 id="gemini-modal-title" style="margin: 0 0 24px 0; font-size: 1.5rem; font-weight: 800; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent;">AI Assistant</h3>
+      <h3 id="gemini-modal-title">AI Assistant</h3>
       <div id="gemini-modal-content"><div class="spinner"></div></div>
     </div>
   </div>
   <div id="thumbnail-modal" class="modal-overlay">
-      <div class="modal-content" style="background: transparent; border: none; box-shadow: none; padding: 0; width: auto;">
-          <button id="thumbnail-modal-close" class="modal-close" style="background: var(--bg-tertiary); top: -50px; right: -50px;">&times;</button>
-          <img id="enlarged-thumbnail" src="" alt="Enlarged stream thumbnail" style="display: block; max-width: 90vw; max-height: 90vh; border-radius: var(--radius-lg); cursor: pointer; box-shadow: var(--shadow-xl);">
+      <div class="modal-content">
+          <button id="thumbnail-modal-close" class="modal-close">&times;</button>
+          <img id="enlarged-thumbnail" src="" alt="Enlarged stream thumbnail">
       </div>
   </div>
 
 <script>
+// Utility classes (PWA, Utils, CacheManager)
 const PWA = {
   deferredPrompt: null,
   iconCache: {},
@@ -1370,6 +508,7 @@ const PWA = {
     manifestLink.href = url;
     document.head.appendChild(manifestLink);
 
+    // Explicitly add favicon link
     const faviconLink = document.createElement('link');
     faviconLink.rel = 'icon';
     faviconLink.type = 'image/png';
@@ -1419,7 +558,7 @@ const PWA = {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.deferredPrompt = e;
-      installBtn.style.display = 'inline-flex';
+      installBtn.style.display = 'inline-grid';
     });
     installBtn.addEventListener('click', async () => {
       if (!this.deferredPrompt) return;
@@ -1432,7 +571,6 @@ const PWA = {
     });
   }
 };
-
 const Utils = {
   debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a), wait); }; },
   formatNumber(n){ if(!n) return '0'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toString(); },
@@ -1440,7 +578,6 @@ const Utils = {
   formatDuration(m){ if(!m || m < 0) return '0m'; if(m<60) return `${m}m`; const h=Math.floor(m/60), min=m%60; if(h<24) return `${h}h ${min}m`; const d=Math.floor(h/24), rh=h%24; return `${d}d ${rh}h`; },
   calculateUptime(start){ if(!start) return 0; return Math.floor((new Date()-new Date(start))/(1000*60)); },
 };
-
 class CacheManager {
   constructor(ttl=60000){ this.cache=new Map(); this.ttl=ttl; }
   set(k,d,ttl=this.ttl){ this.cache.set(k,{d,t:Date.now(),ttl}); }
@@ -1448,10 +585,11 @@ class CacheManager {
   clear(){ this.cache.clear(); }
 }
 
+/* =================== Gemini API Service =================== */
 const Gemini = {
-  apiKey: "",
+  apiKey: "", // Left empty for automated key injection
   async ask(prompt, retries = 3, delay = 1000) {
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-preview-0514:generateContent?key=${this.apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${this.apiKey}`;
     const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
     try {
@@ -1480,6 +618,8 @@ const Gemini = {
   }
 };
 
+
+/* =================== Main App Logic =================== */
 const App = {
   state:{
     streamers:[], streamerData:new Map(), favorites:[], groups:{},
@@ -1489,13 +629,13 @@ const App = {
     workerEndpoint: 'https://autumn-base-826c.rapahannock.workers.dev/',
     workerAuthToken: 'oK2ZrKag8*R7Wr*UgMBrFdcD6',
     autoRefreshInterval: null,
-    autoRefreshDelay: 120000,
+    autoRefreshDelay: 300000, // Default 5 minutes
     toastTimeout: null,
     BANNED_PLACEHOLDER_THUMBNAIL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='none' stroke='%23ef4444' stroke-width='1'%3E%3Cpath d='M2 0H14C15.1 0 16 0.9 16 2V7C16 8.1 15.1 9 14 9H2C0.9 9 0 8.1 0 7V2C0 0.9 0.9 0 2 0Z' stroke='none' fill='%2323272d'/%3E%3Ccircle cx='8' cy='4.5' r='3'/%3E%3Cline x1='5.5' y1='2' x2='10.5' y2='7'/%3E%3C/svg%3E",
   },
   
   elements: {},
-  cache: new CacheManager(120000),
+  cache: new CacheManager(120000), // 2 minute cache
 
   init(){
     this.cacheElements();
@@ -1504,19 +644,6 @@ const App = {
     this.populateFilterDropdown();
     this.fetchStreamerList();
     this.startAutoRefresh();
-    this.initMouseTracking();
-  },
-
-  initMouseTracking() {
-    document.addEventListener('mousemove', (e) => {
-      document.querySelectorAll('.streamer').forEach(card => {
-        const rect = card.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        card.style.setProperty('--mouse-x', `${x}%`);
-        card.style.setProperty('--mouse-y', `${y}%`);
-      });
-    });
   },
 
   cacheElements(){
@@ -1556,6 +683,7 @@ const App = {
       importBtn: document.getElementById('import-btn'),
       importFile: document.getElementById('import-file'),
       installBtn: document.getElementById('install-btn'),
+      youtubeRefreshBtn: document.getElementById('youtube-refresh-btn'),
     };
   },
 
@@ -1566,7 +694,7 @@ const App = {
     this.state.groups = JSON.parse(localStorage.getItem("groups") || "{}");
     this.state.filter = localStorage.getItem("filter") || 'all';
     this.state.sort = localStorage.getItem("sort") || 'status';
-    this.state.autoRefreshDelay = parseInt(localStorage.getItem("autoRefreshDelay") || '120000', 10);
+    this.state.autoRefreshDelay = parseInt(localStorage.getItem("autoRefreshDelay") || '300000', 10);
     this.elements.filterSelect.value = this.state.filter;
     this.elements.sortSelect.value = this.state.sort;
     this.elements.autoRefreshSelect.value = this.state.autoRefreshDelay;
@@ -1604,16 +732,17 @@ const App = {
         if(url) window.open(url, '_blank', 'noopener,noreferrer');
     });
 
-    this.elements.refreshBtn.addEventListener('click', () => this.fetchStreamerData());
+    this.elements.refreshBtn.addEventListener('click', () => this.fetchStreamerData('all'));
     this.elements.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
     this.elements.exportBtn.addEventListener('click', () => this.exportList());
     this.elements.importBtn.addEventListener('click', () => this.elements.importFile.click());
     this.elements.importFile.addEventListener('change', e => this.importList(e));
     this.elements.toast.addEventListener('click', () => this.dismissToast());
-    
+    this.elements.youtubeRefreshBtn.addEventListener('click', () => this.fetchStreamerData('youtube'));
+
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && this.state.autoRefreshDelay > 0) {
-        this.fetchStreamerData();
+        this.fetchStreamerData('auto'); // Resume auto-refresh
         this.startAutoRefresh();
       } else {
         this.stopAutoRefresh();
@@ -1640,7 +769,7 @@ const App = {
     if (this.state.autoRefreshDelay > 0) {
       this.state.autoRefreshInterval = setInterval(() => {
         if (!document.hidden) {
-          this.fetchStreamerData();
+          this.fetchStreamerData('auto');
         }
       }, this.state.autoRefreshDelay);
     }
@@ -1680,7 +809,8 @@ const App = {
       this.state.youtubeApiKey = data.config?.youtubeApiKey;
       
       this.updateConnectionStatus('connected');
-      await this.fetchStreamerData();
+      // On initial load, we fetch everything ('all')
+      await this.fetchStreamerData('all');
     } catch(err) {
       console.error('Failed to load data from worker:', err);
       this.updateConnectionStatus('error');
@@ -1689,26 +819,51 @@ const App = {
     }
   },
   
-  async fetchStreamerData() {
-    this.setLoadingState(true);
+  async fetchStreamerData(mode = 'all') {
+    // Mode: 'all' (default), 'auto' (excludes YT), 'youtube' (only YT)
+    
+    // Don't set global loading state on auto-refresh to avoid flickering, unless manual
+    if (mode !== 'auto' && this.state.isLoading) this.setLoadingState(true);
+    
     if (!this.state.streamers.length) {
         this.setLoadingState(false);
         this.render();
         return;
     }
-    const promises = this.state.streamers.map(s => this.fetchStreamerInfo(s));
+
+    let streamersToFetch = this.state.streamers;
+
+    if (mode === 'auto') {
+        // Exclude YouTube
+        streamersToFetch = streamersToFetch.filter(s => s.platform !== 'youtube');
+    } else if (mode === 'youtube') {
+        // Only YouTube
+        streamersToFetch = streamersToFetch.filter(s => s.platform === 'youtube');
+        this.showToast('Refreshing YouTube streamers...', 'info');
+    }
+
+    const promises = streamersToFetch.map(s => this.fetchStreamerInfo(s));
     const results = await Promise.allSettled(promises);
+    
     results.forEach(r => {
       if (r.status === 'fulfilled' && r.value) {
         this.state.streamerData.set(r.value.name, r.value);
       }
     });
-    this.setLoadingState(false);
+    
+    // Only turn off loading if it was on
+    if (this.state.isLoading) this.setLoadingState(false);
+    this.render();
   },
 
    async fetchStreamerInfo(streamer) {
     const {name, platform} = streamer;
     const k = `api-${platform}-${name}`;
+    // Only check cache if NOT manual refresh
+    // Actually, for this update, we likely want to bypass cache for the manual refresh target
+    // But keeping it simple: regular polling uses cache, manual doesn't? 
+    // Let's rely on cache manager TTL (2 mins). If user clicks refresh button, we might want to bypass.
+    // For now, respect cache.
     const c = this.cache.get(k); if (c) return c;
     
     let data;
@@ -1733,7 +888,7 @@ const App = {
       switch(platform) {
           case 'kick': return `https://kick.com/${name}`;
           case 'twitch': return `https://twitch.tv/${name}`;
-          case 'youtube': return `https://www.youtube.com/@${name.replace('@','')}`;
+          case 'youtube': return `https://www.youtube.com/@${name.replace('@','')}`; // Basic fallback
           default: return '#';
       }
   },
@@ -1893,11 +1048,7 @@ const App = {
     if (!filtered.length) return this.renderEmptyState();
     
     const frag = document.createDocumentFragment();
-    filtered.forEach((s, i) => {
-      const card = this.createStreamerCard(s);
-      card.style.animationDelay = `${i * 0.05}s`;
-      frag.appendChild(card);
-    });
+    filtered.forEach(s => frag.appendChild(this.createStreamerCard(s)));
     this.elements.container.appendChild(frag);
     this.elements.lastUpdated.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
     this.updateSelectionUI();
@@ -1924,11 +1075,11 @@ const App = {
     
     let metaText = 'Offline';
     if (s.isLive) {
-        metaText = `${Utils.formatNumber(s.viewers)} viewers • ${Utils.formatDuration(s.uptime || 0)}`;
+        metaText = `${Utils.formatNumber(s.viewers)} viewers - ${Utils.formatDuration(s.uptime || 0)}`;
     } else if (s.title === 'API Key Error (403)') {
         metaText = `<span style="color: var(--warning);">${s.title}</span>`;
     } else if (s.title === 'Banned / Not Found') {
-        metaText = `<span style="color: var(--error);">${s.title}</span>`;
+        metaText = `<span style="color: var(--offline);">${s.title}</span>`;
     }
 
     div.innerHTML = `
@@ -1939,14 +1090,14 @@ const App = {
       </div>
       <div class="streamer-content">
         <div class="streamer-header">
-          <img class="streamer-avatar" src="${s.profilePic}" alt="" onerror="this.style.backgroundColor='var(--bg-tertiary)'">
+          <img class="streamer-avatar" src="${s.profilePic}" alt="">
           <div class="streamer-name-wrapper">
             <a href="${s.url}" target="_blank" rel="noopener noreferrer" class="streamer-name">${platformIcon} ${Utils.sanitizeHTML(s.name)}</a>
             <div class="stream-meta">${metaText}</div>
           </div>
         </div>
         <p class="stream-title">${Utils.sanitizeHTML(s.title)}</p>
-        ${s.category ? `<div class="stream-category">🎮 ${Utils.sanitizeHTML(s.category)}</div>` : ''}
+        ${s.category ? `<div class="stream-category">${Utils.sanitizeHTML(s.category)}</div>` : ''}
         <div class="streamer-actions-wrapper">
             <button class="action-menu-toggle" aria-label="More actions">•••</button>
             <div class="actions-drawer">
@@ -1974,6 +1125,7 @@ const App = {
         e.stopPropagation();
         const parentCard = e.currentTarget.closest('.streamer');
         
+        // Close other open drawers
         document.querySelectorAll('.streamer.actions-open').forEach(openCard => {
             if(openCard !== parentCard) {
                 openCard.classList.remove('actions-open');
@@ -1995,7 +1147,7 @@ const App = {
         this.state.selectedStreamers.clear();
     }
     this.elements.selectModeBtn.classList.toggle('active', this.state.selectionMode);
-    this.elements.bulkActions.style.display = this.state.selectionMode ? 'flex' : 'none';
+    this.elements.bulkActions.classList.toggle('visible', this.state.selectionMode);
     this.render();
   },
   toggleSelection(name) {
@@ -2132,7 +1284,7 @@ const App = {
           }
       };
       reader.readAsText(file);
-      event.target.value = '';
+      event.target.value = ''; // Reset file input
   },
   
   async addStreamer() {
@@ -2150,10 +1302,11 @@ const App = {
 
   async removeStreamer(name, platform) {
     const pin = prompt(`Enter PIN to confirm removal of ${name}:`);
-    if (pin === null) {
+    if (pin === null) { // User clicked cancel
         this.showToast('Removal cancelled.', 'info');
         return;
     }
+    // The worker is expected to handle PIN verification.
     const result = await this.postToWorker({ action: 'remove', name, platform, pin });
     if (result !== null) {
       this.showToast(`🗑️ ${name} removed successfully.`, 'success');
@@ -2195,12 +1348,12 @@ const App = {
       this.render();
   },
   renderSkeletons(){
-    this.elements.container.innerHTML = Array(8).fill('').map((_, i) => `
-      <div class="streamer skeleton" style="animation-delay: ${i * 0.05}s;">
-        <div style="width:100%; aspect-ratio:16/9; background: var(--bg-tertiary); border-radius: var(--radius-lg) var(--radius-lg) 0 0;"></div>
+    this.elements.container.innerHTML = Array(8).fill('').map(() => `
+      <div class="streamer skeleton">
+        <div style="width:100%; aspect-ratio:16/9; background: var(--bg-tertiary);"></div>
         <div class="streamer-content">
           <div class="streamer-header">
-            <div style="width:52px; height:52px; border-radius:50%; background: var(--bg-tertiary);"></div>
+            <div style="width:40px; height:40px; border-radius:50%; background: var(--bg-tertiary);"></div>
             <div style="flex:1;">
               <div style="height:20px; width:60%; background:var(--bg-tertiary); border-radius:6px; margin-bottom:8px;"></div>
               <div style="height:14px; width:40%; background:var(--bg-tertiary); border-radius:6px;"></div>
@@ -2221,7 +1374,7 @@ const App = {
       clearTimeout(this.state.toastTimeout);
     }
     t.textContent = msg;
-    t.className = '';
+    t.className = ''; // Clear previous type classes
     t.classList.add(type);
     t.classList.add('show');
     this.state.toastTimeout = setTimeout(() => {
