@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor v7.9.3</title>
+  <title>Kick & Twitch Monitor v7.9.4</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -705,8 +705,8 @@ const App = {
                  const result = d.livestream ? {
                      isLive: true, title: d.livestream.session_title, 
                      viewers: d.livestream.viewer_count, category: d.livestream.categories[0].name,
-                     // NEW: Append timestamp to force refresh the image
-                     thumb: `${d.livestream.thumbnail.url}?t=${Date.now()}`, 
+                     // REVERTED to original URL (no cache buster)
+                     thumb: d.livestream.thumbnail.url, 
                      url
                  } : { isLive: false, title: 'Offline', url, thumb: d.user.profile_pic };
                  streamCache.set(k, result);
@@ -729,7 +729,7 @@ const App = {
                     title: isLive ? streamData.title : 'Offline',
                     viewers: isLive ? streamData.viewer_count : 0,
                     category: isLive ? streamData.game_name : '',
-                    // NEW: Append timestamp to force refresh the image
+                    // KEPT cache buster for Twitch (required)
                     thumb: isLive ? `${streamData.thumbnail_url.replace('{width}', '640').replace('{height}', '360')}?t=${Date.now()}` : userData.profile_image_url,
                     url
                  };
@@ -773,8 +773,8 @@ const App = {
                     title: details.snippet.title,
                     viewers: parseInt(details.liveStreamingDetails.concurrentViewers || 0),
                     category: 'YouTube Live',
-                    // NEW: Append timestamp to force refresh the image
-                    thumb: `${details.snippet.thumbnails.medium.url}?t=${Date.now()}`,
+                    // REVERTED to original URL (no cache buster)
+                    thumb: details.snippet.thumbnails.medium.url,
                     url: channelUrl
                  };
                  streamCache.set(k, result);
