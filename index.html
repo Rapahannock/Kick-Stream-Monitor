@@ -583,6 +583,7 @@ const App = {
         activeCard: null,
         viewMode: 'grid',
         BANNED_PLACEHOLDER_THUMBNAIL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='none' stroke='%23ef4444' stroke-width='1'%3E%3Cpath d='M2 0H14C15.1 0 16 0.9 16 2V7C16 8.1 15.1 9 14 9H2C0.9 9 0 8.1 0 7V2C0 0.9 0.9 0 2 0Z' stroke='none' fill='%2323272d'/%3E%3Ccircle cx='8' cy='4.5' r='3'/%3E%3Cline x1='5.5' y1='2' x2='10.5' y2='7'/%3E%3C/svg%3E",
+        youtubeQuotaExceeded: false, // New state flag
     },
     
     els: {
@@ -705,7 +706,7 @@ const App = {
                      isLive: true, title: d.livestream.session_title, 
                      viewers: d.livestream.viewer_count, category: d.livestream.categories[0].name,
                      thumb: d.livestream.thumbnail.url, url
-                 } : { isLive: false, title: 'Offline', url, thumb: d.user.profile_pic };
+                 } : { isLive: false, title: 'Banned / Not Found', url, thumb: d.user.profile_pic };
                  streamCache.set(k, result);
                  return result;
             }
@@ -733,6 +734,11 @@ const App = {
                  return result;
             }
             if (s.platform === 'youtube') {
+                 // Check if quota already exceeded
+                 if (this.state.youtubeQuotaExceeded) {
+                     return { isLive: false, title: 'Daily Limit Reached', url, viewers: 0 };
+                 }
+
                  if (!this.state.keys || !this.state.keys.youtubeApiKey) return { isLive: false, title: 'YouTube Key Missing', url };
                  const apiKey = this.state.keys.youtubeApiKey;
                  const cb = force ? `&_=${Date.now()}` : '';
@@ -773,8 +779,13 @@ const App = {
             return { isLive: false, title: 'Offline', url }; 
         } catch (e) {
              const is403 = e.message.includes('403');
-             const msg = is403 ? (s.platform === 'youtube' ? 'Daily Limit / Key Error' : 'Access Denied') : 'Connection Failed';
-             // Don't cache errors so we can retry
+             if (is403 && s.platform === 'youtube') {
+                 // FLIP THE SAFETY SWITCH
+                 this.state.youtubeQuotaExceeded = true;
+                 const msg = 'Daily Limit Reached';
+                 return { isLive: false, title: msg, url };
+             }
+             const msg = is403 ? 'Access Denied' : 'Connection Failed';
              return { isLive: false, title: msg, url };
         }
     },
