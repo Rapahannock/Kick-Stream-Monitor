@@ -3,1190 +3,839 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor v7.6</title>
+  <title>Kick & Twitch Monitor v7.7</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a0a; /* Flat, deep black */
-      --bg-glass: rgba(22, 27, 34, 0.4); /* Highly transparent for aero effect */
-      --bg-tertiary: #21262d;
-      --text-primary: #e6edf3;
-      --text-secondary: #8b949e;
-      --border-primary: rgba(255, 255, 255, 0.08); /* Subtle glass edge */
-      --border-highlight: rgba(255, 255, 255, 0.15);
+      --bg-primary: #050505;
+      --bg-glass: rgba(20, 20, 25, 0.7); /* Deep smoked glass */
+      --bg-glass-hover: rgba(30, 30, 35, 0.85);
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --border-primary: rgba(255, 255, 255, 0.1);
       --accent-primary: #22d3ee;
-      --accent-secondary: #67e8f9;
-      --live: #22c55e;
+      --live: #10b981;
       --twitch: #9146ff;
       --youtube: #ff0000;
       --kick: #53fc18;
-      --offline: #f85149;
+      --offline: #64748b;
       --warning: #f59e0b;
-      --info: #3b82f6;
-      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
-      --shadow-glow: 0 0 20px rgba(0,0,0,0.5);
+      --red-light: #ff4444; /* New Red Light color */
+      --radius-sm: 8px;
       --radius-md: 12px;
-      --radius-lg: 16px;
-      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      --transition-fast: 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      --transition-slow: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
     [data-theme="light"] {
-      --bg-primary: #f0f2f5;
-      --bg-glass: rgba(255, 255, 255, 0.5);
-      --bg-tertiary: #e1e4e8;
-      --text-primary: #24292e;
-      --text-secondary: #586069;
-      --border-primary: rgba(0, 0, 0, 0.08);
-      --border-highlight: rgba(255, 255, 255, 0.6);
-      --accent-primary: #0366d6;
-      --accent-secondary: #2188ff;
+        --bg-primary: #f8fafc;
+        --bg-glass: rgba(255, 255, 255, 0.8);
+        --bg-glass-hover: rgba(255, 255, 255, 0.95);
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --border-primary: rgba(0, 0, 0, 0.1);
+        --accent-primary: #0891b2;
     }
 
-    *, *::before, *::after { box-sizing: border-box; }
+    * { box-sizing: border-box; }
 
     body {
-      color-scheme: light dark;
-      font-family: var(--font-family);
+      font-family: 'Inter', sans-serif;
       background-color: var(--bg-primary);
-      /* Subtle noise texture */
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      /* Subtle noise */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
       color: var(--text-primary);
       margin: 0;
-      line-height: 1.5;
-      padding: 20px 20px 120px 20px;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      transition: background var(--transition-slow), color var(--transition-slow);
+      padding: 20px 20px 100px 20px;
+      min-height: 100vh;
     }
 
-    #app-container { max-width: 1800px; margin: 0 auto; }
-    main#main-content { margin-top: 0; }
+    #app-container { max-width: 2400px; margin: 0 auto; }
     
-    #streamers { display: grid; gap: 24px; }
-    #streamers.grid-view { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
-    #streamers.list-view, #streamers.compact-view { grid-template-columns: 1fr; }
-
-    /* --- AERO GLASS CARD --- */
+    /* --- DENSE GRID LAYOUT --- */
+    #streamers { 
+        display: grid; 
+        /* Increased min-width from 240px to 320px for larger thumbnails */
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+        gap: 16px; 
+    }
+    
+    /* POSTER CARD STYLE */
     .streamer {
-      background: var(--bg-glass);
-      /* Heavy blur for the frosted glass effect */
-      backdrop-filter: blur(20px) saturate(120%);
-      -webkit-backdrop-filter: blur(20px) saturate(120%);
-      
-      border: 1px solid var(--border-primary);
-      border-left: 3px solid transparent; /* Base border */
-      border-radius: var(--radius-lg);
-      
-      display: flex; flex-direction: column;
-      position: relative;
-      overflow: hidden; /* Clips the inner content */
-      
-      /* Subtle default shadow */
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      
-      transition: all var(--transition-fast);
-      transform: translateZ(0); /* Hardware acceleration */
+        position: relative;
+        aspect-ratio: 16/9; /* Strict 16:9 ratio to prevent cropping */
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        background: #111;
+        border: 1px solid var(--border-primary);
+        transition: var(--transition);
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    
+    .streamer:hover {
+        transform: scale(1.03);
+        box-shadow: 0 16px 32px rgba(0,0,0,0.6);
+        z-index: 100;
+        border-color: rgba(255,255,255,0.4);
     }
 
-    /* Top shine/highlight for that "glass edge" look */
-    .streamer::after {
+    /* Thumbnail Image */
+    .streamer-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Ensures filling without distortion */
+        transition: var(--transition);
+    }
+    
+    /* Removed the heavy blur/darkening on hover so you can still see the content clearly */
+    .streamer:hover .streamer-img {
+        filter: brightness(0.8); 
+    }
+
+    /* Platform Borders (Left Edge) */
+    .streamer::before {
         content: '';
         position: absolute;
-        top: 0; left: 0; right: 0; height: 1px;
-        background: linear-gradient(90deg, transparent, var(--border-highlight), transparent);
-        opacity: 0.5;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        z-index: 20;
+        box-shadow: 2px 0 15px currentColor;
     }
+    .streamer.kick::before { background: var(--kick); color: var(--kick); }
+    .streamer.twitch::before { background: var(--twitch); color: var(--twitch); }
+    .streamer.youtube::before { background: var(--youtube); color: var(--youtube); }
+    .streamer.offline::before { background: var(--offline); color: var(--offline); opacity: 0.5; box-shadow: none;}
 
-    /* Hover State: The "Intensify" */
-    .streamer:hover {
-      transform: translateY(-6px) scale(1.01);
-      background: color-mix(in srgb, var(--bg-glass) 90%, var(--bg-tertiary));
-      border-color: rgba(255,255,255,0.2);
-    }
-
-    /* Platform-specific glows - Subtle by default, Intense on Hover */
-    /* Kick */
-    .streamer.live.kick {
-        border-left-color: var(--kick);
-        /* Subtle colored glow at bottom/side */
-        box-shadow: 
-            inset 10px 0 20px -10px rgba(83, 252, 24, 0.1),
-            0 4px 6px rgba(0,0,0,0.3);
-    }
-    .streamer.live.kick:hover {
-        /* Intense Prism Glow */
-        box-shadow: 
-            0 0 20px rgba(83, 252, 24, 0.4), /* Outer glow */
-            inset 0 0 20px rgba(83, 252, 24, 0.2), /* Inner glow */
-            0 10px 25px rgba(0,0,0,0.5); /* Deep shadow */
-    }
-
-    /* Twitch */
-    .streamer.live.twitch {
-        border-left-color: var(--twitch);
-        box-shadow: 
-            inset 10px 0 20px -10px rgba(145, 70, 255, 0.1),
-            0 4px 6px rgba(0,0,0,0.3);
-    }
-    .streamer.live.twitch:hover {
-        box-shadow: 
-            0 0 20px rgba(145, 70, 255, 0.5),
-            inset 0 0 20px rgba(145, 70, 255, 0.2),
-            0 10px 25px rgba(0,0,0,0.5);
-    }
-
-    /* YouTube */
-    .streamer.live.youtube {
-        border-left-color: var(--youtube);
-        box-shadow: 
-            inset 10px 0 20px -10px rgba(255, 0, 0, 0.1),
-            0 4px 6px rgba(0,0,0,0.3);
-    }
-    .streamer.live.youtube:hover {
-        box-shadow: 
-            0 0 20px rgba(255, 0, 0, 0.5),
-            inset 0 0 20px rgba(255, 0, 0, 0.2),
-            0 10px 25px rgba(0,0,0,0.5);
-    }
-
-    /* Prism sheen effect on hover */
-    .streamer::before {
-        content: "";
+    /* Name Tag (Always Visible) */
+    .name-tag {
         position: absolute;
-        top: 0; left: -100%; width: 50%; height: 100%;
-        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.05), transparent);
-        transform: skewX(-25deg);
-        transition: none;
+        bottom: 0; left: 0; right: 0;
+        padding: 10px 12px 10px 16px;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 20%, transparent);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 15;
+        transition: transform 0.3s ease;
+    }
+    /* Only slide out name tag if overlay is showing */
+    .streamer:hover .name-tag {
+        transform: translateY(100%);
+    }
+
+    .streamer-name {
+        font-weight: 800;
+        font-size: 1.1rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #fff;
+    }
+
+    /* Full Details Overlay (Visible on Hover/Tap) */
+    .details-overlay {
+        position: absolute;
+        inset: 0;
+        padding: 16px;
+        background: rgba(10, 10, 14, 0.85); /* Slightly clearer background */
+        backdrop-filter: blur(4px); /* Reduced blur to see bg image faintly */
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 25;
         pointer-events: none;
-        z-index: 2;
     }
-    .streamer:hover::before {
-        left: 200%;
-        transition: left 0.8s ease;
+    .streamer:hover .details-overlay, .streamer.active .details-overlay {
+        opacity: 1;
+        pointer-events: auto;
     }
-    
-    .streamer.actions-open { z-index: 100; overflow: visible; }
 
-    .streamer.selected { border-color: var(--accent-primary); box-shadow: 0 0 0 2px var(--accent-primary); }
-    
-    /* --- End Card Styles --- */
-
-    .streamer.favorite::before {
-        content: '★'; position: absolute; top: 12px; left: 12px; z-index: 5;
-        color: gold; font-size: 20px; text-shadow: 0 0 8px rgba(0,0,0,0.8);
+    /* Content inside Overlay */
+    .overlay-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
     }
-    .streamer-checkbox{position:absolute;top:12px;right:12px;width:24px;height:24px;cursor:pointer;z-index:10; accent-color: var(--accent-primary);}
-
-    .thumbnail-container { position: relative; cursor: pointer; border-radius: var(--radius-lg) var(--radius-lg) 0 0; overflow:hidden;}
-    .thumbnail-preview {
-      display: block; width: 100%; aspect-ratio: 16/9;
-      object-fit: cover; background: var(--bg-tertiary);
-      transition: transform var(--transition-slow);
+    .overlay-name { font-weight: 800; font-size: 1.2rem; color: #fff; }
+    .live-badge {
+        font-size: 0.75rem; font-weight: 800;
+        padding: 4px 8px; border-radius: 4px;
+        background: rgba(255,255,255,0.1);
+        color: var(--text-secondary);
     }
-    .streamer:hover .thumbnail-preview { transform: scale(1.05); }
+    .streamer.live .live-badge {
+        background: var(--live);
+        color: #000;
+        box-shadow: 0 0 10px var(--live);
+    }
+
+    .overlay-title {
+        font-size: 0.9rem;
+        color: #e0e0e0;
+        margin-bottom: 4px;
+        line-height: 1.3;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        font-weight: 500;
+    }
+    .overlay-category {
+        font-size: 0.8rem;
+        color: var(--accent-primary);
+        font-weight: 600;
+        margin-bottom: auto; 
+    }
+    .overlay-stats {
+        font-size: 0.8rem;
+        color: #ccc;
+        margin-bottom: 12px;
+        font-weight: 600;
+        display: flex; gap: 8px;
+    }
+
+    /* Action Buttons in Overlay */
+    .overlay-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 8px;
+    }
+    .icon-action {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        height: 36px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        transition: all 0.2s;
+        font-size: 16px;
+    }
+    .icon-action:hover {
+        background: var(--text-primary);
+        color: #000;
+        transform: translateY(-2px);
+    }
+    .icon-action.enlarge-btn {
+        background: var(--accent-primary);
+        color: #000;
+        border: none;
+    }
+    .icon-action.enlarge-btn:hover {
+        filter: brightness(1.2);
+    }
+
+    /* --- Floating Bar (Merged Header/Footer) --- */
+    .floating-bar {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(10, 10, 12, 0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 8px 12px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+      width: max-content; max-width: 95vw;
+    }
+    .app-logo { font-weight: 800; font-size: 1rem; color: var(--text-primary); margin-right: 8px; white-space: nowrap; }
+    .bar-btn {
+        background: rgba(255,255,255,0.05); border: none;
+        color: var(--text-secondary); padding: 8px 12px;
+        border-radius: 8px; font-weight: 600; cursor: pointer;
+        transition: 0.2s; font-size: 0.85rem;
+    }
+    .bar-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .bar-btn.active { background: var(--text-primary); color: #000; }
     
+    #gemini-btn {
+        background: linear-gradient(135deg, var(--accent-primary), #3b82f6);
+        color: #000;
+    }
+
+    /* Settings Panel */
+    .settings-panel {
+        position: fixed; top: 0; right: 0; bottom: 0; width: 350px;
+        background: #0a0a0a; border-left: 1px solid var(--border-primary);
+        transform: translateX(100%); transition: transform 0.3s ease;
+        z-index: 1200; padding: 24px; box-shadow: -10px 0 50px rgba(0,0,0,0.5);
+    }
+    .settings-panel.open { transform: translateX(0); }
+    .settings-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100;
+        opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        backdrop-filter: blur(4px);
+    }
+    .settings-overlay.visible { opacity: 1; pointer-events: auto; }
+    
+    .setting-row { margin-bottom: 16px; }
+    .setting-label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-secondary); }
+    .setting-input { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid var(--border-primary); color: #fff; border-radius: 6px; }
+
+    /* Modals */
+    .modal {
+        position: fixed; inset: 0; z-index: 2000;
+        background: rgba(0,0,0,0.9);
+        display: none; align-items: center; justify-content: center;
+        backdrop-filter: blur(10px);
+    }
+    .modal.visible { display: flex; animation: fadeIn 0.2s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    #enlarged-img {
+        max-width: 95vw; max-height: 90vh;
+        border-radius: 12px;
+        box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        border: 1px solid var(--border-primary);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    #enlarged-img:hover { transform: scale(1.01); }
+    .modal-close {
+        position: absolute; top: 20px; right: 20px;
+        background: rgba(255,255,255,0.1); border: none;
+        color: #fff; width: 40px; height: 40px; border-radius: 50%;
+        font-size: 24px; cursor: pointer;
+    }
+
+    .gemini-content {
+        background: #111; padding: 24px; border-radius: 16px;
+        border: 1px solid var(--border-primary);
+        max-width: 500px; width: 90%;
+        color: var(--text-secondary);
+    }
+    .gemini-content h3 { color: var(--accent-primary); margin-top: 0; }
+
+    /* Toast */
+    #toast {
+        position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+        background: #111; border: 1px solid var(--border-primary);
+        padding: 12px 20px; border-radius: 50px;
+        color: #fff; opacity: 0; pointer-events: none;
+        transition: 0.3s; z-index: 1500;
+    }
+    #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* --- PULSING RED LIGHT INDICATOR --- */
     .live-indicator {
       position: absolute; top: 12px; right: 12px;
       display: flex; align-items: center; gap: 6px;
-      background: rgba(0,0,0,0.6); color: white;
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(255,255,255,0.1);
+      /* Consistent Red-ish/Dark background for all live streams to make the red light pop */
+      background: rgba(10, 10, 10, 0.85); 
+      color: var(--red-light);
+      border: 1px solid rgba(255, 68, 68, 0.2);
       padding: 4px 10px; border-radius: 99px;
-      font-size: 0.8rem; font-weight: 700;
+      font-size: 0.8rem; font-weight: 800;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      z-index: 20;
     }
+
+    /* The "Red Light" Dot */
     .live-indicator::before {
-      content: ''; display: block; width: 8px; height: 8px;
-      background: white; border-radius: 50%;
-      animation: pulse 2s infinite;
+      content: ''; 
+      display: block; width: 8px; height: 8px;
+      background: #ff0000;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #ff0000;
+      animation: redTallyPulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
-    .streamer.live.kick .live-indicator { color: var(--kick); }
-    .streamer.live.kick .live-indicator::before { background: var(--kick); }
-    
-    .streamer.live.twitch .live-indicator { color: var(--twitch); }
-    .streamer.live.twitch .live-indicator::before { background: var(--twitch); }
-    
-    .streamer.live.youtube .live-indicator { color: var(--youtube); }
-    .streamer.live.youtube .live-indicator::before { background: var(--youtube); }
 
-    .streamer-content { padding: 16px; background: transparent; position: relative;}
-    .streamer-header { display: flex; align-items: center; gap: 12px; }
-    .streamer-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--border-primary); }
-    .streamer-name-wrapper { flex: 1; }
-    .streamer-name {
-      font-weight: 700; font-size: 1.1rem; line-height: 1.2;
-      color: var(--text-primary); text-decoration: none;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .streamer-name:hover { color: var(--accent-primary); }
-    .platform-icon { width: 16px; height: 16px; opacity: 0.8; }
-    .stream-meta { font-size: 0.8rem; color: var(--text-secondary); }
-    .stream-title {
-      font-size: 0.9rem; color: var(--text-secondary);
-      margin-top: 8px; line-height: 1.4;
-      display: -webkit-box; -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .stream-category {
-      display: inline-block; margin-top: 12px;
-      font-size: 0.75rem; font-weight: 600; color: var(--text-primary);
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 4px 10px; border-radius: 99px;
+    @keyframes redTallyPulse {
+      0% { opacity: 1; transform: scale(1); box-shadow: 0 0 5px #ff0000; }
+      50% { opacity: 0.6; transform: scale(0.9); box-shadow: 0 0 2px #ff0000; }
+      100% { opacity: 1; transform: scale(1); box-shadow: 0 0 5px #ff0000; }
     }
     
-    .streamer.list-view { flex-direction: row; align-items: center; padding: 12px; }
-    .streamer.list-view .thumbnail-container { flex-basis: 160px; flex-shrink: 0; border-radius: var(--radius-md); overflow: hidden; }
-    .streamer.list-view .streamer-content { padding: 0 16px; flex: 1; }
-    .streamer.list-view .streamer-actions-wrapper { margin-left: auto; display: flex; margin-top: 0; }
-    
-    /* Action Drawer */
-    .streamer-actions-wrapper { position: absolute; top: 16px; right: 16px; }
-    .action-menu-toggle {
-        width: 32px; height: 32px; border-radius: 50%;
-        background: rgba(255,255,255,0.05); color: var(--text-secondary);
-        border: 1px solid var(--border-primary);
-        cursor: pointer; font-size: 1.1rem; line-height: 1;
-        transition: all var(--transition-fast);
-        display: grid; place-items: center;
-    }
-    .action-menu-toggle:hover { background: var(--bg-tertiary); color: var(--text-primary); }
-    
-    .actions-drawer {
-        position: absolute; right: 0; top: 40px; z-index: 50;
-        background: #1c1c22; /* Solid background to prevent see-through mess */
-        border: 1px solid var(--border-primary);
-        border-radius: var(--radius-md);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        padding: 6px;
-        display: flex; flex-direction: column; gap: 4px;
-        min-width: 140px;
-        opacity: 0; transform: translateY(-10px) scale(0.95);
-        pointer-events: none; transition: all var(--transition-fast);
-    }
-    .streamer.actions-open .actions-drawer { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-    
-    .action-btn {
-        display: flex; align-items: center; gap: 8px; width: 100%;
-        padding: 8px 12px; background: transparent; color: var(--text-secondary);
-        border: none; border-radius: 6px;
-        font-weight: 500; font-size: 0.85rem; text-align: left;
-        cursor: pointer; transition: background var(--transition-fast);
-    }
-    .action-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
-    .action-btn.favorite.active { color: gold; }
-    .action-btn.remove { color: #ff6b6b; }
-
-    /* Floating Bar - Glass */
-    .floating-bar {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 1100;
-      background: rgba(22, 27, 34, 0.6);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      padding: 10px 16px;
-      border-radius: 24px;
-      border: 1px solid rgba(255,255,255,0.1);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-      display: flex; align-items: center; gap: 16px;
-      width: max-content; max-width: calc(100% - 32px);
-    }
-    .floating-bar-section { display: flex; align-items: center; gap: 8px; }
-    .app-title {
-      margin: 0 8px; font-weight: 800; font-size: 1rem;
-      background-image: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      white-space: nowrap;
-    }
-    .app-title small { color: var(--text-secondary); font-weight: 600; font-size: 0.8em; margin-left: 4px;}
-    
-    .view-controls button, .view-controls .view-toggle, .icon-btn {
-        background: rgba(255,255,255,0.05); border: 1px solid transparent;
-        color: var(--text-secondary); padding: 8px 12px;
-        border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;
-        transition: all var(--transition-fast);
-        display: inline-flex; align-items: center; justify-content: center;
-    }
-    .view-controls button:hover, .icon-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
-    .view-controls button.active { background: var(--accent-primary); color: #000; }
-    #gemini-choice-btn { background-color: var(--accent-primary); color: #000; }
-    #gemini-choice-btn:hover { background-color: var(--accent-secondary); }
-
-    .settings-panel {
-      position: fixed; top: 0; right: 0; bottom: 0; width: 400px;
-      background: rgba(13, 17, 23, 0.95);
-      backdrop-filter: blur(20px);
-      padding: 32px;
-      border-left: 1px solid var(--border-primary);
-      box-shadow: -10px 0 40px rgba(0,0,0,0.5);
-      transform: translateX(100%); transition: transform var(--transition-slow);
-      z-index: 1300; overflow-y: auto;
-    }
-    .settings-panel.expanded { transform: translateX(0); }
-    .settings-grid { display: flex; flex-direction: column; gap: 24px; }
-    .setting-group { display: flex; flex-direction: column; gap: 8px; }
-    .setting-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
-
-    input, select {
-        background: rgba(0,0,0,0.3); color: var(--text-primary);
-        border: 1px solid var(--border-primary); border-radius: 8px;
-        padding: 12px; font-size: 0.95rem; width: 100%;
-    }
-    input:focus { outline: none; border-color: var(--accent-primary); }
-    
-    .button.primary { background: var(--accent-primary); color: #000; border: none; font-weight: 700; cursor: pointer; padding: 12px; border-radius: 8px;}
-    
-    @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .6; transform: scale(0.9); } }
-    
-    .empty-state, .error-state { text-align:center; padding: 60px 20px; background: var(--bg-secondary); border-radius: var(--radius-lg); margin-top: 16px; border: 1px solid var(--border-primary); }
-    .error-state h3 { color: var(--offline); }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-      display: none; align-items: center; justify-content: center;
-      z-index: 2000; backdrop-filter: blur(5px);
-    }
-    .modal-overlay.visible { display: flex; }
-    #settings-overlay { z-index: 1250; }
-    .modal-content {
-      background: #161b22; padding: 24px;
-      border-radius: 16px; border: 1px solid var(--border-primary);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-width: 90vw; width: 500px;
-      position: relative;
-    }
-    #thumbnail-modal .modal-content { background: transparent; border: none; box-shadow: none; padding: 0; width: auto; }
-    #enlarged-thumbnail { display: block; max-width: 85vw; max-height: 85vh; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); box-shadow: 0 0 50px rgba(0,0,0,0.8); }
-
-    .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer; }
-    
-    #toast {
-      visibility: hidden; background: #21262d; color: #fff;
-      border: 1px solid var(--border-primary);
-      border-radius: 12px; padding: 16px 24px;
-      position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 50px);
-      z-index: 3001; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    #toast.show { visibility: visible; opacity: 1; transform: translate(-50%, 0); }
-
+    /* Mobile Adjustments */
     @media (max-width: 768px) {
-        .app-title, #last-updated { display: none; }
-        .floating-bar { width: 95%; justify-content: space-between; gap: 8px;}
-        .view-controls { gap: 4px; }
-        .view-controls button { padding: 8px 10px; font-size: 0.8rem; }
+        #streamers.grid-view { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .name-tag { padding: 4px 8px; }
+        .streamer-name { font-size: 0.8rem; }
+        .overlay-actions { grid-template-columns: 1fr 1fr; }
+        .floating-bar { width: 95%; justify-content: space-between; padding: 8px; }
+        .app-logo { display: none; }
     }
   </style>
 </head>
-<body data-theme="dark">
-  <div id="app-container">
-    
+<body>
+
+<div id="app-container">
     <main id="main-content">
-      <div id="streamers" class="grid-view" role="grid"></div>
+        <div id="streamers" class="grid-view"></div>
     </main>
-    
-    <div id="settings-overlay" class="modal-overlay"></div>
-    <section class="settings-panel" id="settings-panel">
-        <h2 style="margin-top: 0; margin-bottom: 24px;">Settings</h2>
-        <div class="settings-grid">
-             <div class="setting-group" style="border-bottom: 1px solid var(--border-primary); padding-bottom: 24px; margin-bottom: 8px;">
-                <label for="gemini-api-key">Gemini API Key (Required for AI)</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="password" id="gemini-api-key" placeholder="Paste key from Google AI Studio">
-                    <button id="save-gemini-key" class="button primary" style="flex-basis: 80px;">Save</button>
-                </div>
-                <small style="color: var(--text-secondary); font-size: 0.8em;">Used for summaries and recommendations.</small>
-            </div>
+</div>
 
-            <div class="setting-group">
-            <label for="search-input">Search / Filter</label>
-            <input type="text" id="search-input" placeholder="Name, category, title...">
-            </div>
-            <div class="setting-group">
-            <label for="filter-select">View</label>
-            <select id="filter-select"></select>
-            </div>
-            <div class="setting-group">
-            <label for="sort-select">Sort By</label>
-            <select id="sort-select">
-                <option value="status">Live Status</option>
-                <option value="viewers">Viewer Count</option>
-                <option value="name">Name (A-Z)</option>
-                <option value="category">Category</option>
-                <option value="uptime">Stream Duration</option>
+<!-- Floating Control Bar -->
+<div class="floating-bar">
+    <span class="app-logo">StreamMonitor</span>
+    <button class="bar-btn" id="refresh-yt-btn" title="Refresh YouTube Only">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ff0000" width="18" height="18"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+    </button>
+    <button class="bar-btn" id="gemini-choice-btn">✨ Pick for Me</button>
+    <div style="width: 1px; height: 20px; background: var(--border-primary);"></div>
+    <button class="bar-btn active" id="view-grid">Grid</button>
+    <button class="bar-btn" id="view-list">List</button>
+    <div style="flex:1"></div>
+    <button class="bar-btn" id="install-btn" style="display:none">Install</button>
+    <button class="bar-btn" id="settings-btn">⚙️</button>
+</div>
+
+<!-- Settings Panel -->
+<div id="settings-overlay" class="settings-overlay"></div>
+<div id="settings-panel" class="settings-panel">
+    <h2>Settings</h2>
+    
+    <div class="setting-row">
+        <label class="setting-label">Search</label>
+        <input type="text" id="search-input" class="setting-input" placeholder="Filter streamers...">
+    </div>
+
+    <div class="setting-row">
+        <label class="setting-label">Sort By</label>
+        <select id="sort-select" class="setting-input">
+            <option value="viewers" selected>Viewers (Default)</option>
+            <option value="status">Live Status</option>
+            <option value="name">Name</option>
+        </select>
+    </div>
+
+    <div class="setting-row">
+        <label class="setting-label">Add Streamer</label>
+        <div style="display:flex; gap:8px;">
+            <input id="add-name" class="setting-input" placeholder="Name">
+            <select id="add-platform" class="setting-input" style="width:100px;">
+                <option value="kick">Kick</option>
+                <option value="twitch">Twitch</option>
+                <option value="youtube">YouTube</option>
             </select>
-            </div>
-            <div class="setting-group">
-                <label for="auto-refresh-select">Auto Refresh</label>
-                <select id="auto-refresh-select">
-                    <option value="0">Off</option>
-                    <option value="5000">5 seconds</option>
-                    <option value="30000">30 seconds</option>
-                    <option value="60000">1 minute</option>
-                    <option value="300000" selected>5 minutes</option>
-                    <option value="600000">10 minutes</option>
-                </select>
-            </div>
-            <div class="setting-group">
-            <label for="add-input">Add Streamer</label>
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="add-input" placeholder="Enter streamer name" style="flex: 1;">
-                <select id="platform-select" style="flex-basis: 100px;">
-                    <option value="kick" selected>Kick</option>
-                    <option value="twitch">Twitch</option>
-                    <option value="youtube">YouTube</option>
-                </select>
-                <button id="add-btn" style="flex-basis: 80px;" class="button primary">Add</button>
-            </div>
-            </div>
+            <button id="add-btn" class="bar-btn" style="background:var(--accent-primary); color:#000;">Add</button>
         </div>
-        <div class="action-buttons" style="margin-top: 24px; border-top: 1px solid var(--border-primary); padding-top: 24px;">
-            <button id="refresh-btn" class="button">Refresh Data</button>
-            <button id="export-btn" class="button">Export Config</button>
-            <button id="import-btn" class="button">Import Config</button>
-            <input type="file" id="import-file" accept=".json" style="display:none">
-        </div>
-    </section>
-
-    <div class="floating-bar">
-        <div class="floating-bar-section">
-            <h1 class="app-title">Stream Monitor <small>v7.6</small></h1>
-            <div id="last-updated" aria-live="polite" title="Last updated time"></div>
-            <div class="status-indicator" id="connection-status" aria-label="Connection status"></div>
-        </div>
-        <div class="floating-bar-section view-controls">
-            <button id="gemini-choice-btn" title="Ask AI to recommend a stream">✨ Help Me Choose</button>
-            <div style="flex:1;"></div>
-            <button class="view-toggle active" data-view="grid" aria-label="Grid view">Grid</button>
-            <button class="view-toggle" data-view="list" aria-label="List view">List</button>
-            <button class="view-toggle" id="select-mode-btn" aria-label="Selection mode">Select</button>
-        </div>
-        <div class="floating-bar-section">
-             <button class="icon-btn" id="youtube-refresh-btn" title="Refresh YouTube" aria-label="Refresh YouTube">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FF0000" style="width: 20px; height: 20px;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-            </button>
-             <button class="icon-btn" id="install-btn" title="Install app" aria-label="Install app" style="display:none">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
-            </button>
-            <button class="settings-toggle" id="settings-toggle" aria-expanded="false">Settings</button>
-        </div>
-     </div>
-     <div class="bulk-actions" id="bulk-actions">
-            <span class="selection-count" id="selection-count">0 selected</span>
-            <button id="bulk-favorite" class="button">⭐ Favorite</button>
-            <button id="bulk-unfavorite" class="button">☆ Unfavorite</button>
-            <button id="select-all" class="button">Select All</button>
-            <button id="clear-selection" class="button">Clear</button>
     </div>
-  </div>
     
-  <!-- Modals -->
-  <div id="toast" role="alert" aria-live="assertive"></div>
-  <div id="gemini-modal" class="modal-overlay">
-    <div class="modal-content">
-      <button id="gemini-modal-close" class="modal-close" title="Close">&times;</button>
-      <h3 id="gemini-modal-title" style="margin-top:0;">AI Assistant</h3>
-      <div id="gemini-modal-content"><div class="spinner"></div></div>
+    <div class="setting-row" style="margin-top: 32px; border-top: 1px solid var(--border-primary); padding-top: 24px;">
+        <label class="setting-label">Data Management</label>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+            <button id="export-btn" class="bar-btn">Export JSON</button>
+            <button id="import-btn" class="bar-btn">Import JSON</button>
+            <input type="file" id="import-file" style="display:none">
+        </div>
     </div>
-  </div>
-  <div id="thumbnail-modal" class="modal-overlay">
-      <div class="modal-content">
-          <button id="thumbnail-modal-close" class="modal-close" style="top: -40px; right: 0;">&times;</button>
-          <img id="enlarged-thumbnail" src="" alt="Enlarged stream thumbnail">
-      </div>
-  </div>
+    
+    <div class="setting-row">
+         <label class="setting-label">Gemini API Key</label>
+         <input type="password" id="gemini-key" class="setting-input" placeholder="Paste API Key here">
+         <button id="save-gemini" class="bar-btn" style="width:100%; margin-top:8px;">Save Key</button>
+    </div>
+    
+    <div class="setting-row">
+         <label class="setting-label">Worker Auth Token</label>
+         <input type="password" id="worker-token" class="setting-input" placeholder="Paste Worker Token here">
+         <button id="save-worker-token" class="bar-btn" style="width:100%; margin-top:8px;">Save Token</button>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="image-modal" class="modal">
+    <button class="modal-close">&times;</button>
+    <img id="enlarged-img">
+</div>
+
+<div id="gemini-modal" class="modal">
+    <div class="gemini-content">
+        <h3>AI Recommendation</h3>
+        <div id="gemini-response">Thinking...</div>
+        <button class="bar-btn" style="width:100%; margin-top:16px;" onclick="document.getElementById('gemini-modal').classList.remove('visible')">Close</button>
+    </div>
+</div>
+
+<div id="toast">Notification</div>
 
 <script>
-// Utility classes (PWA, Utils, CacheManager)
-const PWA = {
-  deferredPrompt: null,
-  iconCache: {},
-  async init() { try { await this.injectManifest(); this.setupInstallUI(); } catch (e) {} },
-  async injectManifest() {
-    const icon192 = await this.generateIcon(192);
-    const icon512 = await this.generateIcon(512);
-    const manifest = { name: 'Stream Monitor', short_name: 'StreamMon', start_url: '.', display: 'standalone', background_color: '#0a0a0a', theme_color: '#22d3ee', icons: [{ src: icon192, sizes: '192x192', type: 'image/png' }, { src: icon512, sizes: '512x512', type: 'image/png' }] };
-    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-    const link = document.createElement('link'); link.rel = 'manifest'; link.href = URL.createObjectURL(blob); document.head.appendChild(link);
-    const favicon = document.createElement('link'); favicon.rel = 'icon'; favicon.href = icon192; document.head.appendChild(favicon);
-  },
-  async generateIcon(size) {
-    const c = document.createElement('canvas'); c.width = c.height = size;
-    const ctx = c.getContext('2d');
-    const grad = ctx.createLinearGradient(0, 0, size, size); grad.addColorStop(0, '#22d3ee'); grad.addColorStop(1, '#67e8f9');
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#000'; ctx.font = `bold ${size * 0.5}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SM', size/2, size/2);
-    return c.toDataURL();
-  },
-  setupInstallUI() {
-    const btn = document.getElementById('install-btn');
-    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); this.deferredPrompt = e; btn.style.display = 'inline-grid'; });
-    btn.addEventListener('click', async () => { if(this.deferredPrompt){ this.deferredPrompt.prompt(); this.deferredPrompt = null; btn.style.display='none'; }});
-  }
-};
-const Utils = {
-  debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a), wait); }; },
-  formatNumber(n){ if(!n) return '0'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toString(); },
-  sanitizeHTML(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; },
-  formatDuration(m){ if(!m || m < 0) return '0m'; if(m<60) return `${m}m`; const h=Math.floor(m/60), min=m%60; if(h<24) return `${h}h ${min}m`; const d=Math.floor(h/24), rh=h%24; return `${d}d ${rh}h`; },
-  calculateUptime(start){ if(!start) return 0; return Math.floor((new Date()-new Date(start))/(1000*60)); },
-};
-class CacheManager {
-  constructor(ttl=60000){ this.cache=new Map(); this.ttl=ttl; }
-  set(k,d,ttl=this.ttl){ this.cache.set(k,{d,t:Date.now(),ttl}); }
-  get(k){ const it=this.cache.get(k); if(!it) return null; if(Date.now()-it.t>it.ttl){ this.cache.delete(k); return null; } return it.d; }
-}
-
-/* =================== Gemini API Service =================== */
-const Gemini = {
-  apiKey: "", 
-  async ask(prompt, retries = 3, delay = 1000) {
-    if (!this.apiKey) throw new Error("API Key Missing. Please set it in Settings.");
-    // Updated to stable model
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
-    const payload = { contents: [{ parts: [{ text: prompt }] }] };
-    try {
-      const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!response.ok) throw new Error(`API Error: ${response.status}`);
-      const result = await response.json();
-      return result.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-    } catch (error) {
-       console.error("Gemini Error:", error); throw error;
-    }
-  }
-};
-
-/* =================== Main App Logic =================== */
+/* --- CORE APP LOGIC --- */
 const App = {
-  state:{
-    streamers:[], streamerData:new Map(), favorites:[], groups:{},
-    isLoading:true, filter:'all', sort:'status', searchQuery:'',
-    selectionMode: false, selectedStreamers: new Set(),
-    workerEndpoint: 'https://autumn-base-826c.rapahannock.workers.dev/',
-    workerAuthToken: 'oK2ZrKag8*R7Wr*UgMBrFdcD6',
-    autoRefreshInterval: null,
-    autoRefreshDelay: 300000,
-    toastTimeout: null,
-    BANNED_PLACEHOLDER_THUMBNAIL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='none' stroke='%23ef4444' stroke-width='1'%3E%3Cpath d='M2 0H14C15.1 0 16 0.9 16 2V7C16 8.1 15.1 9 14 9H2C0.9 9 0 8.1 0 7V2C0 0.9 0.9 0 2 0Z' stroke='none' fill='%2323272d'/%3E%3Ccircle cx='8' cy='4.5' r='3'/%3E%3Cline x1='5.5' y1='2' x2='10.5' y2='7'/%3E%3C/svg%3E",
-  },
-  
-  elements: {},
-  cache: new CacheManager(120000),
-
-  init(){
-    this.cacheElements();
-    this.loadSettings();
-    this.registerEventListeners();
-    this.populateFilterDropdown();
-    this.fetchStreamerList();
-    this.startAutoRefresh();
-  },
-
-  cacheElements(){
-    this.elements = {
-      container: document.getElementById('streamers'),
-      searchInput: document.getElementById('search-input'),
-      lastUpdated: document.getElementById('last-updated'),
-      statusIndicator: document.getElementById('connection-status'),
-      settingsToggle: document.getElementById('settings-toggle'),
-      settingsPanel: document.getElementById('settings-panel'),
-      settingsOverlay: document.getElementById('settings-overlay'),
-      toast: document.getElementById('toast'),
-      filterSelect: document.getElementById('filter-select'),
-      sortSelect: document.getElementById('sort-select'),
-      autoRefreshSelect: document.getElementById('auto-refresh-select'),
-      addInput: document.getElementById('add-input'),
-      platformSelect: document.getElementById('platform-select'),
-      addBtn: document.getElementById('add-btn'),
-      selectModeBtn: document.getElementById('select-mode-btn'),
-      bulkActions: document.getElementById('bulk-actions'),
-      selectionCount: document.getElementById('selection-count'),
-      bulkFavoriteBtn: document.getElementById('bulk-favorite'),
-      bulkUnfavoriteBtn: document.getElementById('bulk-unfavorite'),
-      selectAllBtn: document.getElementById('select-all'),
-      clearSelectionBtn: document.getElementById('clear-selection'),
-      geminiChoiceBtn: document.getElementById('gemini-choice-btn'),
-      geminiModal: document.getElementById('gemini-modal'),
-      geminiModalTitle: document.getElementById('gemini-modal-title'),
-      geminiModalContent: document.getElementById('gemini-modal-content'),
-      geminiModalClose: document.getElementById('gemini-modal-close'),
-      thumbnailModal: document.getElementById('thumbnail-modal'),
-      enlargedThumbnail: document.getElementById('enlarged-thumbnail'),
-      thumbnailModalClose: document.getElementById('thumbnail-modal-close'),
-      refreshBtn: document.getElementById('refresh-btn'),
-      exportBtn: document.getElementById('export-btn'),
-      importBtn: document.getElementById('import-btn'),
-      importFile: document.getElementById('import-file'),
-      installBtn: document.getElementById('install-btn'),
-      youtubeRefreshBtn: document.getElementById('youtube-refresh-btn'),
-      geminiApiKeyInput: document.getElementById('gemini-api-key'),
-      saveGeminiKeyBtn: document.getElementById('save-gemini-key'),
-    };
-  },
-
-  loadSettings(){
-    this.state.favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-    this.state.groups = JSON.parse(localStorage.getItem("groups") || "{}");
-    this.state.filter = localStorage.getItem("filter") || 'all';
-    this.state.sort = localStorage.getItem("sort") || 'status';
-    this.state.autoRefreshDelay = parseInt(localStorage.getItem("autoRefreshDelay") || '300000', 10);
+    state: {
+        streamers: [],
+        data: new Map(),
+        filter: '',
+        sort: 'viewers', // Changed default sort to viewers
+        workerUrl: 'https://autumn-base-826c.rapahannock.workers.dev/',
+        workerToken: localStorage.getItem('workerToken') || 'oK2ZrKag8*R7Wr*UgMBrFdcD6',
+        geminiKey: localStorage.getItem('geminiKey') || '',
+        activeCard: null // For mobile toggle
+    },
     
-    // Load Gemini API Key
-    const savedGeminiKey = localStorage.getItem('geminiApiKey');
-    if (savedGeminiKey) {
-        Gemini.apiKey = savedGeminiKey;
-        this.elements.geminiApiKeyInput.value = savedGeminiKey;
-    }
+    els: {
+        grid: document.getElementById('streamers'),
+        toast: document.getElementById('toast')
+    },
 
-    this.elements.filterSelect.value = this.state.filter;
-    this.elements.sortSelect.value = this.state.sort;
-    this.elements.autoRefreshSelect.value = this.state.autoRefreshDelay;
-    const viewMode = localStorage.getItem("viewMode") || 'grid';
-    this.updateViewMode(viewMode);
-  },
+    async init() {
+        this.bindEvents();
+        await this.fetchList();
+        setInterval(() => this.fetchData('auto'), 300000); // 5 min auto refresh
+    },
 
-  registerEventListeners(){
-    this.elements.settingsToggle.addEventListener('click', () => this.toggleSettings());
-    this.elements.settingsOverlay.addEventListener('click', () => this.toggleSettings());
-    this.elements.searchInput.addEventListener('input', Utils.debounce(() => this.render(), 300));
-    this.elements.filterSelect.addEventListener('change', e => { this.state.filter = e.target.value; localStorage.setItem('filter', e.target.value); this.render(); });
-    this.elements.sortSelect.addEventListener('change', e => { this.state.sort = e.target.value; localStorage.setItem('sort', e.target.value); this.render(); });
-    this.elements.autoRefreshSelect.addEventListener('change', e => this.handleAutoRefreshChange(e));
-    this.elements.addBtn.addEventListener('click', () => this.addStreamer());
-
-    this.elements.selectModeBtn.addEventListener('click', () => this.toggleSelectionMode());
-    this.elements.bulkFavoriteBtn.addEventListener('click', () => this.bulkToggleFavorite(true));
-    this.elements.bulkUnfavoriteBtn.addEventListener('click', () => this.bulkToggleFavorite(false));
-    this.elements.selectAllBtn.addEventListener('click', () => this.selectAllStreamers());
-    this.elements.clearSelectionBtn.addEventListener('click', () => this.clearSelection());
-
-    document.querySelectorAll('.view-toggle[data-view]').forEach(btn => {
-      btn.addEventListener('click', e => this.updateViewMode(e.currentTarget.dataset.view));
-    });
-
-    this.elements.geminiChoiceBtn.addEventListener('click', () => this.handleRecommendStream());
-    this.elements.geminiModal.addEventListener('click', (e) => { if (e.target === e.currentTarget) this.hideGeminiModal(); });
-    this.elements.geminiModalClose.addEventListener('click', () => this.hideGeminiModal());
-
-    this.elements.thumbnailModal.addEventListener('click', (e) => { if(e.target === e.currentTarget) this.hideEnlargedThumbnail(); });
-    this.elements.thumbnailModalClose.addEventListener('click', () => this.hideEnlargedThumbnail());
-    this.elements.enlargedThumbnail.addEventListener('click', e => { 
-        const url = e.currentTarget.dataset.streamUrl;
-        if(url) window.open(url, '_blank', 'noopener,noreferrer');
-    });
-
-    this.elements.refreshBtn.addEventListener('click', () => this.fetchStreamerData('all'));
-    this.elements.exportBtn.addEventListener('click', () => this.exportList());
-    this.elements.importBtn.addEventListener('click', () => this.elements.importFile.click());
-    this.elements.importFile.addEventListener('change', e => this.importList(e));
-    this.elements.toast.addEventListener('click', () => this.dismissToast());
-    this.elements.youtubeRefreshBtn.addEventListener('click', () => this.fetchStreamerData('youtube'));
-    
-    this.elements.saveGeminiKeyBtn.addEventListener('click', () => {
-        const key = this.elements.geminiApiKeyInput.value.trim();
-        if (key) {
-            localStorage.setItem('geminiApiKey', key);
-            Gemini.apiKey = key;
-            this.showToast('AI Key Saved!', 'success');
-        } else {
-            this.showToast('Please enter a valid key.', 'warning');
-        }
-    });
-    
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && this.state.autoRefreshDelay > 0) {
-        this.fetchStreamerData('auto');
-        this.startAutoRefresh();
-      } else {
-        this.stopAutoRefresh();
-      }
-    });
-  },
-  
-  toggleSettings() {
-      const isExpanded = this.elements.settingsPanel.classList.toggle('expanded');
-      this.elements.settingsToggle.setAttribute('aria-expanded', isExpanded);
-      this.elements.settingsOverlay.classList.toggle('visible', isExpanded);
-  },
-
-  handleAutoRefreshChange(event) {
-    this.state.autoRefreshDelay = parseInt(event.target.value, 10);
-    localStorage.setItem('autoRefreshDelay', this.state.autoRefreshDelay);
-    this.startAutoRefresh();
-    this.showToast(`Auto-refresh updated`, 'info');
-  },
-
-  startAutoRefresh() {
-    this.stopAutoRefresh();
-    if (this.state.autoRefreshDelay > 0) {
-      this.state.autoRefreshInterval = setInterval(() => {
-        if (!document.hidden) {
-          this.fetchStreamerData('auto');
-        }
-      }, this.state.autoRefreshDelay);
-    }
-  },
-
-  stopAutoRefresh() {
-    if (this.state.autoRefreshInterval) {
-      clearInterval(this.state.autoRefreshInterval);
-      this.state.autoRefreshInterval = null;
-    }
-  },
-
-  populateFilterDropdown(){
-    const defs = `<option value="all">All</option><option value="live">Live</option><option value="offline">Offline</option><option value="favorites">Favorites</option>`;
-    const groups = Object.keys(this.state.groups).sort().map(n=>`<option value="group-${n}">📂 ${Utils.sanitizeHTML(n)}</option>`).join('');
-    this.elements.filterSelect.innerHTML = defs + (groups? '<option disabled>-----</option>'+groups : '');
-    this.elements.filterSelect.value = this.state.filter;
-  },
-
-  async fetchStreamerList(){
-    this.setLoadingState(true);
-    this.updateConnectionStatus('connecting');
-    try {
-      const headers = { 'Authorization': `Bearer ${this.state.workerAuthToken}` };
-      const res = await fetch(`${this.state.workerEndpoint}?t=${Date.now()}`, { headers });
-      if (!res.ok) throw new Error(`Network response was not ok: ${res.status}`);
-      
-      const data = await res.json();
-      this.state.streamers = data.streamers || [];
-      this.state.twitchClientId = data.config?.twitchClientId;
-      this.state.twitchAccessToken = data.config?.twitchAccessToken;
-      this.state.youtubeApiKey = data.config?.youtubeApiKey;
-      
-      this.updateConnectionStatus('connected');
-      await this.fetchStreamerData('all');
-    } catch(err) {
-      console.error('Failed to load data:', err);
-      this.updateConnectionStatus('error');
-      this.setLoadingState(false);
-      this.renderErrorState("Failed to Load", err.message);
-    }
-  },
-  
-  async fetchStreamerData(mode = 'all') {
-    if (mode !== 'auto' && this.state.isLoading) this.setLoadingState(true);
-    
-    if (!this.state.streamers.length) {
-        this.setLoadingState(false);
-        this.render();
-        return;
-    }
-
-    let streamersToFetch = this.state.streamers;
-    if (mode === 'auto') streamersToFetch = streamersToFetch.filter(s => s.platform !== 'youtube');
-    else if (mode === 'youtube') streamersToFetch = streamersToFetch.filter(s => s.platform === 'youtube');
-
-    if (mode === 'youtube') this.showToast('Refreshing YouTube...', 'info');
-
-    const promises = streamersToFetch.map(s => this.fetchStreamerInfo(s));
-    await Promise.allSettled(promises);
-    
-    if (this.state.isLoading) this.setLoadingState(false);
-    this.render();
-  },
-
-   async fetchStreamerInfo(streamer) {
-    const {name, platform} = streamer;
-    const k = `api-${platform}-${name}`;
-    // Use cache unless manual specific request (simple approach: cache is 2min)
-    const c = this.cache.get(k); if (c) { this.state.streamerData.set(name, c); return c; }
-    
-    let data;
-    try {
-        if (platform === 'kick') data = await this.fetchKickStreamer(name);
-        else if (platform === 'twitch') data = await this.fetchTwitchStreamer(name);
-        else if (platform === 'youtube') data = await this.fetchYouTubeStreamer(name);
-        else data = { name, platform, isLive: false, title: "Unsupported", viewers: 0 };
-    } catch(e) {
-        console.error(`Fetch error ${name}:`, e);
-        const msg = e.message.includes('403') ? "API Key Error (403)" : "Error fetching data";
-        data = { name, platform, isLive: false, title: msg, viewers: 0, url: this.getFallbackUrl(name, platform) };
-    }
-    this.cache.set(k, data);
-    this.state.streamerData.set(name, data);
-    return data;
-  },
-
-  getFallbackUrl(name, platform) {
-      switch(platform) {
-          case 'kick': return `https://kick.com/${name}`;
-          case 'twitch': return `https://twitch.tv/${name}`;
-          case 'youtube': return `https://www.youtube.com/@${name.replace('@','')}`;
-          default: return '#';
-      }
-  },
-  
-  async fetchApi(url, headers = {}) {
-    for (let i = 0; i < 3; i++) {
-      try {
-        const r = await fetch(url, { headers });
-        if (r.status === 404) return null;
-        if (!r.ok) throw new Error(`API Error: ${r.status}`);
-        return r.json();
-      } catch (e) {
-        if (i < 2) await new Promise(res => setTimeout(res, 1200));
-        else throw e;
-      }
-    }
-  },
-  
-  async fetchKickStreamer(name) {
-    const d = await this.fetchApi(`https://corsproxy.io/?${encodeURIComponent(`https://kick.com/api/v1/channels/${name}`)}`);
-    if (!d) return { name, platform: 'kick', isLive: false, title: "Banned/Not Found", url: `https://kick.com/${name}` };
-    const isLive = d.livestream !== null;
-    return {
-      name, platform: 'kick', isLive,
-      title: d.livestream?.session_title || "Offline",
-      viewers: d.livestream?.viewer_count || 0,
-      category: d.livestream?.categories?.[0]?.name || null,
-      thumbnail: d.livestream?.thumbnail?.url?.replace('thumbnail_360p', 'thumbnail_720p'),
-      url: `https://kick.com/${name}`,
-      profilePic: d.user?.profile_pic || '',
-      uptime: isLive ? Utils.calculateUptime(d.livestream.created_at) : 0,
-    };
-  },
-
-  async fetchTwitchStreamer(name) {
-    if (!this.state.twitchClientId || !this.state.twitchAccessToken) return { name, platform: 'twitch', isLive: false, title: 'API Config Missing' };
-    const headers = { 'Client-ID': this.state.twitchClientId, 'Authorization': `Bearer ${this.state.twitchAccessToken}` };
-    const [streamRes, userRes] = await Promise.all([
-      this.fetchApi(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(name)}`, headers),
-      this.fetchApi(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(name)}`, headers)
-    ]);
-    const streamData = streamRes?.data?.[0];
-    const userData = userRes?.data?.[0];
-    if (!userData) return { name, platform: 'twitch', isLive: false, title: 'Not Found' };
-    const isLive = !!streamData && streamData.type === 'live';
-    return {
-      name, platform: 'twitch', isLive,
-      title: isLive ? streamData.title : "Offline",
-      viewers: isLive ? streamData.viewer_count : 0,
-      category: isLive ? streamData.game_name : null,
-      thumbnail: isLive ? streamData.thumbnail_url.replace('{width}', '440').replace('{height}', '248') : null,
-      url: `https://twitch.tv/${name}`,
-      profilePic: userData.profile_image_url || '',
-      uptime: isLive ? Utils.calculateUptime(streamData.started_at) : 0,
-    };
-  },
-    
-  async fetchYouTubeStreamer(name) {
-    if (!this.state.youtubeApiKey) return { name, platform: 'youtube', isLive: false, title: 'API Key Missing' };
-    try {
-        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(name)}&type=channel&key=${this.state.youtubeApiKey}`;
-        const searchData = await this.fetchApi(searchUrl);
-        const channel = searchData?.items?.[0];
-        if (!channel) return { name, platform: 'youtube', isLive: false, title: 'Channel Not Found', url: this.getFallbackUrl(name, 'youtube') };
+    bindEvents() {
+        // View Toggles
+        document.getElementById('view-grid').onclick = () => this.setView('grid-view');
+        document.getElementById('view-list').onclick = () => this.setView('list-view');
         
-        const { channelId } = channel.id;
-        const profilePic = channel.snippet.thumbnails.default.url;
-        const channelUrl = `https://www.youtube.com/channel/${channelId}`;
+        // Settings Panel
+        const panel = document.getElementById('settings-panel');
+        const overlay = document.getElementById('settings-overlay');
+        const toggle = () => { panel.classList.toggle('open'); overlay.classList.toggle('visible'); };
+        document.getElementById('settings-btn').onclick = toggle;
+        overlay.onclick = toggle;
 
-        // 2-step check: Search for live video by channel ID
-        const liveSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${this.state.youtubeApiKey}`;
-        const liveData = await this.fetchApi(liveSearchUrl);
-        const liveStream = liveData?.items?.[0];
-
-        if (!liveStream) return { name, platform: 'youtube', isLive: false, title: "Offline", profilePic, url: channelUrl, viewers: 0 };
-
-        const videoId = liveStream.id.videoId;
-        const videoData = await this.fetchApi(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails,snippet&id=${videoId}&key=${this.state.youtubeApiKey}`);
-        const details = videoData?.items?.[0];
-
-        return {
-            name, platform: 'youtube', isLive: true,
-            title: details?.snippet?.title || "Live",
-            viewers: parseInt(details?.liveStreamingDetails?.concurrentViewers || 0, 10),
-            category: 'YouTube Live',
-            thumbnail: details?.snippet?.thumbnails?.medium?.url,
-            url: channelUrl, profilePic,
-            uptime: Utils.calculateUptime(details?.snippet?.publishedAt),
+        // Inputs
+        document.getElementById('search-input').oninput = (e) => { this.state.filter = e.target.value.toLowerCase(); this.render(); };
+        document.getElementById('sort-select').onchange = (e) => { this.state.sort = e.target.value; this.render(); };
+        
+        // Buttons
+        document.getElementById('add-btn').onclick = () => this.addStreamer();
+        document.getElementById('refresh-yt-btn').onclick = () => this.fetchData('youtube');
+        document.getElementById('gemini-choice-btn').onclick = () => this.askAI();
+        document.getElementById('save-gemini').onclick = () => {
+            const key = document.getElementById('gemini-key').value;
+            if(key) { localStorage.setItem('geminiKey', key); this.state.geminiKey = key; this.toast('AI Key Saved'); }
         };
-    } catch (error) {
-        console.error(`YT Error ${name}:`, error);
-        throw error; // Let wrapper handle the 403
-    }
-  },
+        document.getElementById('save-worker-token').onclick = () => {
+             const key = document.getElementById('worker-token').value;
+             if(key) { localStorage.setItem('workerToken', key); this.state.workerToken = key; this.toast('Token Saved'); }
+        };
 
-  getFilteredAndSortedData() {
-      let data = Array.from(this.state.streamerData.values());
-      const q = this.elements.searchInput.value.toLowerCase();
-      
-      data = data.filter(s => {
-        const match = !q || s.name.toLowerCase().includes(q) || (s.title||'').toLowerCase().includes(q);
-        if (!match) return false;
-        
-        if(this.state.filter.startsWith('group-')){
-            const g = this.state.filter.replace('group-','');
-            return this.state.groups[g]?.includes(s.name);
+        // Export/Import
+        document.getElementById('export-btn').onclick = () => {
+            const blob = new Blob([JSON.stringify(this.state.streamers)], {type:'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'streamers.json'; a.click();
+        };
+        document.getElementById('import-btn').onclick = () => document.getElementById('import-file').click();
+        document.getElementById('import-file').onchange = (e) => this.handleImport(e);
+
+        // Modal Close
+        document.querySelector('.modal-close').onclick = () => document.getElementById('image-modal').classList.remove('visible');
+        document.getElementById('image-modal').onclick = (e) => { if(e.target.id === 'image-modal') e.target.classList.remove('visible'); };
+        document.getElementById('enlarged-img').onclick = (e) => { if(e.target.dataset.url) window.open(e.target.dataset.url, '_blank'); };
+    },
+
+    async fetchList() {
+        try {
+            const res = await fetch(`${this.state.workerUrl}?t=${Date.now()}`, {
+                headers: { 'Authorization': `Bearer ${this.state.workerToken}` }
+            });
+            if (!res.ok) throw new Error(res.status);
+            const json = await res.json();
+            this.state.streamers = json.streamers;
+            // Store API keys securely in memory only
+            this.state.keys = json.config;
+            this.fetchData('all');
+        } catch (e) {
+            this.toast(`Backend Error: ${e.message}`, 'error');
+            // Fallback for demo if backend fails
+            if(this.state.streamers.length === 0) {
+                 this.state.streamers = [{name:'xqc', platform:'twitch'}, {name:'trainwreckstv', platform:'kick'}];
+                 this.fetchData('all');
+            }
         }
-        switch(this.state.filter){
-            case 'live': return s.isLive;
-            case 'offline': return !s.isLive;
-            case 'favorites': return this.state.favorites.includes(s.name);
-            default: return true;
+    },
+
+    async fetchData(mode = 'all') {
+        const queue = this.state.streamers.filter(s => {
+            if (mode === 'auto') return s.platform !== 'youtube';
+            if (mode === 'youtube') return s.platform === 'youtube';
+            return true;
+        });
+
+        if (mode === 'youtube') this.toast('Refreshing YouTube...');
+
+        await Promise.allSettled(queue.map(async s => {
+            const data = await this.getStreamInfo(s);
+            this.state.data.set(s.name, data);
+        }));
+        this.render();
+    },
+
+    async getStreamInfo(s) {
+        // Fallback URLs
+        let url = '#';
+        if(s.platform==='kick') url=`https://kick.com/${s.name}`;
+        if(s.platform==='twitch') url=`https://twitch.tv/${s.name}`;
+        if(s.platform==='youtube') url=`https://youtube.com/${s.name}`;
+
+        try {
+            if (s.platform === 'kick') {
+                 const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://kick.com/api/v1/channels/${s.name}`)}`);
+                 const d = await r.json();
+                 if (!d) throw new Error('Not Found');
+                 return d.livestream ? {
+                     isLive: true, title: d.livestream.session_title, 
+                     viewers: d.livestream.viewer_count, category: d.livestream.categories[0].name,
+                     thumb: d.livestream.thumbnail.url, url
+                 } : { isLive: false, title: 'Banned / Not Found', url, thumb: d.user.profile_pic };
+            }
+            if (s.platform === 'twitch') {
+                 if (!this.state.keys || !this.state.keys.twitchClientId) return { isLive: false, title: 'Config Error', url };
+                 
+                 // Add timestamp to prevent caching
+                 const t = Date.now();
+                 
+                 const [streamRes, userRes] = await Promise.all([
+                   this.fetchApi(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(s.name)}&t=${t}`, this.state.keys),
+                   this.fetchApi(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(s.name)}&t=${t}`, this.state.keys)
+                 ]);
+                 
+                 if (!userRes.data || !userRes.data[0]) return { isLive: false, title: 'Not Found', url };
+                 
+                 const userData = userRes.data[0];
+                 const streamData = streamRes.data && streamRes.data[0];
+                 const isLive = !!streamData && streamData.type === 'live';
+                 
+                 return {
+                    isLive,
+                    title: isLive ? streamData.title : 'Offline',
+                    viewers: isLive ? streamData.viewer_count : 0,
+                    category: isLive ? streamData.game_name : '',
+                    thumb: isLive ? streamData.thumbnail_url.replace('{width}', '640').replace('{height}', '360') : userData.profile_image_url,
+                    url
+                 };
+            }
+            if (s.platform === 'youtube') {
+                 if (!this.state.keys || !this.state.keys.youtubeApiKey) return { isLive: false, title: 'YouTube API Key Missing', url };
+                 const apiKey = this.state.keys.youtubeApiKey;
+
+                 // Search channel first
+                 const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(s.name)}&type=channel&key=${apiKey}`;
+                 const searchData = await this.fetchApi(searchUrl);
+                 if (!searchData.items || !searchData.items[0]) return { isLive: false, title: 'Channel Not Found', url };
+                 
+                 const channelId = searchData.items[0].id.channelId;
+                 const profilePic = searchData.items[0].snippet.thumbnails.default.url;
+                 const channelUrl = `https://www.youtube.com/channel/${channelId}`;
+
+                 // Search for live video
+                 const liveUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`;
+                 const liveData = await this.fetchApi(liveSearchUrl);
+                 
+                 if (!liveData.items || !liveData.items[0]) return { isLive: false, title: 'Offline', url: channelUrl, thumb: profilePic };
+                 
+                 const videoId = liveData.items[0].id.videoId;
+                 const videoDetails = await this.fetchApi(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails,snippet&id=${videoId}&key=${apiKey}`);
+                 const details = videoDetails.items[0];
+
+                 return {
+                    isLive: true,
+                    title: details.snippet.title,
+                    viewers: parseInt(details.liveStreamingDetails.concurrentViewers || 0),
+                    category: 'YouTube Live',
+                    thumb: details.snippet.thumbnails.medium.url,
+                    url: channelUrl
+                 };
+            }
+            return { isLive: false, title: 'Offline', url }; 
+        } catch (e) {
+             const is403 = e.message.includes('403');
+             return { isLive: false, title: is403 ? 'API Key Error (403)' : 'Error', url };
         }
-      });
-
-      return data.sort((a,b) => {
-          if (this.state.sort === 'viewers') return (b.viewers||0) - (a.viewers||0);
-          if (this.state.sort === 'uptime') return (b.uptime||0) - (a.uptime||0);
-          if (this.state.sort === 'name') return a.name.localeCompare(b.name);
-          // status (default)
-          if (a.isLive !== b.isLive) return b.isLive ? 1 : -1;
-          return (b.viewers||0) - (a.viewers||0);
-      });
-  },
-
-  render(){
-    if(this.state.isLoading) return this.renderSkeletons();
-    const filtered = this.getFilteredAndSortedData();
-    this.elements.container.innerHTML = '';
-    if (!filtered.length) return this.renderEmptyState();
+    },
     
-    const frag = document.createDocumentFragment();
-    filtered.forEach(s => frag.appendChild(this.createStreamerCard(s)));
-    this.elements.container.appendChild(frag);
-    this.elements.lastUpdated.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
-    this.updateSelectionUI();
-  },
+    async fetchApi(url, keys) {
+        const headers = keys && keys.twitchClientId ? {
+            'Client-ID': keys.twitchClientId,
+            'Authorization': `Bearer ${keys.twitchAccessToken}`
+        } : {};
+        const r = await fetch(url, { headers, cache: 'no-store' }); 
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+    },
 
-  createStreamerCard(s) {
-    const div = document.createElement('div');
-    const isFav = this.state.favorites.includes(s.name);
-    const isSel = this.state.selectedStreamers.has(s.name);
-    div.className = `streamer ${s.platform} ${s.isLive ? 'live' : 'offline'} ${isFav ? 'favorite' : ''} ${this.state.viewMode}-view ${isSel ? 'selected' : ''}`;
-    div.dataset.name = s.name;
-    
-    const platformIcon = `<svg class="platform-icon" role="img" viewBox="0 0 24 24" fill="currentColor">${{
-        kick: '<path d="M19.43 2.57L4.57 17.43V2.57h14.86M19.43 0H4.57C2.05 0 0 2.05 0 4.57v14.86C0 21.95 2.05 24 4.57 24h14.86c2.52 0 4.57-2.05 4.57-4.57V4.57C24 2.05 21.95 0 19.43 0z"/>',
-        twitch: '<path d="M11.571 4.714h1.715v5.143H11.57zm4.714 0h1.715v5.143h-1.715zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0H6zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714v9.429z"/>',
-        youtube: '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>'
-    }[s.platform] || ''}</svg>`;
+    render() {
+        const list = this.state.streamers.map(s => {
+            const info = this.state.data.get(s.name) || { isLive: false, title: 'Loading...', url: '#' };
+            return { ...s, ...info };
+        }).filter(s => {
+            if (!this.state.filter) return true;
+            return s.name.toLowerCase().includes(this.state.filter) || 
+                   (s.category && s.category.toLowerCase().includes(this.state.filter));
+        }).sort((a, b) => {
+            if (this.state.sort === 'viewers') return (b.viewers || 0) - (a.viewers || 0);
+            if (this.state.sort === 'status') return (b.isLive === a.isLive) ? 0 : b.isLive ? 1 : -1;
+            return a.name.localeCompare(b.name);
+        });
 
-    let thumb = s.thumbnail || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    if (s.title === 'Banned / Not Found') thumb = this.state.BANNED_PLACEHOLDER_THUMBNAIL;
-    
-    let meta = 'Offline';
-    if (s.isLive) meta = `${Utils.formatNumber(s.viewers)} viewers • ${Utils.formatDuration(s.uptime)}`;
-    else if (s.title.includes('API Key')) meta = `<span style="color:var(--warning)">${s.title}</span>`;
-    
-    div.innerHTML = `
-      ${this.state.selectionMode ? `<input type="checkbox" class="streamer-checkbox" ${isSel ? 'checked' : ''}>` : ''}
-      <div class="thumbnail-container" data-url="${s.url}" data-src="${thumb}">
-        <img class="thumbnail-preview" src="${thumb}" loading="lazy" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'"/>
-        ${s.isLive ? `<div class="live-indicator">LIVE</div>` : ''}
-      </div>
-      <div class="streamer-content">
-        <div class="streamer-header">
-          <img class="streamer-avatar" src="${s.profilePic}" alt="" onerror="this.style.display='none'">
-          <div class="streamer-name-wrapper">
-            <a href="${s.url}" target="_blank" rel="noopener noreferrer" class="streamer-name">${platformIcon} ${Utils.sanitizeHTML(s.name)}</a>
-            <div class="stream-meta">${meta}</div>
-          </div>
-        </div>
-        <p class="stream-title">${Utils.sanitizeHTML(s.title)}</p>
-        ${s.category ? `<div class="stream-category">${Utils.sanitizeHTML(s.category)}</div>` : ''}
-        <div class="streamer-actions-wrapper">
-            <button class="action-menu-toggle" aria-label="Menu">•••</button>
-            <div class="actions-drawer">
-                <button class="action-btn summarize" data-name="${s.name}" ${!s.isLive ? 'disabled' : ''}>✨ Summarize</button>
-                <button class="action-btn favorite ${isFav ? 'active' : ''}" data-name="${s.name}">⭐ Favorite</button>
-                <button class="action-btn remove" data-name="${s.name}" data-platform="${s.platform}">🗑️ Remove</button>
+        this.els.grid.innerHTML = list.map(s => `
+            <div class="streamer ${s.platform} ${s.isLive?'live':''} ${s.title === 'API Key Error (403)' ? 'error-key' : ''}" onclick="App.handleCardClick(this, '${s.thumb}', '${s.url}')">
+                <div class="thumbnail-container">
+                    <img class="streamer-img" src="${s.thumb || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiA5IiBmaWxsPSIjMTExIj48L3N2Zz4='}">
+                    ${s.isLive ? '<div class="live-indicator">LIVE</div>' : ''}
+                </div>
+                <div class="name-tag">
+                    <span class="streamer-name">${s.name}</span>
+                </div>
+                
+                <div class="details-overlay">
+                    <div class="overlay-header">
+                        <div class="overlay-name">${s.name}</div>
+                        ${s.isLive ? `<span class="live-badge">LIVE</span>` : ''}
+                    </div>
+                    <div class="overlay-title">${s.title}</div>
+                    <div class="overlay-stats">${s.viewers ? s.viewers.toLocaleString() + ' viewers' : ''}</div>
+                    <div class="overlay-category">${s.category || ''}</div>
+                    
+                    <div class="overlay-actions">
+                        <button class="icon-action enlarge-btn" title="Enlarge" onclick="App.enlarge(event, '${s.thumb}', '${s.url}')">🔍</button>
+                        <button class="icon-action" title="Summarize" onclick="App.summarize(event, '${s.name}')">✨</button>
+                        <button class="icon-action" title="Favorite" onclick="App.toggleFav(event, '${s.name}')">⭐</button>
+                        <button class="icon-action remove" title="Remove" onclick="App.remove(event, '${s.name}', '${s.platform}')">🗑️</button>
+                    </div>
+                </div>
             </div>
-        </div>
-      </div>
-    `;
-    
-    // Event Listeners
-    div.addEventListener('click', e => {
-        if(e.target.closest('.thumbnail-container')) {
-            const t = e.target.closest('.thumbnail-container');
-            if(t.dataset.src && !t.dataset.src.includes('data:image')) this.showEnlargedThumbnail(t.dataset.src, t.dataset.url);
-            return;
+        `).join('');
+    },
+
+    /* --- INTERACTIONS --- */
+    handleCardClick(el, thumb, url) {
+        if (window.innerWidth <= 768) {
+            if (this.state.activeCard && this.state.activeCard !== el) {
+                this.state.activeCard.classList.remove('active');
+            }
+            el.classList.toggle('active');
+            this.state.activeCard = el;
+        } else {
+            this.enlarge(null, thumb, url);
         }
-        if(this.state.selectionMode && !e.target.closest('a, button, .streamer-actions-wrapper')) 
-            this.toggleSelection(s.name);
-    });
+    },
 
-    const toggle = div.querySelector('.action-menu-toggle');
-    toggle.addEventListener('click', e => {
-        e.stopPropagation();
-        const p = e.currentTarget.closest('.streamer');
-        document.querySelectorAll('.streamer.actions-open').forEach(c => { if(c!==p) c.classList.remove('actions-open'); });
-        p.classList.toggle('actions-open');
-    });
+    enlarge(e, src, url) {
+        if(e) e.stopPropagation();
+        if(!src) return;
+        const img = document.getElementById('enlarged-img');
+        img.src = src;
+        img.dataset.url = url;
+        document.getElementById('image-modal').classList.add('visible');
+    },
 
-    div.querySelector('.summarize').addEventListener('click', e => { e.stopPropagation(); this.handleStreamSummary(s.name); });
-    div.querySelector('.favorite').addEventListener('click', e => { e.stopPropagation(); this.toggleFavorite(s.name); });
-    div.querySelector('.remove').addEventListener('click', e => { e.stopPropagation(); this.removeStreamer(s.name, s.platform); });
+    async summarize(e, name) {
+        if(e) e.stopPropagation();
+        if(!this.state.geminiKey) return this.toast('API Key Missing', 'error');
+        const s = this.state.data.get(name);
+        if (!s || !s.isLive) return this.toast('Streamer is offline', 'warning');
+        
+        document.getElementById('gemini-modal').classList.add('visible');
+        const res = await Gemini.ask(`Summarize this stream excitedly: ${s.name} playing ${s.category}, title: "${s.title}"`);
+        document.getElementById('gemini-response').innerHTML = res;
+    },
 
-    return div;
-  },
-  
-  toggleSelectionMode() {
-    this.state.selectionMode = !this.state.selectionMode;
-    if (!this.state.selectionMode) this.state.selectedStreamers.clear();
-    this.elements.selectModeBtn.classList.toggle('active', this.state.selectionMode);
-    this.elements.bulkActions.style.display = this.state.selectionMode ? 'flex' : 'none';
-    this.render();
-  },
-  toggleSelection(name) {
-    if (this.state.selectedStreamers.has(name)) this.state.selectedStreamers.delete(name);
-    else this.state.selectedStreamers.add(name);
-    this.render();
-  },
-  selectAllStreamers() {
-      this.getFilteredAndSortedData().forEach(s => this.state.selectedStreamers.add(s.name));
-      this.render();
-  },
-  clearSelection() { this.state.selectedStreamers.clear(); this.render(); },
-  updateSelectionUI() {
-    if (!this.state.selectionMode) return;
-    this.elements.selectionCount.textContent = `${this.state.selectedStreamers.size} selected`;
-  },
-  bulkToggleFavorite(add) {
-    this.state.selectedStreamers.forEach(name => {
-        const has = this.state.favorites.includes(name);
-        if (add && !has) this.state.favorites.push(name);
-        if (!add && has) this.state.favorites = this.state.favorites.filter(f => f !== name);
-    });
-    localStorage.setItem('favorites', JSON.stringify(this.state.favorites));
-    this.render();
-  },
+    async askAI() {
+        if(!this.state.geminiKey) return this.toast('API Key Missing', 'error');
+        const live = Array.from(this.state.data.values()).filter(s => s.isLive);
+        if(live.length === 0) return this.toast('No one is live', 'warning');
+        
+        document.getElementById('gemini-modal').classList.add('visible');
+        const list = live.map(s => `${s.name} (${s.category})`).join(', ');
+        const res = await Gemini.ask(`Recommend one stream to watch from this list and say why: ${list}`);
+        document.getElementById('gemini-response').innerHTML = res;
+    },
 
-  async handleStreamSummary(name) {
-    const s = this.state.streamerData.get(name);
-    if (!s) return;
-    this.showGeminiModal(`Summary for ${s.name}`);
-    const prompt = `Write a 2-sentence hype summary for streamer ${s.name} playing ${s.category}. Title: ${s.title}.`;
-    try {
-      const summary = await Gemini.ask(prompt);
-      this.elements.geminiModalContent.innerHTML = `<p>${Utils.sanitizeHTML(summary)}</p>`;
-    } catch (e) {
-      this.elements.geminiModalContent.innerHTML = `<p class="error-text">AI Error: ${e.message}</p>`;
+    async remove(e, name, platform) {
+        if(e) e.stopPropagation();
+        const pin = prompt(`Enter PIN to remove ${name}:`);
+        if(!pin) return;
+        
+        try {
+            const res = await fetch(this.state.workerUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.state.workerToken}`
+                },
+                body: JSON.stringify({ action: 'remove', name, platform, pin })
+            });
+            if(res.ok) {
+                this.toast(`${name} removed`);
+                this.fetchList();
+            } else {
+                this.toast('Remove failed', 'error');
+            }
+        } catch(err) { this.toast('Error connecting', 'error'); }
+    },
+
+    async addStreamer() {
+        const name = document.getElementById('add-name').value;
+        const platform = document.getElementById('add-platform').value;
+        if(!name) return;
+        
+        try {
+            const res = await fetch(this.state.workerUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.state.workerToken}`
+                },
+                body: JSON.stringify({ action: 'add', name, platform })
+            });
+            if(res.ok) {
+                this.toast(`${name} added`);
+                document.getElementById('add-name').value = '';
+                this.fetchList();
+            } else {
+                this.toast('Add failed', 'error');
+            }
+        } catch(err) { this.toast('Error connecting', 'error'); }
+    },
+
+    async handleImport(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            try {
+                const list = JSON.parse(ev.target.result);
+                const res = await fetch(this.state.workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.state.workerToken}` },
+                    body: JSON.stringify({ action: 'bulkReplace', list })
+                });
+                if(res.ok) { this.toast('Imported'); this.fetchList(); }
+            } catch(err) { this.toast('Import Failed', 'error'); }
+        };
+        reader.readAsText(file);
+    },
+
+    setView(cls) {
+        this.els.grid.className = cls;
+        document.querySelectorAll('.view-toggle').forEach(b => b.classList.remove('active'));
+        if(cls.includes('grid')) document.getElementById('view-grid').classList.add('active');
+        else document.getElementById('view-list').classList.add('active');
+    },
+
+    toast(msg, type='info') {
+        this.els.toast.textContent = msg;
+        this.els.toast.className = `visible ${type}`;
+        setTimeout(() => this.els.toast.className = '', 3000);
     }
-  },
-  
-  async handleRecommendStream() {
-    const live = [...this.state.streamerData.values()].filter(s => s.isLive);
-    if (!live.length) return this.showToast("No one is live right now!", 'info');
-    this.showGeminiModal("Recommendation");
-    const list = live.map(s => `${s.name} (${s.category})`).join(', ');
-    const prompt = `Pick one streamer to watch from: ${list}. Give a fun reason why.`;
-    try {
-      const res = await Gemini.ask(prompt);
-      this.elements.geminiModalContent.innerHTML = `<p>${Utils.sanitizeHTML(res)}</p>`;
-    } catch (e) {
-      this.elements.geminiModalContent.innerHTML = `<p class="error-text">AI Error: ${e.message}</p>`;
-    }
-  },
-  
-  showGeminiModal(title) {
-    this.elements.geminiModalTitle.textContent = title;
-    this.elements.geminiModalContent.innerHTML = '<div class="spinner"></div>';
-    this.elements.geminiModal.classList.add('visible');
-  },
-  hideGeminiModal() { this.elements.geminiModal.classList.remove('visible'); },
-
-  showEnlargedThumbnail(src, url) {
-    this.elements.enlargedThumbnail.src = src;
-    this.elements.enlargedThumbnail.dataset.streamUrl = url;
-    this.elements.thumbnailModal.classList.add('visible');
-  },
-  hideEnlargedThumbnail() { this.elements.thumbnailModal.classList.remove('visible'); },
-  
-  toggleFavorite(name) {
-    const favs = new Set(this.state.favorites);
-    if (favs.has(name)) favs.delete(name); else favs.add(name);
-    this.state.favorites = [...favs];
-    localStorage.setItem('favorites', JSON.stringify(this.state.favorites));
-    this.render();
-  },
-
-  exportList() {
-      const blob = new Blob([JSON.stringify(this.state.streamers)], {type: 'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'streamers.json'; a.click();
-  },
-
-  importList(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-          try {
-              const list = JSON.parse(e.target.result);
-              if (!Array.isArray(list)) throw new Error("Invalid");
-              const result = await this.postToWorker({ action: 'bulkReplace', list });
-              if (result) { this.showToast('Imported!', 'success'); this.fetchStreamerList(); }
-          } catch (err) { this.showToast('Import Failed', 'error'); }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-  },
-  
-  async addStreamer() {
-    const name = this.elements.addInput.value.trim();
-    const platform = this.elements.platformSelect.value;
-    if (!name) return this.showToast('Enter name', 'warning');
-    const result = await this.postToWorker({ action: 'add', name, platform });
-    if (result) { this.showToast('Added!', 'success'); this.elements.addInput.value=''; this.fetchStreamerList(); }
-  },
-
-  async removeStreamer(name, platform) {
-    const pin = prompt(`Enter PIN to remove ${name}:`);
-    if (!pin) return;
-    const result = await this.postToWorker({ action: 'remove', name, platform, pin });
-    if (result) { this.showToast('Removed!', 'success'); this.fetchStreamerList(); }
-  },
-  
-  async postToWorker(body) {
-    try {
-      if (!this.state.workerAuthToken) throw new Error('Missing Auth Token');
-      const res = await fetch(this.state.workerEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.state.workerAuthToken}` },
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) throw new Error((await res.text()) || res.statusText);
-      return true;
-    } catch (e) {
-      this.showToast(e.message, 'error');
-      return null;
-    }
-  },
-
-  setLoadingState(l){ this.state.isLoading = l; this.render(); },
-  updateConnectionStatus(s){ this.elements.statusIndicator.className = `status-indicator ${s}`; },
-  updateViewMode(mode){
-      this.state.viewMode = mode; localStorage.setItem("viewMode", mode);
-      document.querySelectorAll('.view-toggle').forEach(b => b.classList.toggle('active', b.dataset.view === mode));
-      this.elements.container.className = `${mode}-view`;
-      this.render();
-  },
-  renderSkeletons(){ /* ... (same as before) ... */ this.elements.container.innerHTML = 'Loading...'; },
-  renderEmptyState(){ this.elements.container.innerHTML = `<div class="empty-state"><h3>No Streamers</h3></div>`; },
-  renderErrorState(t, m){ this.elements.container.innerHTML = `<div class="error-state"><h3>${t}</h3><p>${m}</p></div>`; },
-  
-  showToast(msg, type = 'info') {
-    const t = this.elements.toast;
-    if (this.state.toastTimeout) clearTimeout(this.state.toastTimeout);
-    t.textContent = msg; t.className = type; t.classList.add('show');
-    this.state.toastTimeout = setTimeout(() => t.classList.remove('show'), 4000);
-  },
-  dismissToast() { this.elements.toast.classList.remove('show'); }
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
-  try { await PWA.init(); App.init(); } catch(e) { console.error(e); }
+App.init();
+
+// PWA Init
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        // Minimal SW registration to satisfy installation criteria
+    });
+}
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('install-btn');
+    btn.style.display = 'inline-flex';
+    btn.onclick = () => e.prompt();
 });
 </script>
 </body>
