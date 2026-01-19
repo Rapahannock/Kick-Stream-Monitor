@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor v7.7</title>
+  <title>Kick & Twitch Monitor v7.9.3</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -57,18 +57,26 @@
 
     #app-container { max-width: 2400px; margin: 0 auto; }
     
-    /* --- DENSE GRID LAYOUT --- */
+    /* --- GRID & LIST LAYOUTS --- */
     #streamers { 
         display: grid; 
-        /* Increased min-width from 240px to 320px for larger thumbnails */
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
         gap: 16px; 
+        /* Default grid layout */
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+    }
+    
+    /* List View Override */
+    #streamers.list-view {
+        grid-template-columns: 1fr;
+        max-width: 1200px;
+        margin: 0 auto;
     }
     
     /* POSTER CARD STYLE */
     .streamer {
         position: relative;
-        aspect-ratio: 16/9; /* Strict 16:9 ratio to prevent cropping */
+        /* Default Grid Aspect Ratio */
+        aspect-ratio: 16/9; 
         border-radius: var(--radius-md);
         overflow: hidden;
         background: #111;
@@ -85,17 +93,118 @@
         border-color: rgba(255,255,255,0.4);
     }
 
+    /* List View Card Adjustments */
+    .streamer.list-view-view {
+        aspect-ratio: auto;
+        height: 140px;
+        display: flex;
+        flex-direction: row;
+        transform: none !important; /* Disable scale on list view to prevent layout shifts */
+    }
+    .streamer.list-view-view:hover {
+        background: var(--bg-glass-hover);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
     /* Thumbnail Image */
     .streamer-img {
         width: 100%;
         height: 100%;
-        object-fit: cover; /* Ensures filling without distortion */
+        object-fit: cover; 
         transition: var(--transition);
     }
     
-    /* Removed the heavy blur/darkening on hover so you can still see the content clearly */
-    .streamer:hover .streamer-img {
-        filter: brightness(0.8); 
+    /* List View Thumbnail */
+    .streamer.list-view-view .thumbnail-container {
+        width: 250px;
+        height: 100%;
+        flex-shrink: 0;
+        border-radius: 0;
+    }
+    
+    /* Name Tag (Always Visible in Grid) */
+    .name-tag {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        padding: 10px 12px 10px 16px;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, transparent);
+        display: flex;
+        flex-direction: column; /* Stack name and title */
+        align-items: flex-start;
+        gap: 4px;
+        z-index: 15;
+        transition: transform 0.3s ease;
+    }
+    .streamer:hover .name-tag {
+        transform: translateY(100%);
+    }
+    .streamer.list-view-view .name-tag { display: none; } /* Hide name tag overlay in list view */
+
+    .streamer-name {
+        font-weight: 800;
+        font-size: 1.1rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #fff;
+        width: 100%;
+    }
+
+    /* Marquee Title Styles */
+    .marquee-wrapper {
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+        height: 20px;
+        mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    }
+
+    .stream-title-marquee {
+        display: inline-block;
+        white-space: nowrap;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.8);
+        animation: marquee 15s linear infinite;
+        padding-left: 100%; /* Start off-screen */
+    }
+
+    @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+    }
+
+    /* Full Details Overlay */
+    .details-overlay {
+        position: absolute;
+        inset: 0;
+        padding: 16px;
+        background: rgba(10, 10, 14, 0.85); 
+        backdrop-filter: blur(4px);
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 25;
+        pointer-events: none;
+    }
+    .streamer:hover .details-overlay, .streamer.active .details-overlay {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* List View Content (Instead of Overlay) */
+    .streamer.list-view-view .details-overlay {
+        position: relative;
+        opacity: 1;
+        background: transparent;
+        backdrop-filter: none;
+        pointer-events: auto;
+        inset: auto;
+        width: 100%;
+        height: 100%;
+        padding: 16px 24px;
     }
 
     /* Platform Borders (Left Edge) */
@@ -112,51 +221,6 @@
     .streamer.youtube::before { background: var(--youtube); color: var(--youtube); }
     .streamer.offline::before { background: var(--offline); color: var(--offline); opacity: 0.5; box-shadow: none;}
 
-    /* Name Tag (Always Visible) */
-    .name-tag {
-        position: absolute;
-        bottom: 0; left: 0; right: 0;
-        padding: 10px 12px 10px 16px;
-        background: linear-gradient(to top, rgba(0,0,0,0.95) 20%, transparent);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        z-index: 15;
-        transition: transform 0.3s ease;
-    }
-    /* Only slide out name tag if overlay is showing */
-    .streamer:hover .name-tag {
-        transform: translateY(100%);
-    }
-
-    .streamer-name {
-        font-weight: 800;
-        font-size: 1.1rem;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.9);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        color: #fff;
-    }
-
-    /* Full Details Overlay (Visible on Hover/Tap) */
-    .details-overlay {
-        position: absolute;
-        inset: 0;
-        padding: 16px;
-        background: rgba(10, 10, 14, 0.85); /* Slightly clearer background */
-        backdrop-filter: blur(4px); /* Reduced blur to see bg image faintly */
-        display: flex;
-        flex-direction: column;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        z-index: 25;
-        pointer-events: none;
-    }
-    .streamer:hover .details-overlay, .streamer.active .details-overlay {
-        opacity: 1;
-        pointer-events: auto;
-    }
 
     /* Content inside Overlay */
     .overlay-header {
@@ -362,6 +426,9 @@
         .overlay-actions { grid-template-columns: 1fr 1fr; }
         .floating-bar { width: 95%; justify-content: space-between; padding: 8px; }
         .app-logo { display: none; }
+        /* Fix list view on mobile */
+        .streamer.list-view-view { flex-direction: column; height: auto; }
+        .streamer.list-view-view .thumbnail-container { width: 100%; height: 200px; }
     }
   </style>
 </head>
@@ -459,36 +526,80 @@
 <div id="toast">Notification</div>
 
 <script>
-/* --- CORE APP LOGIC --- */
+// --- UTILITIES & CACHE ---
+const Utils = {
+  debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a), wait); }; },
+  formatNumber(n){ if(!n) return '0'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toString(); },
+  sanitizeHTML(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; },
+  formatDuration(m){ if(!m || m < 0) return '0m'; if(m<60) return `${m}m`; const h=Math.floor(m/60), min=m%60; if(h<24) return `${h}h ${min}m`; const d=Math.floor(h/24), rh=h%24; return `${d}d ${rh}h`; },
+  calculateUptime(start){ if(!start) return 0; return Math.floor((new Date()-new Date(start))/(1000*60)); },
+};
+
+class CacheManager {
+  constructor(ttl=60000){ this.cache=new Map(); this.ttl=ttl; }
+  set(k,d){ this.cache.set(k,{d,t:Date.now()}); }
+  get(k){ 
+      const it=this.cache.get(k); 
+      if(!it) return null; 
+      if(Date.now()-it.t > this.ttl){ this.cache.delete(k); return null; } 
+      return it.d; 
+  }
+  clear(){ this.cache.clear(); }
+}
+
+// Global Cache Instance
+const streamCache = new CacheManager(120000); // 2 minute cache
+
+/* --- GEMINI API --- */
+const Gemini = {
+  apiKey: "", 
+  async ask(prompt, retries = 3, delay = 1000) {
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${this.apiKey}`;
+    const payload = { contents: [{ parts: [{ text: prompt }] }] };
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(response.status);
+      const result = await response.json();
+      return result.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+    } catch (error) {
+       console.error("Gemini API Error:", error);
+       throw error;
+    }
+  }
+};
+
+/* --- MAIN APP --- */
 const App = {
     state: {
         streamers: [],
         data: new Map(),
         filter: '',
-        sort: 'viewers', // Changed default sort to viewers
+        sort: 'viewers',
         workerUrl: 'https://autumn-base-826c.rapahannock.workers.dev/',
         workerToken: localStorage.getItem('workerToken') || 'oK2ZrKag8*R7Wr*UgMBrFdcD6',
         geminiKey: localStorage.getItem('geminiKey') || '',
-        activeCard: null // For mobile toggle
+        activeCard: null,
+        viewMode: 'grid',
+        BANNED_PLACEHOLDER_THUMBNAIL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='none' stroke='%23ef4444' stroke-width='1'%3E%3Cpath d='M2 0H14C15.1 0 16 0.9 16 2V7C16 8.1 15.1 9 14 9H2C0.9 9 0 8.1 0 7V2C0 0.9 0.9 0 2 0Z' stroke='none' fill='%2323272d'/%3E%3Ccircle cx='8' cy='4.5' r='3'/%3E%3Cline x1='5.5' y1='2' x2='10.5' y2='7'/%3E%3C/svg%3E",
     },
     
     els: {
         grid: document.getElementById('streamers'),
-        toast: document.getElementById('toast')
+        toast: document.getElementById('toast'),
     },
 
     async init() {
         this.bindEvents();
         await this.fetchList();
-        setInterval(() => this.fetchData('auto'), 300000); // 5 min auto refresh
+        setInterval(() => this.fetchData('auto'), 300000); 
     },
 
     bindEvents() {
-        // View Toggles
-        document.getElementById('view-grid').onclick = () => this.setView('grid-view');
-        document.getElementById('view-list').onclick = () => this.setView('list-view');
-        
-        // Settings Panel
+        // UI Toggles
+        document.getElementById('view-grid').onclick = () => this.updateViewMode('grid');
+        document.getElementById('view-list').onclick = () => this.updateViewMode('list');
         const panel = document.getElementById('settings-panel');
         const overlay = document.getElementById('settings-overlay');
         const toggle = () => { panel.classList.toggle('open'); overlay.classList.toggle('visible'); };
@@ -499,9 +610,9 @@ const App = {
         document.getElementById('search-input').oninput = (e) => { this.state.filter = e.target.value.toLowerCase(); this.render(); };
         document.getElementById('sort-select').onchange = (e) => { this.state.sort = e.target.value; this.render(); };
         
-        // Buttons
+        // Actions
         document.getElementById('add-btn').onclick = () => this.addStreamer();
-        document.getElementById('refresh-yt-btn').onclick = () => this.fetchData('youtube');
+        document.getElementById('refresh-yt-btn').onclick = () => this.fetchData('youtube', true);
         document.getElementById('gemini-choice-btn').onclick = () => this.askAI();
         document.getElementById('save-gemini').onclick = () => {
             const key = document.getElementById('gemini-key').value;
@@ -511,19 +622,25 @@ const App = {
              const key = document.getElementById('worker-token').value;
              if(key) { localStorage.setItem('workerToken', key); this.state.workerToken = key; this.toast('Token Saved'); }
         };
-
+        
         // Export/Import
-        document.getElementById('export-btn').onclick = () => {
-            const blob = new Blob([JSON.stringify(this.state.streamers)], {type:'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'streamers.json'; a.click();
-        };
+        document.getElementById('export-btn').onclick = () => this.exportList();
         document.getElementById('import-btn').onclick = () => document.getElementById('import-file').click();
         document.getElementById('import-file').onchange = (e) => this.handleImport(e);
 
-        // Modal Close
+        // Modals
         document.querySelector('.modal-close').onclick = () => document.getElementById('image-modal').classList.remove('visible');
         document.getElementById('image-modal').onclick = (e) => { if(e.target.id === 'image-modal') e.target.classList.remove('visible'); };
         document.getElementById('enlarged-img').onclick = (e) => { if(e.target.dataset.url) window.open(e.target.dataset.url, '_blank'); };
+    },
+
+    updateViewMode(mode) {
+        this.state.viewMode = mode;
+        localStorage.setItem("viewMode", mode);
+        document.getElementById('view-grid').classList.toggle('active', mode === 'grid');
+        document.getElementById('view-list').classList.toggle('active', mode === 'list');
+        this.els.grid.className = mode === 'grid' ? 'grid-view' : 'list-view';
+        this.render();
     },
 
     async fetchList() {
@@ -534,12 +651,10 @@ const App = {
             if (!res.ok) throw new Error(res.status);
             const json = await res.json();
             this.state.streamers = json.streamers;
-            // Store API keys securely in memory only
             this.state.keys = json.config;
             this.fetchData('all');
         } catch (e) {
             this.toast(`Backend Error: ${e.message}`, 'error');
-            // Fallback for demo if backend fails
             if(this.state.streamers.length === 0) {
                  this.state.streamers = [{name:'xqc', platform:'twitch'}, {name:'trainwreckstv', platform:'kick'}];
                  this.fetchData('all');
@@ -547,7 +662,7 @@ const App = {
         }
     },
 
-    async fetchData(mode = 'all') {
+    async fetchData(mode = 'all', force = false) {
         const queue = this.state.streamers.filter(s => {
             if (mode === 'auto') return s.platform !== 'youtube';
             if (mode === 'youtube') return s.platform === 'youtube';
@@ -556,49 +671,57 @@ const App = {
 
         if (mode === 'youtube') this.toast('Refreshing YouTube...');
 
-        await Promise.allSettled(queue.map(async s => {
-            const data = await this.getStreamInfo(s);
+        // Process sequentially to avoid overwhelming browser, but update UI immediately
+        queue.forEach(async s => {
+            // Update individual state to show loading if needed, or just refresh
+            const data = await this.getStreamInfo(s, force);
             this.state.data.set(s.name, data);
-        }));
+            this.render();
+        });
+        
+        // Ensure UI is rendered initially even if data isn't back yet
         this.render();
     },
 
-    async getStreamInfo(s) {
-        // Fallback URLs
+    async getStreamInfo(s, force = false) {
         let url = '#';
         if(s.platform==='kick') url=`https://kick.com/${s.name}`;
         if(s.platform==='twitch') url=`https://twitch.tv/${s.name}`;
         if(s.platform==='youtube') url=`https://youtube.com/${s.name}`;
+        
+        const k = `api-${s.platform}-${s.name}`;
+        if (!force) {
+            const cached = streamCache.get(k); // Use global cache
+            if (cached) return cached;
+        }
+
+        const timeout = 5000; 
 
         try {
             if (s.platform === 'kick') {
-                 const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://kick.com/api/v1/channels/${s.name}`)}`);
-                 const d = await r.json();
+                 const d = await this.fetchWithTimeout(`https://corsproxy.io/?${encodeURIComponent(`https://kick.com/api/v1/channels/${s.name}`)}`, {}, timeout);
                  if (!d) throw new Error('Not Found');
-                 return d.livestream ? {
+                 const result = d.livestream ? {
                      isLive: true, title: d.livestream.session_title, 
                      viewers: d.livestream.viewer_count, category: d.livestream.categories[0].name,
                      thumb: d.livestream.thumbnail.url, url
-                 } : { isLive: false, title: 'Banned / Not Found', url, thumb: d.user.profile_pic };
+                 } : { isLive: false, title: 'Offline', url, thumb: d.user.profile_pic };
+                 streamCache.set(k, result);
+                 return result;
             }
             if (s.platform === 'twitch') {
                  if (!this.state.keys || !this.state.keys.twitchClientId) return { isLive: false, title: 'Config Error', url };
-                 
-                 // Add timestamp to prevent caching
                  const t = Date.now();
-                 
                  const [streamRes, userRes] = await Promise.all([
                    this.fetchApi(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(s.name)}&t=${t}`, this.state.keys),
                    this.fetchApi(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(s.name)}&t=${t}`, this.state.keys)
-                 ]);
-                 
+                 ]).catch(() => [{}, {}]);
+
                  if (!userRes.data || !userRes.data[0]) return { isLive: false, title: 'Not Found', url };
-                 
                  const userData = userRes.data[0];
                  const streamData = streamRes.data && streamRes.data[0];
                  const isLive = !!streamData && streamData.type === 'live';
-                 
-                 return {
+                 const result = {
                     isLive,
                     title: isLive ? streamData.title : 'Offline',
                     viewers: isLive ? streamData.viewer_count : 0,
@@ -606,31 +729,37 @@ const App = {
                     thumb: isLive ? streamData.thumbnail_url.replace('{width}', '640').replace('{height}', '360') : userData.profile_image_url,
                     url
                  };
+                 streamCache.set(k, result);
+                 return result;
             }
             if (s.platform === 'youtube') {
-                 if (!this.state.keys || !this.state.keys.youtubeApiKey) return { isLive: false, title: 'YouTube API Key Missing', url };
+                 if (!this.state.keys || !this.state.keys.youtubeApiKey) return { isLive: false, title: 'YouTube Key Missing', url };
                  const apiKey = this.state.keys.youtubeApiKey;
-
-                 // Search channel first
-                 const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(s.name)}&type=channel&key=${apiKey}`;
-                 const searchData = await this.fetchApi(searchUrl);
-                 if (!searchData.items || !searchData.items[0]) return { isLive: false, title: 'Channel Not Found', url };
+                 const cb = force ? `&_=${Date.now()}` : '';
                  
-                 const channelId = searchData.items[0].id.channelId;
-                 const profilePic = searchData.items[0].snippet.thumbnails.default.url;
+                 // 1. Search Channel
+                 const searchRes = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(s.name)}&type=channel&key=${apiKey}${cb}`, {}, timeout);
+                 if (!searchRes.items || !searchRes.items[0]) return { isLive: false, title: 'Channel Not Found', url };
+                 
+                 const channelId = searchRes.items[0].id.channelId;
+                 const profilePic = searchRes.items[0].snippet.thumbnails.default.url;
                  const channelUrl = `https://www.youtube.com/channel/${channelId}`;
 
-                 // Search for live video
-                 const liveUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`;
-                 const liveData = await this.fetchApi(liveSearchUrl);
+                 // 2. Search Live Video
+                 const liveRes = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}${cb}`, {}, timeout);
                  
-                 if (!liveData.items || !liveData.items[0]) return { isLive: false, title: 'Offline', url: channelUrl, thumb: profilePic };
+                 if (!liveRes.items || !liveRes.items[0]) {
+                     const offlineRes = { isLive: false, title: 'Offline', url: channelUrl, thumb: profilePic };
+                     streamCache.set(k, offlineRes);
+                     return offlineRes;
+                 }
                  
-                 const videoId = liveData.items[0].id.videoId;
-                 const videoDetails = await this.fetchApi(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails,snippet&id=${videoId}&key=${apiKey}`);
+                 // 3. Get Video Details
+                 const videoId = liveRes.items[0].id.videoId;
+                 const videoDetails = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails,snippet&id=${videoId}&key=${apiKey}${cb}`, {}, timeout);
                  const details = videoDetails.items[0];
 
-                 return {
+                 const result = {
                     isLive: true,
                     title: details.snippet.title,
                     viewers: parseInt(details.liveStreamingDetails.concurrentViewers || 0),
@@ -638,11 +767,29 @@ const App = {
                     thumb: details.snippet.thumbnails.medium.url,
                     url: channelUrl
                  };
+                 streamCache.set(k, result);
+                 return result;
             }
             return { isLive: false, title: 'Offline', url }; 
         } catch (e) {
              const is403 = e.message.includes('403');
-             return { isLive: false, title: is403 ? 'API Key Error (403)' : 'Error', url };
+             const msg = is403 ? (s.platform === 'youtube' ? 'Daily Limit / Key Error' : 'Access Denied') : 'Connection Failed';
+             // Don't cache errors so we can retry
+             return { isLive: false, title: msg, url };
+        }
+    },
+    
+    async fetchWithTimeout(resource, options = {}, timeout = 5000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        try {
+            const response = await fetch(resource, { ...options, signal: controller.signal });
+            clearTimeout(id);
+            if (!response.ok) throw new Error(response.status);
+            return response.json();
+        } catch(e) {
+            clearTimeout(id);
+            throw e;
         }
     },
     
@@ -658,7 +805,7 @@ const App = {
 
     render() {
         const list = this.state.streamers.map(s => {
-            const info = this.state.data.get(s.name) || { isLive: false, title: 'Loading...', url: '#' };
+            const info = this.state.data.get(s.name) || { isLive: false, title: 'Loading...', isLoading: true, url: '#' };
             return { ...s, ...info };
         }).filter(s => {
             if (!this.state.filter) return true;
@@ -671,13 +818,14 @@ const App = {
         });
 
         this.els.grid.innerHTML = list.map(s => `
-            <div class="streamer ${s.platform} ${s.isLive?'live':''} ${s.title === 'API Key Error (403)' ? 'error-key' : ''}" onclick="App.handleCardClick(this, '${s.thumb}', '${s.url}')">
+            <div class="streamer ${s.platform} ${s.isLive?'live':''} ${this.state.viewMode === 'list' ? 'list-view-view' : ''} ${s.title.includes('Error') || s.title.includes('Limit') || s.title.includes('Denied') ? 'error-key' : ''}" onclick="App.handleCardClick(this, '${s.thumb}', '${s.url}')">
                 <div class="thumbnail-container">
                     <img class="streamer-img" src="${s.thumb || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiA5IiBmaWxsPSIjMTExIj48L3N2Zz4='}">
                     ${s.isLive ? '<div class="live-indicator">LIVE</div>' : ''}
                 </div>
                 <div class="name-tag">
                     <span class="streamer-name">${s.name}</span>
+                    ${s.isLive ? `<div class="marquee-wrapper"><span class="stream-title-marquee">${Utils.sanitizeHTML(s.title)}</span></div>` : ''}
                 </div>
                 
                 <div class="details-overlay">
@@ -686,7 +834,7 @@ const App = {
                         ${s.isLive ? `<span class="live-badge">LIVE</span>` : ''}
                     </div>
                     <div class="overlay-title">${s.title}</div>
-                    <div class="overlay-stats">${s.viewers ? s.viewers.toLocaleString() + ' viewers' : ''}</div>
+                    <div class="overlay-stats">${s.isLoading ? '...' : (s.viewers ? s.viewers.toLocaleString() + ' viewers' : 'Offline')}</div>
                     <div class="overlay-category">${s.category || ''}</div>
                     
                     <div class="overlay-actions">
@@ -808,12 +956,10 @@ const App = {
         };
         reader.readAsText(file);
     },
-
-    setView(cls) {
-        this.els.grid.className = cls;
-        document.querySelectorAll('.view-toggle').forEach(b => b.classList.remove('active'));
-        if(cls.includes('grid')) document.getElementById('view-grid').classList.add('active');
-        else document.getElementById('view-list').classList.add('active');
+    
+    exportList() {
+        const blob = new Blob([JSON.stringify(this.state.streamers)], {type:'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'streamers.json'; a.click();
     },
 
     toast(msg, type='info') {
