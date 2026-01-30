@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor v7.9.5</title>
+  <!-- CRITICAL FIX: This tag hides your origin from the proxy, often bypassing 403 blocks -->
+  <meta name="referrer" content="no-referrer">
+  
+  <title>Kick & Twitch Monitor v7.9.6</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,7 +17,7 @@
   <style>
     :root {
       --bg-primary: #050505;
-      --bg-glass: rgba(20, 20, 25, 0.7);
+      --bg-glass: rgba(20, 20, 25, 0.7); /* Deep smoked glass */
       --bg-glass-hover: rgba(30, 30, 35, 0.85);
       --text-primary: #ffffff;
       --text-secondary: #a1a1aa;
@@ -26,7 +29,7 @@
       --kick: #53fc18;
       --offline: #64748b;
       --warning: #f59e0b;
-      --red-light: #ff4444;
+      --red-light: #ff4444; /* New Red Light color */
       --radius-sm: 8px;
       --radius-md: 12px;
       --transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -47,6 +50,7 @@
     body {
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-primary);
+      /* Subtle noise */
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
       color: var(--text-primary);
       margin: 0;
@@ -56,12 +60,15 @@
 
     #app-container { max-width: 2400px; margin: 0 auto; }
     
+    /* --- GRID & LIST LAYOUTS --- */
     #streamers { 
         display: grid; 
         gap: 16px; 
+        /* Default grid layout */
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
     }
     
+    /* List View Override */
     #streamers.list-view {
         grid-template-columns: 1fr;
         max-width: 1200px;
@@ -71,6 +78,7 @@
     /* POSTER CARD STYLE */
     .streamer {
         position: relative;
+        /* Default Grid Aspect Ratio */
         aspect-ratio: 16/9; 
         border-radius: var(--radius-md);
         overflow: hidden;
@@ -88,18 +96,20 @@
         border-color: rgba(255,255,255,0.4);
     }
 
+    /* List View Card Adjustments */
     .streamer.list-view-view {
         aspect-ratio: auto;
         height: 140px;
         display: flex;
         flex-direction: row;
-        transform: none !important;
+        transform: none !important; /* Disable scale on list view to prevent layout shifts */
     }
     .streamer.list-view-view:hover {
         background: var(--bg-glass-hover);
         box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
+    /* Thumbnail Image */
     .streamer-img {
         width: 100%;
         height: 100%;
@@ -107,6 +117,7 @@
         transition: var(--transition);
     }
     
+    /* List View Thumbnail */
     .streamer.list-view-view .thumbnail-container {
         width: 250px;
         height: 100%;
@@ -114,13 +125,14 @@
         border-radius: 0;
     }
     
+    /* Name Tag (Always Visible in Grid) */
     .name-tag {
         position: absolute;
         bottom: 0; left: 0; right: 0;
         padding: 10px 12px 10px 16px;
         background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, transparent);
         display: flex;
-        flex-direction: column;
+        flex-direction: column; /* Stack name and title */
         align-items: flex-start;
         gap: 4px;
         z-index: 15;
@@ -129,7 +141,7 @@
     .streamer:hover .name-tag {
         transform: translateY(100%);
     }
-    .streamer.list-view-view .name-tag { display: none; }
+    .streamer.list-view-view .name-tag { display: none; } /* Hide name tag overlay in list view */
 
     .streamer-name {
         font-weight: 800;
@@ -145,6 +157,7 @@
     /* Error State Styling for Card */
     .streamer.error-key {
         border-color: var(--warning);
+        opacity: 0.8;
     }
     .streamer.error-key .streamer-name {
         color: var(--warning);
@@ -173,6 +186,7 @@
         100% { transform: translateX(-100%); }
     }
 
+    /* Full Details Overlay */
     .details-overlay {
         position: absolute;
         inset: 0;
@@ -203,6 +217,7 @@
         padding: 16px 24px;
     }
 
+    /* Platform Borders (Left Edge) */
     .streamer::before {
         content: '';
         position: absolute;
@@ -257,6 +272,7 @@
         display: flex; gap: 8px;
     }
 
+    /* Action Buttons in Overlay */
     .overlay-actions {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -379,7 +395,7 @@
     }
     #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* Live Indicator with Red Dot */
+    /* --- PULSING RED LIGHT INDICATOR --- */
     .live-indicator {
       position: absolute; top: 12px; right: 12px;
       display: flex; align-items: center; gap: 6px;
@@ -414,7 +430,6 @@
         .overlay-actions { grid-template-columns: 1fr 1fr; }
         .floating-bar { width: 95%; justify-content: space-between; padding: 8px; }
         .app-logo { display: none; }
-        /* Fix list view on mobile */
         .streamer.list-view-view { flex-direction: column; height: auto; }
         .streamer.list-view-view .thumbnail-container { width: 100%; height: 200px; }
     }
@@ -432,7 +447,6 @@
 <div class="floating-bar">
     <span class="app-logo">StreamMonitor</span>
     <button class="bar-btn" id="refresh-yt-btn" title="Refresh YouTube Only">
-        <!-- YouTube Red Refresh Icon -->
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ff0000" width="18" height="18"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
     </button>
     <button class="bar-btn" id="gemini-choice-btn">✨ Pick for Me</button>
@@ -603,7 +617,6 @@ const App = {
         
         // Actions
         document.getElementById('add-btn').onclick = () => this.addStreamer();
-        // Manual YouTube Refresh triggers 'youtube' mode
         document.getElementById('refresh-yt-btn').onclick = () => this.fetchData('youtube', true);
         document.getElementById('gemini-choice-btn').onclick = () => this.askAI();
         document.getElementById('save-gemini').onclick = () => {
@@ -659,17 +672,14 @@ const App = {
         let queue = this.state.streamers;
 
         if (mode === 'auto') {
-            // EXCLUDE YouTube from auto-refresh to save quota
             queue = queue.filter(s => s.platform !== 'youtube');
         } else if (mode === 'youtube') {
-            // ONLY refresh YouTube when button clicked
             queue = queue.filter(s => s.platform === 'youtube');
             this.toast('Refreshing YouTube...', 'info');
-            // Reset quota flag on manual refresh to try again
             this.state.youtubeQuotaExceeded = false;
         }
 
-        // Process sequentially to avoid overwhelming browser, but update UI immediately
+        // Progressive loading (rendering inside loop)
         queue.forEach(async s => {
             const data = await this.getStreamInfo(s, force);
             this.state.data.set(s.name, data);
@@ -732,7 +742,6 @@ const App = {
                  return result;
             }
             if (s.platform === 'youtube') {
-                 // Check if quota already exceeded
                  if (this.state.youtubeQuotaExceeded) {
                      return { isLive: false, title: 'Daily Limit Reached', url, viewers: 0 };
                  }
@@ -741,7 +750,6 @@ const App = {
                  const apiKey = this.state.keys.youtubeApiKey;
                  const cb = force ? `&_=${Date.now()}` : '';
                  
-                 // 1. Search Channel
                  const searchRes = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(s.name)}&type=channel&key=${apiKey}${cb}`, {}, timeout);
                  if (!searchRes.items || !searchRes.items[0]) return { isLive: false, title: 'Channel Not Found', url };
                  
@@ -749,7 +757,6 @@ const App = {
                  const profilePic = searchRes.items[0].snippet.thumbnails.default.url;
                  const channelUrl = `https://www.youtube.com/channel/${channelId}`;
 
-                 // 2. Search Live Video
                  const liveRes = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}${cb}`, {}, timeout);
                  
                  if (!liveRes.items || !liveRes.items[0]) {
@@ -758,7 +765,6 @@ const App = {
                      return offlineRes;
                  }
                  
-                 // 3. Get Video Details
                  const videoId = liveRes.items[0].id.videoId;
                  const videoDetails = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails,snippet&id=${videoId}&key=${apiKey}${cb}`, {}, timeout);
                  const details = videoDetails.items[0];
@@ -768,7 +774,6 @@ const App = {
                     title: details.snippet.title,
                     viewers: parseInt(details.liveStreamingDetails.concurrentViewers || 0),
                     category: 'YouTube Live',
-                    // REVERTED to original URL (no cache buster)
                     thumb: details.snippet.thumbnails.medium.url,
                     url: channelUrl
                  };
@@ -779,15 +784,20 @@ const App = {
         } catch (e) {
              const is403 = e.message.includes('403');
              if (is403 && s.platform === 'youtube') {
-                 // FLIP THE SAFETY SWITCH
                  this.state.youtubeQuotaExceeded = true;
                  const msg = 'Daily Limit Reached';
                  return { isLive: false, title: msg, url };
              }
              if (is403 && s.platform === 'kick') {
-                 return { isLive: false, title: 'Access Denied (Kick)', url };
+                 // SPECIAL HANDLING FOR KICK PROXY BLOCK
+                 // Return a "Status Unknown" object but keep the card clickable
+                 return { 
+                     isLive: false, 
+                     title: 'Connection Error (403)', 
+                     url, 
+                     isError: true // Flag to style differently if needed
+                 };
              }
-             // For twitch or generic errors
              const msg = is403 ? 'Access Denied' : (e.message.includes('400') ? 'Config Error' : 'Connection Failed');
              return { isLive: false, title: msg, url };
         }
