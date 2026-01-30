@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Kick & Twitch Monitor v7.9.4</title>
+  <title>Kick & Twitch Monitor v7.9.5</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,7 +14,7 @@
   <style>
     :root {
       --bg-primary: #050505;
-      --bg-glass: rgba(20, 20, 25, 0.7); /* Deep smoked glass */
+      --bg-glass: rgba(20, 20, 25, 0.7);
       --bg-glass-hover: rgba(30, 30, 35, 0.85);
       --text-primary: #ffffff;
       --text-secondary: #a1a1aa;
@@ -26,7 +26,7 @@
       --kick: #53fc18;
       --offline: #64748b;
       --warning: #f59e0b;
-      --red-light: #ff4444; /* New Red Light color */
+      --red-light: #ff4444;
       --radius-sm: 8px;
       --radius-md: 12px;
       --transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -47,7 +47,6 @@
     body {
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-primary);
-      /* Subtle noise */
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
       color: var(--text-primary);
       margin: 0;
@@ -57,15 +56,12 @@
 
     #app-container { max-width: 2400px; margin: 0 auto; }
     
-    /* --- GRID & LIST LAYOUTS --- */
     #streamers { 
         display: grid; 
         gap: 16px; 
-        /* Default grid layout */
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
     }
     
-    /* List View Override */
     #streamers.list-view {
         grid-template-columns: 1fr;
         max-width: 1200px;
@@ -75,7 +71,6 @@
     /* POSTER CARD STYLE */
     .streamer {
         position: relative;
-        /* Default Grid Aspect Ratio */
         aspect-ratio: 16/9; 
         border-radius: var(--radius-md);
         overflow: hidden;
@@ -93,20 +88,18 @@
         border-color: rgba(255,255,255,0.4);
     }
 
-    /* List View Card Adjustments */
     .streamer.list-view-view {
         aspect-ratio: auto;
         height: 140px;
         display: flex;
         flex-direction: row;
-        transform: none !important; /* Disable scale on list view to prevent layout shifts */
+        transform: none !important;
     }
     .streamer.list-view-view:hover {
         background: var(--bg-glass-hover);
         box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
-    /* Thumbnail Image */
     .streamer-img {
         width: 100%;
         height: 100%;
@@ -114,7 +107,6 @@
         transition: var(--transition);
     }
     
-    /* List View Thumbnail */
     .streamer.list-view-view .thumbnail-container {
         width: 250px;
         height: 100%;
@@ -122,14 +114,13 @@
         border-radius: 0;
     }
     
-    /* Name Tag (Always Visible in Grid) */
     .name-tag {
         position: absolute;
         bottom: 0; left: 0; right: 0;
         padding: 10px 12px 10px 16px;
         background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, transparent);
         display: flex;
-        flex-direction: column; /* Stack name and title */
+        flex-direction: column;
         align-items: flex-start;
         gap: 4px;
         z-index: 15;
@@ -138,7 +129,7 @@
     .streamer:hover .name-tag {
         transform: translateY(100%);
     }
-    .streamer.list-view-view .name-tag { display: none; } /* Hide name tag overlay in list view */
+    .streamer.list-view-view .name-tag { display: none; }
 
     .streamer-name {
         font-weight: 800;
@@ -151,7 +142,14 @@
         width: 100%;
     }
 
-    /* Marquee Title Styles */
+    /* Error State Styling for Card */
+    .streamer.error-key {
+        border-color: var(--warning);
+    }
+    .streamer.error-key .streamer-name {
+        color: var(--warning);
+    }
+
     .marquee-wrapper {
         width: 100%;
         overflow: hidden;
@@ -167,7 +165,7 @@
         font-size: 0.85rem;
         color: rgba(255, 255, 255, 0.8);
         animation: marquee 15s linear infinite;
-        padding-left: 100%; /* Start off-screen */
+        padding-left: 100%;
     }
 
     @keyframes marquee {
@@ -175,7 +173,6 @@
         100% { transform: translateX(-100%); }
     }
 
-    /* Full Details Overlay */
     .details-overlay {
         position: absolute;
         inset: 0;
@@ -194,7 +191,6 @@
         pointer-events: auto;
     }
 
-    /* List View Content (Instead of Overlay) */
     .streamer.list-view-view .details-overlay {
         position: relative;
         opacity: 1;
@@ -207,7 +203,6 @@
         padding: 16px 24px;
     }
 
-    /* Platform Borders (Left Edge) */
     .streamer::before {
         content: '';
         position: absolute;
@@ -221,8 +216,6 @@
     .streamer.youtube::before { background: var(--youtube); color: var(--youtube); }
     .streamer.offline::before { background: var(--offline); color: var(--offline); opacity: 0.5; box-shadow: none;}
 
-
-    /* Content inside Overlay */
     .overlay-header {
         display: flex;
         justify-content: space-between;
@@ -264,7 +257,6 @@
         display: flex; gap: 8px;
     }
 
-    /* Action Buttons in Overlay */
     .overlay-actions {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -296,7 +288,7 @@
         filter: brightness(1.2);
     }
 
-    /* --- Floating Bar (Merged Header/Footer) --- */
+    /* Floating Bar */
     .floating-bar {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
       z-index: 1000;
@@ -387,11 +379,10 @@
     }
     #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* --- PULSING RED LIGHT INDICATOR --- */
+    /* Live Indicator with Red Dot */
     .live-indicator {
       position: absolute; top: 12px; right: 12px;
       display: flex; align-items: center; gap: 6px;
-      /* Consistent Red-ish/Dark background for all live streams to make the red light pop */
       background: rgba(10, 10, 10, 0.85); 
       color: var(--red-light);
       border: 1px solid rgba(255, 68, 68, 0.2);
@@ -401,8 +392,6 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.5);
       z-index: 20;
     }
-
-    /* The "Red Light" Dot */
     .live-indicator::before {
       content: ''; 
       display: block; width: 8px; height: 8px;
@@ -411,7 +400,6 @@
       box-shadow: 0 0 10px #ff0000;
       animation: redTallyPulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
-
     @keyframes redTallyPulse {
       0% { opacity: 1; transform: scale(1); box-shadow: 0 0 5px #ff0000; }
       50% { opacity: 0.6; transform: scale(0.9); box-shadow: 0 0 2px #ff0000; }
@@ -444,6 +432,7 @@
 <div class="floating-bar">
     <span class="app-logo">StreamMonitor</span>
     <button class="bar-btn" id="refresh-yt-btn" title="Refresh YouTube Only">
+        <!-- YouTube Red Refresh Icon -->
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ff0000" width="18" height="18"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
     </button>
     <button class="bar-btn" id="gemini-choice-btn">✨ Pick for Me</button>
@@ -583,12 +572,13 @@ const App = {
         activeCard: null,
         viewMode: 'grid',
         BANNED_PLACEHOLDER_THUMBNAIL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='none' stroke='%23ef4444' stroke-width='1'%3E%3Cpath d='M2 0H14C15.1 0 16 0.9 16 2V7C16 8.1 15.1 9 14 9H2C0.9 9 0 8.1 0 7V2C0 0.9 0.9 0 2 0Z' stroke='none' fill='%2323272d'/%3E%3Ccircle cx='8' cy='4.5' r='3'/%3E%3Cline x1='5.5' y1='2' x2='10.5' y2='7'/%3E%3C/svg%3E",
-        youtubeQuotaExceeded: false, // New state flag
+        youtubeQuotaExceeded: false,
     },
     
     els: {
         grid: document.getElementById('streamers'),
         toast: document.getElementById('toast'),
+        container: document.getElementById('app-container')
     },
 
     async init() {
@@ -613,6 +603,7 @@ const App = {
         
         // Actions
         document.getElementById('add-btn').onclick = () => this.addStreamer();
+        // Manual YouTube Refresh triggers 'youtube' mode
         document.getElementById('refresh-yt-btn').onclick = () => this.fetchData('youtube', true);
         document.getElementById('gemini-choice-btn').onclick = () => this.askAI();
         document.getElementById('save-gemini').onclick = () => {
@@ -638,8 +629,9 @@ const App = {
     updateViewMode(mode) {
         this.state.viewMode = mode;
         localStorage.setItem("viewMode", mode);
-        document.getElementById('view-grid').classList.toggle('active', mode === 'grid');
-        document.getElementById('view-list').classList.toggle('active', mode === 'list');
+        document.querySelectorAll('.view-toggle[data-view]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === mode);
+        });
         this.els.grid.className = mode === 'grid' ? 'grid-view' : 'list-view';
         this.render();
     },
@@ -664,23 +656,26 @@ const App = {
     },
 
     async fetchData(mode = 'all', force = false) {
-        const queue = this.state.streamers.filter(s => {
-            if (mode === 'auto') return s.platform !== 'youtube';
-            if (mode === 'youtube') return s.platform === 'youtube';
-            return true;
-        });
+        let queue = this.state.streamers;
 
-        if (mode === 'youtube') this.toast('Refreshing YouTube...');
+        if (mode === 'auto') {
+            // EXCLUDE YouTube from auto-refresh to save quota
+            queue = queue.filter(s => s.platform !== 'youtube');
+        } else if (mode === 'youtube') {
+            // ONLY refresh YouTube when button clicked
+            queue = queue.filter(s => s.platform === 'youtube');
+            this.toast('Refreshing YouTube...', 'info');
+            // Reset quota flag on manual refresh to try again
+            this.state.youtubeQuotaExceeded = false;
+        }
 
         // Process sequentially to avoid overwhelming browser, but update UI immediately
         queue.forEach(async s => {
-            // Update individual state to show loading if needed, or just refresh
             const data = await this.getStreamInfo(s, force);
             this.state.data.set(s.name, data);
             this.render();
         });
         
-        // Ensure UI is rendered initially even if data isn't back yet
         this.render();
     },
 
@@ -692,7 +687,7 @@ const App = {
         
         const k = `api-${s.platform}-${s.name}`;
         if (!force) {
-            const cached = streamCache.get(k); // Use global cache
+            const cached = streamCache.get(k); 
             if (cached) return cached;
         }
 
@@ -789,7 +784,11 @@ const App = {
                  const msg = 'Daily Limit Reached';
                  return { isLive: false, title: msg, url };
              }
-             const msg = is403 ? 'Access Denied' : 'Connection Failed';
+             if (is403 && s.platform === 'kick') {
+                 return { isLive: false, title: 'Access Denied (Kick)', url };
+             }
+             // For twitch or generic errors
+             const msg = is403 ? 'Access Denied' : (e.message.includes('400') ? 'Config Error' : 'Connection Failed');
              return { isLive: false, title: msg, url };
         }
     },
@@ -819,6 +818,8 @@ const App = {
     },
 
     render() {
+        if(this.state.isLoading && this.state.data.size === 0) return this.renderSkeletons();
+        
         const list = this.state.streamers.map(s => {
             const info = this.state.data.get(s.name) || { isLive: false, title: 'Loading...', isLoading: true, url: '#' };
             return { ...s, ...info };
