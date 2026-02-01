@@ -6,7 +6,7 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>Kick & Twitch Monitor v7.9.7</title>
+  <title>Kick & Twitch Monitor v7.9.8</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -683,20 +683,36 @@ const App = {
             if (cached) return cached;
         }
 
+        const timeout = 8000; // Increased for fallback proxies
+
         try {
             if (s.platform === 'kick') {
                 // FALLBACK SYSTEM FOR KICK PROXY
+                const targetUrl = `https://kick.com/api/v1/channels/${s.name}`;
                 const proxies = [
-                    `https://corsproxy.io/?${encodeURIComponent(`https://kick.com/api/v1/channels/${s.name}`)}`,
-                    `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://kick.com/api/v1/channels/${s.name}`)}`
+                    `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+                    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+                    `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
                 ];
 
                 let d = null;
                 for (const proxyUrl of proxies) {
                     try {
-                        const r = await this.fetchWithTimeout(proxyUrl, {}, 5000);
-                        if (r) { d = r; break; }
-                    } catch(e) { console.warn(`Proxy failed: ${proxyUrl}`); }
+                        const r = await this.fetchWithTimeout(proxyUrl, {}, timeout);
+                        
+                        // Handle AllOrigins JSON wrapper
+                        if (proxyUrl.includes('allorigins')) {
+                            if (r.contents) {
+                                d = JSON.parse(r.contents);
+                                break;
+                            }
+                        } else {
+                            if (r && r.livestream !== undefined) { 
+                                d = r; 
+                                break; 
+                            }
+                        }
+                    } catch(e) { /* try next */ }
                 }
                 
                 if (!d) throw new Error('Not Found / Blocked');
@@ -735,6 +751,7 @@ const App = {
                  return result;
             }
             if (s.platform === 'youtube') {
+                 // Check if quota already exceeded
                  if (this.state.youtubeQuotaExceeded) {
                      return { isLive: false, title: 'Daily Limit Reached', url, viewers: 0 };
                  }
