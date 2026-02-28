@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="referrer" content="no-referrer">
-  <title>StreamMonitor v8.0</title>
+  <title>StreamMonitor v8.1</title>
   <meta name="theme-color" content="#08080a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -72,7 +72,6 @@
 
     #app-container { max-width: 2400px; margin: 0 auto; position: relative; z-index: 1; }
 
-    /* --- GRID --- */
     #streamers {
       display: grid;
       gap: 16px;
@@ -84,7 +83,6 @@
       margin: 0 auto;
     }
 
-    /* --- CARD --- */
     .streamer {
       position: relative;
       aspect-ratio: 16 / 9;
@@ -113,7 +111,6 @@
     .streamer.live.youtube { border-color: rgba(255, 0, 51, 0.12); }
     .streamer.live.youtube:hover { border-color: rgba(255, 0, 51, 0.3); box-shadow: var(--shadow-hover), 0 0 40px var(--youtube-glow); }
 
-    /* List View Card */
     .streamer.list-item {
       aspect-ratio: auto;
       height: 140px;
@@ -137,7 +134,6 @@
     .streamer:hover .streamer-img { transform: scale(1.05); }
     .streamer.list-item:hover .streamer-img { transform: none; }
 
-    /* Platform Accent Bar */
     .streamer::before {
       content: '';
       position: absolute; left: 0; top: 0; bottom: 0;
@@ -153,7 +149,6 @@
     .streamer.live.twitch:hover::before { box-shadow: 2px 0 20px var(--twitch-glow); }
     .streamer.live.youtube:hover::before { box-shadow: 2px 0 20px var(--youtube-glow); }
 
-    /* Name Tag */
     .name-tag {
       position: absolute; bottom: 0; left: 0; right: 0;
       padding: 40px 14px 12px 16px;
@@ -182,7 +177,6 @@
     }
     @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-    /* Live Indicator */
     .live-indicator {
       position: absolute; top: 10px; right: 10px;
       display: flex; align-items: center; gap: 6px;
@@ -202,7 +196,6 @@
       50% { opacity: 0.5; box-shadow: 0 0 2px #ef4444; }
     }
 
-    /* Viewer Count Badge */
     .viewer-badge {
       position: absolute; top: 10px; left: 14px;
       background: rgba(0,0,0,0.7); backdrop-filter: blur(12px);
@@ -213,7 +206,6 @@
     }
     .viewer-badge.has-viewers { color: #fff; }
 
-    /* Details Overlay */
     .details-overlay {
       position: absolute; inset: 0;
       padding: 16px;
@@ -266,7 +258,6 @@
     .icon-action.primary-action:hover { filter: brightness(1.15); }
     .icon-action.danger:hover { background: rgba(239,68,68,0.2); color: var(--danger); }
 
-    /* Error State */
     .streamer.error-key { border-color: rgba(234, 179, 8, 0.3); }
     .streamer.error-key .streamer-name { color: var(--warning); }
     .streamer.error-key::after {
@@ -274,7 +265,6 @@
       font-size: 1.2rem; z-index: 20;
     }
 
-    /* Skeleton */
     .skeleton-card {
       aspect-ratio: 16/9; border-radius: var(--radius);
       background: var(--bg-card); border: 1px solid var(--border-subtle);
@@ -287,7 +277,6 @@
     }
     @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
-    /* --- FLOATING BAR --- */
     .floating-bar {
       position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
       z-index: 1000;
@@ -323,13 +312,11 @@
     .bar-btn.yt-refresh { background: rgba(255,0,51,0.08); color: var(--youtube); border-color: rgba(255,0,51,0.1); }
     .bar-btn.yt-refresh:hover { background: rgba(255,0,51,0.15); }
 
-    /* API status dot on bar */
     .api-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
     .api-dot.ok { background: var(--live); box-shadow: 0 0 6px var(--live); }
     .api-dot.err { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
     .api-dot.unknown { background: var(--text-dim); }
 
-    /* --- SETTINGS PANEL --- */
     .settings-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.6);
       backdrop-filter: blur(4px); z-index: 1100;
@@ -360,9 +347,7 @@
 
     .settings-body { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 24px; }
 
-    .setting-section {
-      display: flex; flex-direction: column; gap: 12px;
-    }
+    .setting-section { display: flex; flex-direction: column; gap: 12px; }
     .section-title {
       font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--text-dim); padding-bottom: 4px;
@@ -397,7 +382,6 @@
     .btn.primary { background: var(--accent); color: #000; border-color: transparent; }
     .btn.primary:hover { filter: brightness(1.1); }
 
-    /* --- MODALS --- */
     .modal {
       position: fixed; inset: 0; z-index: 2000;
       background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
@@ -434,7 +418,6 @@
     #gemini-response { line-height: 1.6; font-size: 0.92rem; }
     #gemini-response p { margin-bottom: 8px; }
 
-    /* PIN Dialog */
     .pin-input {
       background: rgba(255,255,255,0.04); color: var(--text-primary);
       border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
@@ -445,7 +428,6 @@
     .pin-actions { display: flex; gap: 8px; }
     .pin-actions .btn { flex: 1; }
 
-    /* --- TOAST --- */
     #toast {
       position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%) translateY(16px);
       background: var(--bg-elevated); border: 1px solid var(--border-subtle);
@@ -461,7 +443,6 @@
     #toast.error { border-color: rgba(239,68,68,0.3); color: var(--danger); }
     #toast.success { border-color: rgba(34,197,94,0.3); color: var(--live); }
 
-    /* --- STATUS BAR (top) --- */
     .status-bar {
       display: flex; align-items: center; gap: 12px;
       padding: 8px 0 20px;
@@ -474,7 +455,6 @@
     }
     .status-chip.live-count { color: var(--live); border-color: rgba(34,197,94,0.15); }
 
-    /* --- RESPONSIVE --- */
     @media (max-width: 768px) {
       body { padding: 12px 10px 100px; }
       #streamers { grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -515,7 +495,6 @@
   </main>
 </div>
 
-<!-- Floating Control Bar -->
 <div class="floating-bar">
   <span class="app-logo">StreamMonitor</span>
   <div class="bar-divider"></div>
@@ -539,7 +518,6 @@
   <button class="bar-btn" id="settings-btn">⚙️</button>
 </div>
 
-<!-- Settings Panel -->
 <div id="settings-overlay" class="settings-overlay"></div>
 <div id="settings-panel" class="settings-panel">
   <div class="settings-header">
@@ -583,11 +561,6 @@
         <button id="save-gemini" class="btn" style="width:100%; margin-top:4px;">Save Gemini Key</button>
       </div>
       <div class="setting-row">
-        <label class="setting-label">Twitch Client Secret</label>
-        <input type="password" id="twitch-secret" class="setting-input" placeholder="For auto token refresh">
-        <button id="save-twitch-secret" class="btn" style="width:100%; margin-top:4px;">Save & Refresh Token</button>
-      </div>
-      <div class="setting-row">
         <label class="setting-label">Worker Auth Token</label>
         <input type="password" id="worker-token" class="setting-input" placeholder="Worker bearer token">
         <button id="save-worker-token" class="btn" style="width:100%; margin-top:4px;">Save Token</button>
@@ -605,13 +578,11 @@
   </div>
 </div>
 
-<!-- Image Modal -->
 <div id="image-modal" class="modal">
   <button class="modal-close" id="image-modal-close">&times;</button>
   <img id="enlarged-img">
 </div>
 
-<!-- Gemini Modal -->
 <div id="gemini-modal" class="modal">
   <div class="modal-card">
     <h3 class="accent-title">✨ AI Recommendation</h3>
@@ -620,7 +591,6 @@
   </div>
 </div>
 
-<!-- PIN Modal -->
 <div id="pin-modal" class="modal">
   <div class="modal-card">
     <h3>Enter PIN to Remove</h3>
@@ -671,7 +641,6 @@ const App = {
     workerUrl: 'https://autumn-base-826c.rapahannock.workers.dev/',
     workerToken: localStorage.getItem('workerToken') || 'oK2ZrKag8*R7Wr*UgMBrFdcD6',
     geminiKey: localStorage.getItem('geminiKey') || '',
-    twitchSecret: localStorage.getItem('twitchSecret') || '',
     activeCard: null,
     viewMode: 'grid',
     youtubeQuotaExceeded: false,
@@ -716,10 +685,6 @@ const App = {
       const k = document.getElementById('gemini-key').value;
       if (k) { localStorage.setItem('geminiKey', k); this.state.geminiKey = k; Gemini.apiKey = k; this.toast('Gemini key saved', 'success'); }
     };
-    document.getElementById('save-twitch-secret').onclick = () => {
-      const k = document.getElementById('twitch-secret').value;
-      if (k) { localStorage.setItem('twitchSecret', k); this.state.twitchSecret = k; this.toast('Twitch secret saved', 'success'); this.refreshTwitchToken(); }
-    };
     document.getElementById('save-worker-token').onclick = () => {
       const k = document.getElementById('worker-token').value;
       if (k) { localStorage.setItem('workerToken', k); this.state.workerToken = k; this.toast('Worker token saved', 'success'); }
@@ -735,7 +700,6 @@ const App = {
     document.getElementById('gemini-close').onclick = () => document.getElementById('gemini-modal').classList.remove('visible');
     document.getElementById('gemini-modal').onclick = (e) => { if (e.target.id === 'gemini-modal') e.target.classList.remove('visible'); };
 
-    // PIN modal
     document.getElementById('pin-cancel').onclick = () => { this.state.pendingRemove = null; document.getElementById('pin-modal').classList.remove('visible'); };
     document.getElementById('pin-confirm').onclick = () => this.confirmRemove();
     document.getElementById('pin-input').onkeydown = (e) => { if (e.key === 'Enter') this.confirmRemove(); };
@@ -764,7 +728,7 @@ const App = {
     } catch (e) {
       this.toast(`Backend error: ${e.message}`, 'error');
       if (this.state.streamers.length === 0) {
-        this.state.streamers = [{ name: 'xqc', platform: 'twitch' }, { name: 'trainwreckstv', platform: 'kick' }];
+        this.state.streamers = [{ name: 'xqc', platform: 'kick' }, { name: 'trainwreckstv', platform: 'kick' }];
         this.fetchData('all');
       }
     }
@@ -842,6 +806,7 @@ const App = {
             this.fetchTwitchApi(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(s.name)}&t=${t}`)
           ]);
         } catch (e) {
+          // AUTO-REFRESH: if 401, ask the worker to get a new token, then retry
           if (e.message === '401' && !this.state.twitchRefreshing) {
             const refreshed = await this.refreshTwitchToken();
             if (refreshed) {
@@ -851,7 +816,7 @@ const App = {
               ]);
             } else {
               this.state.twitchOk = false;
-              return { isLive: false, title: 'Token Expired — Add Secret in Settings', url, isError: true };
+              return { isLive: false, title: 'Token Refresh Failed', url, isError: true };
             }
           } else {
             this.state.twitchOk = false;
@@ -936,42 +901,29 @@ const App = {
     return r.json();
   },
 
+  // === KEY CHANGE: Token refresh now calls the WORKER, not Twitch directly ===
   async refreshTwitchToken() {
     if (this.state.twitchRefreshing) return false;
     this.state.twitchRefreshing = true;
-    const clientId = this.state.keys?.twitchClientId;
-    const clientSecret = this.state.twitchSecret || localStorage.getItem('twitchSecret');
-
-    if (!clientId || !clientSecret) {
-      this.toast('Need Twitch Client Secret to refresh. Add in Settings.', 'warning');
-      this.state.twitchRefreshing = false;
-      return false;
-    }
-
     try {
-      this.toast('Refreshing Twitch token...', 'info');
-      const r = await fetch('https://id.twitch.tv/oauth2/token', {
+      this.toast('Refreshing Twitch token via worker...', 'info');
+      const r = await fetch(this.state.workerUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials`
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.state.workerToken}`
+        },
+        body: JSON.stringify({ action: 'refreshTwitchToken' })
       });
       const data = await r.json();
-      if (data.access_token) {
-        this.state.keys.twitchAccessToken = data.access_token;
+      if (data.twitchAccessToken) {
+        this.state.keys.twitchAccessToken = data.twitchAccessToken;
         this.state.twitchOk = true;
         this.toast('Twitch token refreshed!', 'success');
-        // Try persisting to worker
-        try {
-          await fetch(this.state.workerUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.state.workerToken}` },
-            body: JSON.stringify({ action: 'updateConfig', config: { twitchAccessToken: data.access_token } })
-          });
-        } catch (e) { /* Worker may not support this */ }
         this.state.twitchRefreshing = false;
         return true;
       }
-      throw new Error('No token in response');
+      throw new Error(data.error || 'No token returned');
     } catch (e) {
       this.toast('Token refresh failed: ' + e.message, 'error');
       this.state.twitchOk = false;
@@ -985,8 +937,6 @@ const App = {
     if (refreshed) {
       streamCache.clear();
       this.fetchData('twitch', true);
-    } else if (!this.state.twitchSecret) {
-      this.toast('Add your Twitch Client Secret in Settings first', 'warning');
     }
   },
 
@@ -1010,7 +960,6 @@ const App = {
       const isErr = s.isError || s.title.includes('Error') || s.title.includes('Limit') || s.title.includes('Denied') || s.title.includes('Expired');
       const thumbSafe = (s.thumb || '').replace(/'/g, '%27');
       const urlSafe = (s.url || '#').replace(/'/g, '%27');
-      const viewerText = s.isLoading ? '...' : (s.viewers ? Utils.formatNumber(s.viewers) : '');
 
       return `
         <div class="streamer ${s.platform} ${s.isLive ? 'live' : 'offline'} ${isListView ? 'list-item' : ''} ${isErr ? 'error-key' : ''}"
@@ -1178,10 +1127,6 @@ const App = {
 };
 
 App.init();
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-});
 </script>
 </body>
 </html>
