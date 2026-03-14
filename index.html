@@ -6,10 +6,9 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>StreamMonitor v8.2.1</title>
+  <title>StreamMonitor v8.2.2</title>
   <meta name="theme-color" content="#08080a">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -777,19 +776,31 @@ const App = {
 
     try {
       if (s.platform === 'kick') {
-        // --- CRITICAL FIX: Using Cloudflare Worker for Kick Proxy ---
-        const proxyUrl = `${this.state.workerUrl}?proxyTarget=${encodeURIComponent(`https://kick.com/api/v1/channels/${s.name}`)}`;
-        let d = null;
+        // MULTI-PROXY CASCADE FOR KICK (Including Worker + Public Fallbacks)
+        const targetUrl = `https://kick.com/api/v1/channels/${s.name}`;
+        const proxies = [
+          `${this.state.workerUrl}?proxyTarget=${encodeURIComponent(targetUrl)}`,
+          `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
+          `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+        ];
         
-        try {
-            d = await this.fetchWithTimeout(proxyUrl, {
-                headers: { 'Authorization': `Bearer ${this.state.workerToken}` }
-            }, 8000);
-        } catch (e) {
-            throw new Error(`Worker Proxy Failed: ${e.message}`);
+        let d = null;
+        for (const proxyUrl of proxies) {
+          try {
+            const isWorker = proxyUrl.includes('workers.dev');
+            const headers = isWorker ? { 'Authorization': `Bearer ${this.state.workerToken}` } : {};
+            const r = await this.fetchWithTimeout(proxyUrl, { headers }, 6000);
+            
+            if (proxyUrl.includes('allorigins')) {
+                if (r.contents) { d = JSON.parse(r.contents); break; }
+            } else {
+                if (r && r.livestream !== undefined) { d = r; break; }
+            }
+          } catch (e) { /* Try next proxy silently */ }
         }
         
-        if (!d || d.error) throw new Error('Not Found / Blocked');
+        // If all proxies fail, gracefully return the Cloudflare Block status
+        if (!d) throw new Error('403_CLOUDFLARE_BLOCK');
         
         const result = d.livestream
           ? { isLive: true, title: d.livestream.session_title, viewers: d.livestream.viewer_count, category: d.livestream.categories?.[0]?.name || '', thumb: d.livestream.thumbnail?.url, url }
@@ -799,7 +810,7 @@ const App = {
       }
 
       if (s.platform === 'twitch') {
-        if (!this.state.keys?.twitchClientId) return { isLive: false, title: 'Config Error', url, isError: true };
+        if (!this.state.keys?.twitchClientId) return { isLive: false, title: 'Config Error', url };
         const t = Date.now();
         let streamRes, userRes;
         try {
@@ -808,6 +819,7 @@ const App = {
             this.fetchTwitchApi(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(s.name)}&t=${t}`)
           ]);
         } catch (e) {
+          if (e.message.includes('400_BAD_REQUEST')) throw e; // Pass 400 down to catch block
           if (e.message === '401' && !this.state.twitchRefreshing) {
             const refreshed = await this.refreshTwitchToken();
             if (refreshed) {
@@ -842,8 +854,8 @@ const App = {
       }
 
       if (s.platform === 'youtube') {
-        if (this.state.youtubeQuotaExceeded) return { isLive: false, title: 'Daily Limit Reached', url, viewers: 0, isError: true };
-        if (!this.state.keys?.youtubeApiKey) return { isLive: false, title: 'YouTube Key Missing', url, isError: true };
+        if (this.state.youtubeQuotaExceeded) return { isLive: false, title: 'Daily Limit Reached', url, viewers: 0 };
+        if (!this.state.keys?.youtubeApiKey) return { isLive: false, title: 'YouTube Key Missing', url };
         const apiKey = this.state.keys.youtubeApiKey;
         const cb = force ? `&_=${Date.now()}` : '';
         const searchRes = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(s.name)}&type=channel&key=${apiKey}${cb}`, {}, 5000);
@@ -874,10 +886,24 @@ const App = {
       }
       return { isLive: false, title: 'Offline', url };
     } catch (e) {
-      const is403 = e.message?.includes('403');
-      if (is403 && s.platform === 'youtube') { this.state.youtubeQuotaExceeded = true; this.state.youtubeOk = false; return { isLive: false, title: 'Daily Limit Reached', url, isError: true }; }
-      if (s.platform === 'kick') return { isLive: false, title: `Worker Proxy Failed`, url, isError: true };
-      return { isLive: false, title: e.message?.includes('401') ? 'Token Expired' : 'Connection Failed', url, isError: true };
+      const msg = String(e.message);
+      
+      // Handle the CF Block specifically for the UI gracefully
+      if (msg.includes('403_CLOUDFLARE_BLOCK')) {
+          return { isLive: false, title: 'Cloudflare Protected (Click to view)', url, isError: true };
+      }
+      
+      if (msg.includes('400_BAD_REQUEST') && s.platform === 'twitch') {
+          return { isLive: false, title: 'Invalid/Banned Username', url, isError: true };
+      }
+
+      const is403 = msg.includes('403');
+      if (is403 && s.platform === 'youtube') { 
+          this.state.youtubeQuotaExceeded = true; 
+          this.state.youtubeOk = false; 
+          return { isLive: false, title: 'Daily Limit Reached', url }; 
+      }
+      return { isLive: false, title: msg.includes('401') ? 'Token Expired' : 'Connection Failed', url, isError: true };
     }
   },
 
@@ -898,6 +924,7 @@ const App = {
       'Authorization': `Bearer ${this.state.keys.twitchAccessToken}`
     };
     const r = await fetch(url, { headers, cache: 'no-store' });
+    if (r.status === 400) throw new Error('400_BAD_REQUEST');
     if (!r.ok) throw new Error(String(r.status));
     return r.json();
   },
@@ -957,7 +984,7 @@ const App = {
     const isListView = this.state.viewMode === 'list';
 
     this.els.grid.innerHTML = list.map(s => {
-      const isErr = s.isError || s.title.includes('Error') || s.title.includes('Limit') || s.title.includes('Denied') || s.title.includes('Expired');
+      const isErr = s.isError || s.title.includes('Error') || s.title.includes('Limit') || s.title.includes('Denied') || s.title.includes('Expired') || s.title.includes('Protected');
       const thumbSafe = (s.thumb || '').replace(/'/g, '%27');
       const urlSafe = (s.url || '#').replace(/'/g, '%27');
 
