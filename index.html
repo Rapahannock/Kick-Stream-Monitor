@@ -6,59 +6,49 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>Kick & Twitch Monitor v8.2</title>
-  <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
-  <meta name="theme-color" content="#0a0a0a">
+  <title>StreamMonitor v8.2.1</title>
+  <meta name="theme-color" content="#08080a">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #050505;
+      --bg-primary: #08080a;
       --bg-card: #111114;
-      --bg-glass: rgba(14, 14, 18, 0.7);
-      --bg-glass-hover: rgba(26, 26, 32, 0.85);
-      --bg-elevated: rgba(24, 24, 28, 0.95);
+      --bg-glass: rgba(14, 14, 18, 0.8);
+      --bg-glass-hover: rgba(26, 26, 32, 0.92);
+      --bg-elevated: #18181c;
       --text-primary: #ececf1;
-      --text-secondary: #a1a1aa;
+      --text-secondary: #8e8ea0;
       --text-dim: #52525b;
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-mid: rgba(255, 255, 255, 0.15);
-      --border-hover: rgba(255, 255, 255, 0.25);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-mid: rgba(255, 255, 255, 0.1);
+      --border-hover: rgba(255, 255, 255, 0.18);
       --accent: #06b6d4;
       --accent-dim: rgba(6, 182, 212, 0.15);
       --live: #22c55e;
-      --live-glow: rgba(34, 197, 94, 0.3);
+      --live-glow: rgba(34, 197, 94, 0.25);
       --twitch: #9146ff;
-      --twitch-glow: rgba(145, 70, 255, 0.3);
+      --twitch-glow: rgba(145, 70, 255, 0.25);
       --youtube: #ff0033;
-      --youtube-glow: rgba(255, 0, 51, 0.3);
+      --youtube-glow: rgba(255, 0, 51, 0.2);
       --kick: #53fc18;
-      --kick-glow: rgba(83, 252, 24, 0.3);
+      --kick-glow: rgba(83, 252, 24, 0.2);
       --offline: #3f3f46;
       --danger: #ef4444;
       --warning: #eab308;
-      --radius: 16px;
-      --radius-sm: 10px;
-      --radius-xs: 8px;
-      --shadow-card: 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
-      --shadow-hover: 0 24px 48px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.1);
-      --shadow-modal: 0 32px 96px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);
-      --transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      --transition-fast: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      --radius: 14px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
+      --shadow-card: 0 4px 12px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-hover: 0 20px 40px rgba(0,0,0,0.6), 0 8px 16px rgba(0,0,0,0.4);
+      --shadow-modal: 0 24px 80px rgba(0,0,0,0.8);
+      --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --transition-fast: 0.15s ease;
     }
-
-    /* Custom Scrollbar for modern feel */
-    ::-webkit-scrollbar { width: 12px; height: 12px; }
-    ::-webkit-scrollbar-track { background: var(--bg-primary); }
-    ::-webkit-scrollbar-thumb { 
-      background: var(--text-dim); 
-      border-radius: 10px; 
-      border: 3px solid var(--bg-primary); 
-    }
-    ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -70,74 +60,25 @@
       padding: 24px 24px 110px 24px;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      overflow-x: hidden;
-    }
-
-    /* Animated Living Background */
-    @keyframes ambientDrift {
-      0% { background-position: 0% 0%; }
-      50% { background-position: 100% 100%; }
-      100% { background-position: 0% 0%; }
     }
 
     body::before {
       content: '';
       position: fixed;
-      inset: -50%;
-      width: 200%;
-      height: 200%;
-      background:
-        radial-gradient(circle at 30% 40%, rgba(6, 182, 212, 0.05) 0%, transparent 40%),
-        radial-gradient(circle at 70% 60%, rgba(145, 70, 255, 0.04) 0%, transparent 40%),
-        radial-gradient(circle at 40% 80%, rgba(83, 252, 24, 0.03) 0%, transparent 40%);
-      background-size: 100% 100%;
-      animation: ambientDrift 40s ease-in-out infinite;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* Subtle noise texture overlay */
-    body::after {
-      content: '';
-      position: fixed;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(6, 182, 212, 0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(145, 70, 255, 0.03) 0%, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
 
     #app-container { max-width: 2400px; margin: 0 auto; position: relative; z-index: 1; }
 
-    /* --- STATUS BAR --- */
-    .status-bar {
-      display: flex; align-items: center; gap: 12px;
-      padding: 8px 0 24px;
-      font-size: 0.75rem; color: var(--text-dim);
-    }
-    .status-chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,0.03); 
-      border: 1px solid var(--border-subtle);
-      padding: 6px 12px; border-radius: 8px; 
-      font-weight: 600;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      backdrop-filter: blur(8px);
-    }
-    .status-chip.live-count { 
-      color: var(--live); 
-      border-color: rgba(34,197,94,0.2); 
-      background: rgba(34,197,94,0.05);
-    }
-    .api-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .api-dot.ok { background: var(--live); box-shadow: 0 0 8px var(--live); }
-    .api-dot.err { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
-    .api-dot.unknown { background: var(--text-dim); }
-
-    /* --- GRID & LIST LAYOUTS --- */
     #streamers {
       display: grid;
-      gap: 20px;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     }
     #streamers.list-view {
       grid-template-columns: 1fr;
@@ -145,7 +86,6 @@
       margin: 0 auto;
     }
 
-    /* POSTER CARD STYLE */
     .streamer {
       position: relative;
       aspect-ratio: 16 / 9;
@@ -158,90 +98,74 @@
       box-shadow: var(--shadow-card);
     }
 
-    /* Reflective Glass Sheen Effect */
-    .streamer::after {
-      content: '';
-      position: absolute;
-      top: 0; left: -100%; width: 50%; height: 100%;
-      background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.08), transparent);
-      transform: skewX(-20deg);
-      transition: none;
-      pointer-events: none;
-      z-index: 30;
-    }
-    .streamer:hover::after {
-      left: 200%;
-      transition: left 0.8s ease-in-out;
-    }
-
     .streamer:hover {
-      transform: scale(1.02) translateY(-6px);
+      transform: scale(1.03) translateY(-4px);
       box-shadow: var(--shadow-hover);
       border-color: var(--border-hover);
       z-index: 100;
     }
 
-    .streamer.live { border-color: rgba(34, 197, 94, 0.2); }
-    .streamer.live:hover { border-color: rgba(34, 197, 94, 0.4); }
-    .streamer.live.kick { border-color: rgba(83, 252, 24, 0.15); }
-    .streamer.live.kick:hover { border-color: rgba(83, 252, 24, 0.4); box-shadow: var(--shadow-hover), 0 10px 40px var(--kick-glow); }
-    .streamer.live.twitch { border-color: rgba(145, 70, 255, 0.15); }
-    .streamer.live.twitch:hover { border-color: rgba(145, 70, 255, 0.4); box-shadow: var(--shadow-hover), 0 10px 40px var(--twitch-glow); }
-    .streamer.live.youtube { border-color: rgba(255, 0, 51, 0.15); }
-    .streamer.live.youtube:hover { border-color: rgba(255, 0, 51, 0.4); box-shadow: var(--shadow-hover), 0 10px 40px var(--youtube-glow); }
+    .streamer.live { border-color: rgba(34, 197, 94, 0.15); }
+    .streamer.live:hover { border-color: rgba(34, 197, 94, 0.35); }
+    .streamer.live.kick { border-color: rgba(83, 252, 24, 0.12); }
+    .streamer.live.kick:hover { border-color: rgba(83, 252, 24, 0.3); box-shadow: var(--shadow-hover), 0 0 40px var(--kick-glow); }
+    .streamer.live.twitch { border-color: rgba(145, 70, 255, 0.12); }
+    .streamer.live.twitch:hover { border-color: rgba(145, 70, 255, 0.3); box-shadow: var(--shadow-hover), 0 0 40px var(--twitch-glow); }
+    .streamer.live.youtube { border-color: rgba(255, 0, 51, 0.12); }
+    .streamer.live.youtube:hover { border-color: rgba(255, 0, 51, 0.3); box-shadow: var(--shadow-hover), 0 0 40px var(--youtube-glow); }
 
     .streamer.list-item {
       aspect-ratio: auto;
-      height: 160px;
+      height: 140px;
       display: flex;
       flex-direction: row;
     }
-    .streamer.list-item:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
-    .streamer.list-item .thumbnail-container { width: 280px; min-width: 280px; height: 100%; border-radius: 0; }
+    .streamer.list-item:hover { transform: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .streamer.list-item .thumbnail-container { width: 250px; min-width: 250px; height: 100%; border-radius: 0; }
     .streamer.list-item .name-tag { display: none; }
     .streamer.list-item .details-overlay {
       position: relative; opacity: 1; background: transparent; backdrop-filter: none;
-      pointer-events: auto; inset: auto; width: 100%; height: 100%; padding: 20px 28px;
+      pointer-events: auto; inset: auto; width: 100%; height: 100%; padding: 16px 24px;
     }
 
-    .thumbnail-container { position: relative; width: 100%; height: 100%; overflow: hidden;}
+    .thumbnail-container { position: relative; width: 100%; height: 100%; }
 
     .streamer-img {
       width: 100%; height: 100%; object-fit: cover;
-      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s;
+      transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
-    .streamer:hover .streamer-img { transform: scale(1.08); filter: brightness(0.7); }
-    .streamer.list-item:hover .streamer-img { transform: scale(1.05); filter: none; }
+    .streamer:hover .streamer-img { transform: scale(1.05); }
+    .streamer.list-item:hover .streamer-img { transform: none; }
 
     .streamer::before {
       content: '';
       position: absolute; left: 0; top: 0; bottom: 0;
-      width: 4px; z-index: 20;
+      width: 3px; z-index: 20;
       transition: box-shadow var(--transition), width var(--transition);
     }
     .streamer.kick::before { background: var(--kick); }
     .streamer.twitch::before { background: var(--twitch); }
     .streamer.youtube::before { background: var(--youtube); }
-    .streamer.offline::before { background: var(--offline); opacity: 0.5; }
-    .streamer:hover::before { width: 6px; }
-    .streamer.live.kick:hover::before { box-shadow: 4px 0 24px var(--kick-glow); }
-    .streamer.live.twitch:hover::before { box-shadow: 4px 0 24px var(--twitch-glow); }
-    .streamer.live.youtube:hover::before { box-shadow: 4px 0 24px var(--youtube-glow); }
+    .streamer.offline::before { background: var(--offline); opacity: 0.4; }
+    .streamer:hover::before { width: 4px; }
+    .streamer.live.kick:hover::before { box-shadow: 2px 0 20px var(--kick-glow); }
+    .streamer.live.twitch:hover::before { box-shadow: 2px 0 20px var(--twitch-glow); }
+    .streamer.live.youtube:hover::before { box-shadow: 2px 0 20px var(--youtube-glow); }
 
     .name-tag {
       position: absolute; bottom: 0; left: 0; right: 0;
-      padding: 50px 16px 16px 20px;
-      background: linear-gradient(to top, rgba(0,0,0,0.95) 10%, rgba(0,0,0,0.6) 60%, transparent);
-      display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+      padding: 40px 14px 12px 16px;
+      background: linear-gradient(to top, rgba(0,0,0,0.92) 20%, rgba(0,0,0,0.5) 60%, transparent);
+      display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
       z-index: 15;
-      transition: opacity var(--transition-fast), transform var(--transition-fast);
+      transition: opacity 0.25s ease, transform 0.25s ease;
     }
-    .streamer:hover .name-tag { opacity: 0; transform: translateY(12px); pointer-events: none; }
+    .streamer:hover .name-tag { opacity: 0; transform: translateY(8px); pointer-events: none; }
 
     .streamer-name {
-      font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em;
+      font-weight: 700; font-size: 1rem; letter-spacing: -0.01em;
       color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
     }
 
     .marquee-wrapper {
@@ -251,47 +175,47 @@
     }
     .stream-title-marquee {
       display: inline-block; white-space: nowrap;
-      font-size: 0.85rem; color: rgba(255,255,255,0.75); font-weight: 500;
-      animation: marquee 15s linear infinite; padding-left: 100%;
+      font-size: 0.78rem; color: rgba(255,255,255,0.65); font-weight: 500;
+      animation: marquee 18s linear infinite; padding-left: 100%;
     }
     @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
     .live-indicator {
-      position: absolute; top: 12px; right: 12px;
+      position: absolute; top: 10px; right: 10px;
       display: flex; align-items: center; gap: 6px;
-      background: rgba(0,0,0,0.6); backdrop-filter: blur(16px) saturate(180%);
-      color: #fff; border: 1px solid rgba(255,255,255,0.1);
-      padding: 6px 12px 6px 10px; border-radius: 8px;
-      font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em;
-      z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(12px) saturate(150%);
+      color: #fff; border: 1px solid rgba(255,255,255,0.08);
+      padding: 4px 10px 4px 8px; border-radius: 6px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em;
+      z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
     .live-dot {
-      width: 8px; height: 8px; background: #ef4444; border-radius: 50%;
-      box-shadow: 0 0 10px #ef4444;
+      width: 7px; height: 7px; background: #ef4444; border-radius: 50%;
+      box-shadow: 0 0 8px #ef4444;
       animation: livePulse 1.5s ease-in-out infinite;
     }
     @keyframes livePulse {
-      0%, 100% { opacity: 1; box-shadow: 0 0 8px #ef4444; }
-      50% { opacity: 0.4; box-shadow: 0 0 2px #ef4444; }
+      0%, 100% { opacity: 1; box-shadow: 0 0 6px #ef4444; }
+      50% { opacity: 0.5; box-shadow: 0 0 2px #ef4444; }
     }
 
     .viewer-badge {
-      position: absolute; top: 12px; left: 16px;
-      background: rgba(0,0,0,0.6); backdrop-filter: blur(16px) saturate(180%);
-      color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);
-      padding: 4px 10px; border-radius: 8px;
-      font-size: 0.75rem; font-weight: 700;
-      z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      position: absolute; top: 10px; left: 14px;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(12px);
+      color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.06);
+      padding: 3px 8px; border-radius: 5px;
+      font-size: 0.7rem; font-weight: 600;
+      z-index: 20;
     }
     .viewer-badge.has-viewers { color: #fff; }
 
     .details-overlay {
       position: absolute; inset: 0;
-      padding: 20px;
-      background: rgba(12, 12, 16, 0.85);
-      backdrop-filter: blur(12px) saturate(150%);
+      padding: 16px;
+      background: rgba(8, 8, 12, 0.88);
+      backdrop-filter: blur(8px) saturate(120%);
       display: flex; flex-direction: column;
-      opacity: 0; transition: opacity var(--transition-fast);
+      opacity: 0; transition: opacity 0.2s ease;
       z-index: 25; pointer-events: none;
     }
     .streamer:hover .details-overlay,
@@ -299,270 +223,260 @@
       opacity: 1; pointer-events: auto;
     }
 
-    .overlay-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .overlay-name { font-weight: 800; font-size: 1.25rem; color: #fff; letter-spacing: -0.02em; }
+    .overlay-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .overlay-name { font-weight: 800; font-size: 1.15rem; color: #fff; letter-spacing: -0.02em; }
     .overlay-platform {
-      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-      padding: 4px 10px; border-radius: 6px;
-      background: rgba(255,255,255,0.08); color: var(--text-primary);
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 4px;
+      background: rgba(255,255,255,0.06); color: var(--text-secondary);
     }
-    .streamer.kick .overlay-platform { color: var(--kick); background: rgba(83,252,24,0.15); border: 1px solid rgba(83,252,24,0.2); }
-    .streamer.twitch .overlay-platform { color: var(--twitch); background: rgba(145,70,255,0.15); border: 1px solid rgba(145,70,255,0.2); }
-    .streamer.youtube .overlay-platform { color: var(--youtube); background: rgba(255,0,51,0.15); border: 1px solid rgba(255,0,51,0.2); }
+    .streamer.kick .overlay-platform { color: var(--kick); background: rgba(83,252,24,0.1); }
+    .streamer.twitch .overlay-platform { color: var(--twitch); background: rgba(145,70,255,0.1); }
+    .streamer.youtube .overlay-platform { color: var(--youtube); background: rgba(255,0,51,0.1); }
 
     .overlay-title {
-      font-size: 0.95rem; color: rgba(255,255,255,0.9); margin-bottom: 6px;
-      line-height: 1.4; font-weight: 500;
+      font-size: 0.88rem; color: rgba(255,255,255,0.85); margin-bottom: 4px;
+      line-height: 1.35; font-weight: 500;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
-    .overlay-category { font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-bottom: auto; }
+    .overlay-category { font-size: 0.78rem; color: var(--accent); font-weight: 600; margin-bottom: auto; }
     .overlay-stats {
-      font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;
-      display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+      font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
     }
-    .overlay-stats .dot { width: 4px; height: 4px; background: var(--text-dim); border-radius: 50%; }
+    .overlay-stats .dot { width: 3px; height: 3px; background: var(--text-dim); border-radius: 50%; }
 
-    .overlay-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .overlay-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 
-    /* Polished Icon Buttons */
     .icon-action {
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: var(--radius-sm); height: 40px; color: var(--text-secondary);
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-xs); height: 36px; color: var(--text-secondary);
       cursor: pointer; display: grid; place-items: center;
-      transition: all var(--transition-fast); outline: none;
+      transition: all 0.15s ease; font-size: 15px; outline: none;
     }
-    .icon-action svg { width: 18px; height: 18px; stroke-width: 2; fill: none; stroke: currentColor; transition: transform 0.2s;}
-    
-    .icon-action:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
-    .icon-action:hover svg { transform: scale(1.1); }
-    
+    .icon-action:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-1px); }
     .icon-action.primary-action {
-      background: var(--accent); color: #000; border-color: transparent; box-shadow: 0 4px 12px var(--accent-dim);
+      background: var(--accent); color: #000; border-color: transparent; font-weight: 700;
     }
-    .icon-action.primary-action:hover { filter: brightness(1.15); box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4); }
-    .icon-action.danger:hover { background: rgba(239,68,68,0.2); color: var(--danger); border-color: rgba(239,68,68,0.3); }
+    .icon-action.primary-action:hover { filter: brightness(1.15); }
+    .icon-action.danger:hover { background: rgba(239,68,68,0.2); color: var(--danger); }
 
-    .streamer.error-key { border-color: rgba(234, 179, 8, 0.4); }
+    .streamer.error-key { border-color: rgba(234, 179, 8, 0.3); }
     .streamer.error-key .streamer-name { color: var(--warning); }
     .streamer.error-key::after {
-      content: '⚠'; position: absolute; top: 12px; right: 12px;
-      font-size: 1.4rem; z-index: 20; color: var(--warning);
-      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      content: '⚠'; position: absolute; top: 10px; right: 10px;
+      font-size: 1.2rem; z-index: 20;
     }
 
-    /* Premium Skeleton Loader */
     .skeleton-card {
       aspect-ratio: 16/9; border-radius: var(--radius);
       background: var(--bg-card); border: 1px solid var(--border-subtle);
       overflow: hidden; position: relative;
     }
     .skeleton-card::after {
-      content: ''; position: absolute; inset: -100%;
-      background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.05) 50%, transparent 75%);
-      animation: shimmer 2s infinite linear;
-      transform: skewX(-20deg);
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.03) 50%, transparent 75%);
+      animation: shimmer 1.5s ease-in-out infinite;
     }
-    @keyframes shimmer { 0% { left: -100%; } 100% { left: 200%; } }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
-    /* Floating Bar - Aero Glass */
     .floating-bar {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
       z-index: 1000;
-      background: rgba(14, 14, 18, 0.85);
-      backdrop-filter: blur(32px) saturate(200%);
-      -webkit-backdrop-filter: blur(32px) saturate(200%);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 20px;
-      padding: 8px 12px;
-      display: flex; align-items: center; gap: 8px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+      background: rgba(12, 12, 16, 0.75);
+      backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 6px 10px;
+      display: flex; align-items: center; gap: 6px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
       width: max-content; max-width: 96vw;
-      transition: transform 0.3s;
     }
     .app-logo {
-      font-weight: 900; font-size: 0.95rem; color: var(--text-primary);
-      padding: 0 12px; white-space: nowrap; letter-spacing: -0.02em;
+      font-weight: 800; font-size: 0.85rem; color: var(--text-primary);
+      padding: 0 8px; white-space: nowrap; letter-spacing: -0.02em;
     }
-    .bar-divider { width: 1px; height: 24px; background: var(--border-mid); flex-shrink: 0; margin: 0 4px;}
+    .bar-divider { width: 1px; height: 20px; background: var(--border-subtle); flex-shrink: 0; }
     .bar-btn {
-      background: transparent; border: 1px solid transparent;
-      color: var(--text-secondary); padding: 8px 14px;
+      background: rgba(255,255,255,0.04); border: 1px solid transparent;
+      color: var(--text-secondary); padding: 7px 12px;
       border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
-      transition: all 0.2s ease; font-size: 0.85rem; font-family: inherit;
-      white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
+      transition: all 0.15s ease; font-size: 0.8rem; font-family: inherit;
+      white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;
       outline: none;
     }
     .bar-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
-    .bar-btn.active { background: rgba(255,255,255,0.12); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1); }
-    .bar-btn.accent { background: linear-gradient(135deg, var(--accent), #3b82f6); color: #000; font-weight: 700; border: none;}
-    .bar-btn.accent:hover { filter: brightness(1.15); box-shadow: 0 4px 16px rgba(6, 182, 212, 0.4); }
+    .bar-btn.active { background: var(--text-primary); color: #000; border-color: transparent; }
+    .bar-btn.accent { background: linear-gradient(135deg, var(--accent), #3b82f6); color: #000; font-weight: 700; }
+    .bar-btn.accent:hover { filter: brightness(1.1); }
     .bar-btn svg { flex-shrink: 0; }
-    
-    .bar-btn.twitch-refresh { color: #b78bff; }
-    .bar-btn.twitch-refresh:hover { background: rgba(145,70,255,0.15); color: #d4bcff; }
-    .bar-btn.yt-refresh { color: #ff6b81; }
-    .bar-btn.yt-refresh:hover { background: rgba(255,0,51,0.15); color: #ff99a8; }
+    .bar-btn.twitch-refresh { background: rgba(145,70,255,0.12); color: var(--twitch); border-color: rgba(145,70,255,0.15); }
+    .bar-btn.twitch-refresh:hover { background: rgba(145,70,255,0.2); }
+    .bar-btn.yt-refresh { background: rgba(255,0,51,0.08); color: var(--youtube); border-color: rgba(255,0,51,0.1); }
+    .bar-btn.yt-refresh:hover { background: rgba(255,0,51,0.15); }
 
-    /* Modals & Overlays */
+    .api-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+    .api-dot.ok { background: var(--live); box-shadow: 0 0 6px var(--live); }
+    .api-dot.err { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    .api-dot.unknown { background: var(--text-dim); }
+
     .settings-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(8px); z-index: 1100;
-      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px); z-index: 1100;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
     }
     .settings-overlay.visible { opacity: 1; pointer-events: auto; }
 
     .settings-panel {
-      position: fixed; top: 0; right: 0; bottom: 0; width: 400px; max-width: 100vw;
-      background: rgba(12, 12, 16, 0.95); backdrop-filter: blur(40px);
-      border-left: 1px solid var(--border-mid);
-      transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 1200; box-shadow: -20px 0 80px rgba(0,0,0,0.8);
+      position: fixed; top: 0; right: 0; bottom: 0; width: 380px; max-width: 100vw;
+      background: #0c0c0e; border-left: 1px solid var(--border-subtle);
+      transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      z-index: 1200; box-shadow: -12px 0 60px rgba(0,0,0,0.6);
       display: flex; flex-direction: column;
     }
     .settings-panel.open { transform: translateX(0); }
 
     .settings-header {
-      padding: 28px 28px 20px; border-bottom: 1px solid var(--border-subtle);
+      padding: 24px 24px 16px; border-bottom: 1px solid var(--border-subtle);
       display: flex; align-items: center; justify-content: space-between;
     }
-    .settings-header h2 { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
+    .settings-header h2 { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
     .settings-close {
-      background: rgba(255,255,255,0.08); border: none; color: var(--text-secondary);
-      width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
-      font-size: 20px; display: grid; place-items: center; transition: 0.2s;
+      background: rgba(255,255,255,0.06); border: none; color: var(--text-secondary);
+      width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+      font-size: 18px; display: grid; place-items: center; transition: 0.15s;
     }
-    .settings-close:hover { background: rgba(255,255,255,0.15); color: #fff; transform: rotate(90deg); }
+    .settings-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-    .settings-body { padding: 24px 28px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 28px; }
+    .settings-body { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 24px; }
 
-    .setting-section { display: flex; flex-direction: column; gap: 14px; }
+    .setting-section { display: flex; flex-direction: column; gap: 12px; }
     .section-title {
-      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--text-dim); padding-bottom: 6px; border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-dim); padding-bottom: 4px;
     }
-    .setting-row { display: flex; flex-direction: column; gap: 8px; }
-    .setting-label { font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); }
+    .setting-row { display: flex; flex-direction: column; gap: 6px; }
+    .setting-label { font-weight: 600; font-size: 0.82rem; color: var(--text-secondary); }
 
     .setting-input {
-      background: rgba(0,0,0,0.3); color: var(--text-primary);
-      border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
-      padding: 12px 14px; font-size: 0.9rem; width: 100%;
-      font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s;
+      background: rgba(255,255,255,0.04); color: var(--text-primary);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+      padding: 10px 12px; font-size: 0.88rem; width: 100%;
+      font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s;
       outline: none;
     }
-    .setting-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); background: rgba(0,0,0,0.5);}
+    .setting-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
     .setting-input::placeholder { color: var(--text-dim); }
 
     select.setting-input {
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%23a1a1aa' fill='none' stroke-width='2'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 14px center;
-      padding-right: 36px; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%238e8ea0' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 32px; cursor: pointer;
     }
 
     .btn {
-      background: rgba(255,255,255,0.08); border: 1px solid var(--border-mid);
-      color: var(--text-primary); padding: 10px 16px;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle);
+      color: var(--text-secondary); padding: 9px 14px;
       border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
-      transition: 0.2s; font-size: 0.85rem; font-family: inherit; text-align: center;
+      transition: 0.15s; font-size: 0.82rem; font-family: inherit; text-align: center;
     }
-    .btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2);}
-    .btn.primary { background: var(--accent); color: #000; border-color: transparent; }
-    .btn.primary:hover { filter: brightness(1.15); box-shadow: 0 4px 16px var(--accent-dim); }
+    .btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .btn.primary { background: var(--accent); color: #000; border-color: transparent; font-weight: 700; }
+    .btn.primary:hover { filter: brightness(1.15); }
 
     .modal {
       position: fixed; inset: 0; z-index: 2000;
-      background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
       display: none; align-items: center; justify-content: center;
     }
-    .modal.visible { display: flex; animation: modalFade 0.3s ease; }
-    .modal.visible .modal-card { animation: modalPop 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    
-    @keyframes modalFade { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes modalPop { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .modal.visible { display: flex; animation: modalIn 0.2s ease; }
+    @keyframes modalIn { from { opacity: 0; } to { opacity: 1; } }
 
     .modal-close {
-      position: absolute; top: 20px; right: 20px;
-      background: rgba(255,255,255,0.1); border: none;
-      color: #fff; width: 44px; height: 44px; border-radius: 12px;
-      font-size: 24px; cursor: pointer; display: grid; place-items: center;
-      transition: 0.2s; backdrop-filter: blur(8px);
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.06);
+      color: var(--text-secondary); width: 36px; height: 36px; border-radius: 10px;
+      font-size: 20px; cursor: pointer; display: grid; place-items: center;
+      transition: 0.15s;
     }
-    .modal-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+    .modal-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
 
     #enlarged-img {
-      max-width: 90vw; max-height: 85vh;
+      max-width: 94vw; max-height: 88vh;
       border-radius: var(--radius); box-shadow: var(--shadow-modal);
-      border: 1px solid var(--border-mid); cursor: pointer;
-      transition: transform 0.3s ease;
+      border: 1px solid var(--border-subtle); cursor: pointer;
     }
-    #enlarged-img:hover { transform: scale(1.01); }
 
     .modal-card {
-      background: var(--bg-elevated); padding: 32px; border-radius: 20px;
-      border: 1px solid var(--border-mid); box-shadow: var(--shadow-modal);
-      max-width: 480px; width: 92%; color: var(--text-secondary);
-      position: relative; overflow: hidden;
-    }
-    /* Modal aero shine */
-    .modal-card::before {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      background: #111114; padding: 28px; border-radius: 18px;
+      border: 1px solid var(--border-subtle); box-shadow: var(--shadow-modal);
+      max-width: 460px; width: 92%; color: var(--text-secondary);
     }
     .modal-card h3 {
-      color: var(--text-primary); margin-bottom: 16px; font-size: 1.2rem;
-      font-weight: 800; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px;
+      color: var(--text-primary); margin-bottom: 12px; font-size: 1.1rem;
+      font-weight: 800; letter-spacing: -0.02em;
     }
     .modal-card .accent-title { color: var(--accent); }
-    #gemini-response { line-height: 1.7; font-size: 0.95rem; color: rgba(255,255,255,0.9); }
-    #gemini-response p { margin-bottom: 12px; }
+    #gemini-response { line-height: 1.6; font-size: 0.92rem; }
+    #gemini-response p { margin-bottom: 8px; }
 
     .pin-input {
-      background: rgba(0,0,0,0.4); color: var(--text-primary);
-      border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
-      padding: 14px; font-size: 1.2rem; width: 100%; font-family: inherit;
-      text-align: center; letter-spacing: 0.2em; outline: none; margin: 20px 0;
-      transition: border-color 0.2s;
+      background: rgba(255,255,255,0.04); color: var(--text-primary);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+      padding: 10px 14px; font-size: 1rem; width: 100%; font-family: inherit;
+      text-align: center; letter-spacing: 0.15em; outline: none; margin: 16px 0;
     }
-    .pin-input:focus { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.2); }
-    .pin-actions { display: flex; gap: 12px; }
+    .pin-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .pin-actions { display: flex; gap: 8px; }
     .pin-actions .btn { flex: 1; }
 
     #toast {
-      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px) scale(0.95);
-      background: rgba(24, 24, 28, 0.95); border: 1px solid var(--border-mid);
-      padding: 12px 24px; border-radius: 16px;
-      color: var(--text-primary); font-size: 0.9rem; font-weight: 600;
+      position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%) translateY(16px);
+      background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+      padding: 10px 20px; border-radius: 12px;
+      color: var(--text-primary); font-size: 0.85rem; font-weight: 600;
       opacity: 0; pointer-events: none;
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 1500; box-shadow: 0 12px 32px rgba(0,0,0,0.6);
-      white-space: nowrap; backdrop-filter: blur(12px);
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      z-index: 1500; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      white-space: nowrap;
     }
-    #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-    #toast.warning { border-color: var(--warning); color: var(--warning); background: rgba(234,179,8,0.1); }
-    #toast.error { border-color: var(--danger); color: #fff; background: rgba(239,68,68,0.9); }
-    #toast.success { border-color: var(--live); color: #fff; background: rgba(34,197,94,0.9); }
+    #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.warning { border-color: rgba(234,179,8,0.3); color: var(--warning); }
+    #toast.error { border-color: rgba(239,68,68,0.3); color: var(--danger); }
+    #toast.success { border-color: rgba(34,197,94,0.3); color: var(--live); }
+
+    .status-bar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 0 20px;
+      font-size: 0.75rem; color: var(--text-dim);
+    }
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);
+      padding: 4px 10px; border-radius: 6px; font-weight: 600;
+    }
+    .status-chip.live-count { color: var(--live); border-color: rgba(34,197,94,0.15); }
 
     @media (max-width: 768px) {
-      body { padding: 16px 12px 120px; }
-      #streamers { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      body { padding: 12px 10px 100px; }
+      #streamers { grid-template-columns: repeat(2, 1fr); gap: 8px; }
       #streamers.list-view { grid-template-columns: 1fr; }
-      .streamer:hover { transform: none; box-shadow: var(--shadow-card);}
+      .streamer:hover { transform: none; }
       .streamer:hover .name-tag { opacity: 1; transform: none; }
       .streamer:hover .details-overlay { opacity: 0; pointer-events: none; }
       .streamer.active .details-overlay { opacity: 1; pointer-events: auto; }
       .streamer.active .name-tag { opacity: 0; }
       .name-tag { padding: 24px 10px 8px 12px; }
-      .streamer-name { font-size: 0.85rem; }
-      .overlay-actions { grid-template-columns: repeat(4, 1fr); gap: 4px;}
-      .icon-action { height: 32px; }
-      .floating-bar { width: 96%; padding: 6px 8px; gap: 4px; border-radius: 16px; bottom: 16px; }
+      .streamer-name { font-size: 0.78rem; }
+      .overlay-actions { grid-template-columns: repeat(4, 1fr); }
+      .floating-bar { width: 96%; padding: 5px 8px; gap: 4px; border-radius: 14px; bottom: 12px; }
       .app-logo { display: none; }
-      .bar-btn { padding: 8px 10px; font-size: 0.8rem; }
+      .bar-btn { padding: 7px 8px; font-size: 0.75rem; }
       .settings-panel { width: 100%; }
       .streamer.list-item { flex-direction: column; height: auto; }
       .streamer.list-item .thumbnail-container { width: 100%; height: 180px; min-width: auto; }
-      .status-bar { flex-wrap: wrap; gap: 8px; padding: 0 4px 16px; }
+      .status-bar { flex-wrap: wrap; gap: 6px; }
     }
 
     @media (max-width: 400px) {
@@ -584,33 +498,27 @@
   </main>
 </div>
 
-<!-- Floating Control Bar -->
 <div class="floating-bar">
   <span class="app-logo">StreamMonitor</span>
   <div class="bar-divider"></div>
   <button class="bar-btn twitch-refresh" id="refresh-twitch-btn" title="Refresh Twitch Token & Data">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
     Twitch
   </button>
   <button class="bar-btn yt-refresh" id="refresh-yt-btn" title="Refresh YouTube Data">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
     YT
   </button>
-  <button class="bar-btn accent" id="gemini-choice-btn">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/></svg>
-    Pick
-  </button>
+  <button class="bar-btn accent" id="gemini-choice-btn">✨ Pick</button>
   <div class="bar-divider"></div>
   <button class="bar-btn active" id="view-grid" title="Grid View">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
   </button>
   <button class="bar-btn" id="view-list" title="List View">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
   </button>
   <div class="bar-divider"></div>
-  <button class="bar-btn" id="settings-btn" title="Settings">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-  </button>
+  <button class="bar-btn" id="settings-btn">⚙️</button>
 </div>
 
 <div id="settings-overlay" class="settings-overlay"></div>
@@ -636,9 +544,9 @@
       </div>
       <div class="setting-row">
         <label class="setting-label">Add Streamer</label>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:6px;">
           <input id="add-name" class="setting-input" placeholder="Username" style="flex:1">
-          <select id="add-platform" class="setting-input" style="width:100px; flex-shrink:0;">
+          <select id="add-platform" class="setting-input" style="width:90px; flex-shrink:0;">
             <option value="kick">Kick</option>
             <option value="twitch">Twitch</option>
             <option value="youtube">YouTube</option>
@@ -664,7 +572,7 @@
 
     <div class="setting-section">
       <div class="section-title">Data</div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
         <button id="export-btn" class="btn">Export JSON</button>
         <button id="import-btn" class="btn">Import JSON</button>
         <input type="file" id="import-file" style="display:none" accept=".json">
@@ -680,26 +588,20 @@
 
 <div id="gemini-modal" class="modal">
   <div class="modal-card">
-    <h3 class="accent-title">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/></svg>
-      AI Recommendation
-    </h3>
+    <h3 class="accent-title">✨ AI Recommendation</h3>
     <div id="gemini-response">Thinking...</div>
-    <button class="btn" style="width:100%; margin-top:20px;" id="gemini-close">Close</button>
+    <button class="btn" style="width:100%; margin-top:16px;" id="gemini-close">Close</button>
   </div>
 </div>
 
 <div id="pin-modal" class="modal">
   <div class="modal-card">
-    <h3>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px; color:var(--danger);"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-      Enter PIN to Remove
-    </h3>
-    <p id="pin-target" style="font-size:0.9rem; color:var(--text-dim); margin-top:4px;"></p>
-    <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="20">
+    <h3>Enter PIN to Remove</h3>
+    <p id="pin-target" style="font-size:0.85rem;"></p>
+    <input type="password" id="pin-input" class="pin-input" placeholder="PIN" maxlength="20">
     <div class="pin-actions">
       <button class="btn" id="pin-cancel">Cancel</button>
-      <button class="btn primary" id="pin-confirm" style="background:var(--danger); color:#fff;">Confirm</button>
+      <button class="btn primary" id="pin-confirm">Confirm</button>
     </div>
   </div>
 </div>
@@ -754,14 +656,6 @@ const App = {
   els: {
     grid: document.getElementById('streamers'),
     toast: document.getElementById('toast'),
-  },
-
-  // SVG Icons for Render
-  icons: {
-    enlarge: `<svg viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>`,
-    sparkle: `<svg viewBox="0 0 24 24"><path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/></svg>`,
-    external: `<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>`,
-    trash: `<svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2m-6 5v6m4-6v6"/></svg>`
   },
 
   async init() {
@@ -883,21 +777,20 @@ const App = {
 
     try {
       if (s.platform === 'kick') {
-        const targetUrl = `https://kick.com/api/v1/channels/${s.name}`;
-        const proxies = [
-          `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-          `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-          `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
-        ];
+        // --- CRITICAL FIX: Using Cloudflare Worker for Kick Proxy ---
+        const proxyUrl = `${this.state.workerUrl}?proxyTarget=${encodeURIComponent(`https://kick.com/api/v1/channels/${s.name}`)}`;
         let d = null;
-        for (const proxyUrl of proxies) {
-          try {
-            const r = await this.fetchWithTimeout(proxyUrl, {}, 8000);
-            if (proxyUrl.includes('allorigins')) { if (r.contents) { d = JSON.parse(r.contents); break; } }
-            else { if (r && r.livestream !== undefined) { d = r; break; } }
-          } catch (e) { /* next */ }
+        
+        try {
+            d = await this.fetchWithTimeout(proxyUrl, {
+                headers: { 'Authorization': `Bearer ${this.state.workerToken}` }
+            }, 8000);
+        } catch (e) {
+            throw new Error(`Worker Proxy Failed: ${e.message}`);
         }
-        if (!d) throw new Error('Not Found');
+        
+        if (!d || d.error) throw new Error('Not Found / Blocked');
+        
         const result = d.livestream
           ? { isLive: true, title: d.livestream.session_title, viewers: d.livestream.viewer_count, category: d.livestream.categories?.[0]?.name || '', thumb: d.livestream.thumbnail?.url, url }
           : { isLive: false, title: 'Offline', url, thumb: d.user?.profile_pic };
@@ -906,7 +799,7 @@ const App = {
       }
 
       if (s.platform === 'twitch') {
-        if (!this.state.keys?.twitchClientId) return { isLive: false, title: 'Config Error', url };
+        if (!this.state.keys?.twitchClientId) return { isLive: false, title: 'Config Error', url, isError: true };
         const t = Date.now();
         let streamRes, userRes;
         try {
@@ -949,8 +842,8 @@ const App = {
       }
 
       if (s.platform === 'youtube') {
-        if (this.state.youtubeQuotaExceeded) return { isLive: false, title: 'Daily Limit Reached', url, viewers: 0 };
-        if (!this.state.keys?.youtubeApiKey) return { isLive: false, title: 'YouTube Key Missing', url };
+        if (this.state.youtubeQuotaExceeded) return { isLive: false, title: 'Daily Limit Reached', url, viewers: 0, isError: true };
+        if (!this.state.keys?.youtubeApiKey) return { isLive: false, title: 'YouTube Key Missing', url, isError: true };
         const apiKey = this.state.keys.youtubeApiKey;
         const cb = force ? `&_=${Date.now()}` : '';
         const searchRes = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(s.name)}&type=channel&key=${apiKey}${cb}`, {}, 5000);
@@ -982,8 +875,8 @@ const App = {
       return { isLive: false, title: 'Offline', url };
     } catch (e) {
       const is403 = e.message?.includes('403');
-      if (is403 && s.platform === 'youtube') { this.state.youtubeQuotaExceeded = true; this.state.youtubeOk = false; return { isLive: false, title: 'Daily Limit Reached', url }; }
-      if (is403 && s.platform === 'kick') return { isLive: false, title: 'Status Unknown (403)', url, isError: true };
+      if (is403 && s.platform === 'youtube') { this.state.youtubeQuotaExceeded = true; this.state.youtubeOk = false; return { isLive: false, title: 'Daily Limit Reached', url, isError: true }; }
+      if (s.platform === 'kick') return { isLive: false, title: `Worker Proxy Failed`, url, isError: true };
       return { isLive: false, title: e.message?.includes('401') ? 'Token Expired' : 'Connection Failed', url, isError: true };
     }
   },
@@ -1087,14 +980,14 @@ const App = {
             </div>
             <div class="overlay-title">${Utils.sanitizeHTML(s.title)}</div>
             <div class="overlay-stats">
-              ${s.isLive ? `<span>${s.viewers ? s.viewers.toLocaleString() + ' viewers' : 'Live'}</span>` : '<span>Offline</span>'}
+              ${s.isLive ? `<span>${s.viewers ? s.viewers.toLocaleString() + ' viewers' : 'Live'}</span>` : `<span>${Utils.sanitizeHTML(s.title)}</span>`}
             </div>
             <div class="overlay-category">${Utils.sanitizeHTML(s.category || '')}</div>
             <div class="overlay-actions">
-              <button class="icon-action primary-action" title="Enlarge" onclick="App.enlarge(event, '${thumbSafe}', '${urlSafe}')">${this.icons.enlarge}</button>
-              <button class="icon-action" title="AI Summary" onclick="App.summarize(event, '${s.name}')">${this.icons.sparkle}</button>
-              <button class="icon-action" title="Open Stream" onclick="App.openStream(event, '${urlSafe}')">${this.icons.external}</button>
-              <button class="icon-action danger" title="Remove" onclick="App.promptRemove(event, '${s.name}', '${s.platform}')">${this.icons.trash}</button>
+              <button class="icon-action primary-action" title="Enlarge" onclick="App.enlarge(event, '${thumbSafe}', '${urlSafe}')">🔍</button>
+              <button class="icon-action" title="AI Summary" onclick="App.summarize(event, '${s.name}')">✨</button>
+              <button class="icon-action" title="Open Stream" onclick="App.openStream(event, '${urlSafe}')">↗</button>
+              <button class="icon-action danger" title="Remove" onclick="App.promptRemove(event, '${s.name}', '${s.platform}')">🗑</button>
             </div>
           </div>
         </div>`;
