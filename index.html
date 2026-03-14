@@ -6,10 +6,9 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>StreamMonitor v8.2.3</title>
+  <title>StreamMonitor v8.2.4</title>
   <meta name="theme-color" content="#08080a">
   <meta name="mobile-web-app-capable" content="yes">
-  <!-- Removed deprecated apple-mobile-web-app-capable tag to clear console warning -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -244,7 +243,6 @@
       font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;
       display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
     }
-    .overlay-stats .dot { width: 3px; height: 3px; background: var(--text-dim); border-radius: 50%; }
 
     .overlay-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 
@@ -743,12 +741,23 @@ const App = {
     else if (mode === 'youtube') { queue = queue.filter(s => s.platform === 'youtube'); this.toast('Refreshing YouTube...', 'info'); this.state.youtubeQuotaExceeded = false; }
     else if (mode === 'twitch') { queue = queue.filter(s => s.platform === 'twitch'); }
 
-    const promises = queue.map(async s => {
-      const data = await this.getStreamInfo(s, force);
-      this.state.data.set(s.name, data);
-      this.render();
-    });
-    await Promise.allSettled(promises);
+    // THE HAMMER FIX: Throttle the requests to prevent Cloudflare ban
+    const concurrencyLimit = 4;
+    for (let i = 0; i < queue.length; i += concurrencyLimit) {
+      const chunk = queue.slice(i, i + concurrencyLimit);
+      
+      await Promise.allSettled(chunk.map(async s => {
+        const data = await this.getStreamInfo(s, force);
+        this.state.data.set(s.name, data);
+        this.render(); // Trickle in the UI updates
+      }));
+      
+      // Pause slightly between chunks to let APIs breathe
+      if (i + concurrencyLimit < queue.length) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+    
     this.render();
     this.updateStatusBar();
   },
@@ -777,24 +786,29 @@ const App = {
 
     try {
       if (s.platform === 'kick') {
-        // We are abandoning public proxies (allorigins/corsproxy) to stop console spam and CORS errors.
-        // We route exclusively through your authenticated Cloudflare Worker.
-        const targetUrl = `https://kick.com/api/v1/channels/${s.name}`;
-        const proxyUrl = `${this.state.workerUrl}?proxyTarget=${encodeURIComponent(targetUrl)}`;
+        // MULTI-PROXY CASCADE (With Cache Busting)
+        const targetUrl = `https://kick.com/api/v1/channels/${s.name}?cb=${Date.now()}`;
+        const proxies = [
+          `${this.state.workerUrl}?proxyTarget=${encodeURIComponent(targetUrl)}`,
+          `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`
+        ];
         
-        let d;
-        try {
-            d = await this.fetchWithTimeout(proxyUrl, {
-                headers: { 'Authorization': `Bearer ${this.state.workerToken}` }
-            }, 6000);
-        } catch (e) {
-            // Kick has engaged Cloudflare Bot Fight Mode. 
-            // Our worker cannot pass the invisible javascript challenge.
-            throw new Error('403_CLOUDFLARE_BLOCK');
+        let d = null;
+        for (const proxyUrl of proxies) {
+          try {
+            const isWorker = proxyUrl.includes('workers.dev');
+            const headers = isWorker ? { 'Authorization': `Bearer ${this.state.workerToken}` } : { 'Accept': 'application/json' };
+            const r = await this.fetchWithTimeout(proxyUrl, { headers }, 6000);
+            
+            if (r && (r.livestream !== undefined || r.user !== undefined)) { 
+                d = r; 
+                break; 
+            }
+          } catch (e) { /* Try next proxy silently */ }
         }
         
-        // If the worker returns an error object or empty data
-        if (!d || d.error) throw new Error('403_CLOUDFLARE_BLOCK');
+        if (!d) throw new Error('403_CLOUDFLARE_BLOCK');
         
         const result = d.livestream
           ? { isLive: true, title: d.livestream.session_title, viewers: d.livestream.viewer_count, category: d.livestream.categories?.[0]?.name || '', thumb: d.livestream.thumbnail?.url, url }
@@ -882,7 +896,6 @@ const App = {
     } catch (e) {
       const msg = String(e.message);
       
-      // Handle the CF Block specifically for the UI gracefully
       if (msg.includes('403_CLOUDFLARE_BLOCK')) {
           return { isLive: false, title: 'Cloudflare Protected (Click to view)', url, isError: true };
       }
@@ -895,9 +908,9 @@ const App = {
       if (is403 && s.platform === 'youtube') { 
           this.state.youtubeQuotaExceeded = true; 
           this.state.youtubeOk = false; 
-          return { isLive: false, title: 'Daily Limit Reached', url }; 
+          return { isLive: false, title: 'Daily Limit Reached', url, isError: true }; 
       }
-      return { isLive: false, title: msg.includes('401') ? 'Token Expired' : 'Connection Failed', url, isError: true };
+      return { isLive: false, title: msg.includes('401') ? 'Token Expired' : 'Connection Error', url, isError: true };
     }
   },
 
@@ -978,12 +991,11 @@ const App = {
     const isListView = this.state.viewMode === 'list';
 
     this.els.grid.innerHTML = list.map(s => {
-      const isErr = s.isError || s.title.includes('Error') || s.title.includes('Limit') || s.title.includes('Denied') || s.title.includes('Expired') || s.title.includes('Protected');
       const thumbSafe = (s.thumb || '').replace(/'/g, '%27');
       const urlSafe = (s.url || '#').replace(/'/g, '%27');
 
       return `
-        <div class="streamer ${s.platform} ${s.isLive ? 'live' : 'offline'} ${isListView ? 'list-item' : ''} ${isErr ? 'error-key' : ''}"
+        <div class="streamer ${s.platform} ${s.isLive ? 'live' : 'offline'} ${isListView ? 'list-item' : ''} ${s.isError ? 'error-key' : ''}"
              onclick="App.handleCardClick(this, '${thumbSafe}', '${urlSafe}')">
           <div class="thumbnail-container">
             <img class="streamer-img" src="${s.thumb || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiA5IiBmaWxsPSIjMTExMTE0Ij48L3N2Zz4='}" alt="${Utils.sanitizeHTML(s.name)}" loading="lazy">
@@ -1001,7 +1013,7 @@ const App = {
             </div>
             <div class="overlay-title">${Utils.sanitizeHTML(s.title)}</div>
             <div class="overlay-stats">
-              ${s.isLive ? `<span>${s.viewers ? s.viewers.toLocaleString() + ' viewers' : 'Live'}</span>` : `<span>${Utils.sanitizeHTML(s.title)}</span>`}
+              ${s.isLive ? `<span>${s.viewers ? s.viewers.toLocaleString() + ' viewers' : 'Live'}</span>` : `<span>${s.isError ? 'Connection Error' : 'Offline'}</span>`}
             </div>
             <div class="overlay-category">${Utils.sanitizeHTML(s.category || '')}</div>
             <div class="overlay-actions">
@@ -1013,8 +1025,6 @@ const App = {
           </div>
         </div>`;
     }).join('');
-
-    this.updateStatusBar();
   },
 
   handleCardClick(el, thumb, url) {
