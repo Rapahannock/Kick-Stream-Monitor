@@ -6,7 +6,7 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>Kick & Twitch Monitor v7.9.10</title>
+  <title>Kick & Twitch Monitor v8.1.1</title>
   <meta name="description" content="Monitor your favorite Kick, Twitch, and YouTube streamers with real-time updates, AI-powered summaries, and enhanced accessibility">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,6 +21,7 @@
       --bg-glass-hover: rgba(30, 30, 35, 0.85);
       --text-primary: #ffffff;
       --text-secondary: #a1a1aa;
+      --text-dim: #52525b;
       --border-primary: rgba(255, 255, 255, 0.1);
       --accent-primary: #22d3ee;
       --live: #10b981;
@@ -29,6 +30,7 @@
       --kick: #53fc18;
       --offline: #64748b;
       --warning: #f59e0b;
+      --danger: #ef4444;
       --red-light: #ff4444;
       --radius-sm: 8px;
       --radius-md: 12px;
@@ -41,6 +43,7 @@
         --bg-glass-hover: rgba(255, 255, 255, 0.95);
         --text-primary: #0f172a;
         --text-secondary: #475569;
+        --text-dim: #94a3b8;
         --border-primary: rgba(0, 0, 0, 0.1);
         --accent-primary: #0891b2;
     }
@@ -59,6 +62,23 @@
 
     #app-container { max-width: 2400px; margin: 0 auto; }
     
+    /* --- STATUS BAR --- */
+    .status-bar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 0 20px;
+      font-size: 0.75rem; color: var(--text-dim);
+    }
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-primary);
+      padding: 4px 10px; border-radius: 6px; font-weight: 600;
+    }
+    .status-chip.live-count { color: var(--live); border-color: rgba(34,197,94,0.15); }
+    .api-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+    .api-dot.ok { background: var(--live); box-shadow: 0 0 6px var(--live); }
+    .api-dot.err { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    .api-dot.unknown { background: var(--text-dim); }
+
     /* --- GRID & LIST LAYOUTS --- */
     #streamers { 
         display: grid; 
@@ -326,18 +346,17 @@
         z-index: 1200; padding: 24px; box-shadow: -10px 0 50px rgba(0,0,0,0.5);
     }
     .settings-panel.open { transform: translateX(0); }
-    .settings-grid {display: grid; grid-template-columns: 1fr; gap: 24px;}
-    .setting-group {display: flex; flex-direction: column; gap: 8px;}
-    .setting-group label {font-weight: 600; font-size: 0.9rem;}
-
-    input, select {
-        background: var(--bg-tertiary); color: var(--text-primary);
-        border: 1px solid var(--border-primary); border-radius: 10px;
-        padding: 12px; font-size: 1rem; width: 100%;
-        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    .settings-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100;
+        opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        backdrop-filter: blur(4px);
     }
-    input:focus-visible, select:focus-visible { outline: none; border-color: var(--accent-primary); box-shadow: var(--ring); }
+    .settings-overlay.visible { opacity: 1; pointer-events: auto; }
     
+    .setting-row { margin-bottom: 16px; }
+    .setting-label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-secondary); }
+    .setting-input { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid var(--border-primary); color: #fff; border-radius: 6px; }
+
     /* Modals */
     .modal {
         position: fixed; inset: 0; z-index: 2000;
@@ -410,6 +429,7 @@
     
     /* Mobile Adjustments */
     @media (max-width: 768px) {
+        .status-bar { flex-wrap: wrap; gap: 6px; padding: 8px 10px 16px 10px; }
         #streamers.grid-view { grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .name-tag { padding: 4px 8px; }
         .streamer-name { font-size: 0.8rem; }
@@ -424,6 +444,14 @@
 <body>
 
 <div id="app-container">
+    <!-- RESTORED STATUS BAR -->
+    <div class="status-bar" id="status-bar">
+      <span class="status-chip" id="status-total">0 streamers</span>
+      <span class="status-chip live-count" id="status-live">0 live</span>
+      <span class="status-chip" id="status-twitch">Twitch: <span class="api-dot unknown"></span></span>
+      <span class="status-chip" id="status-yt">YouTube: <span class="api-dot unknown"></span></span>
+    </div>
+
     <main id="main-content">
         <div id="streamers" class="grid-view"></div>
     </main>
@@ -572,6 +600,8 @@ const App = {
         viewMode: 'grid',
         BANNED_PLACEHOLDER_THUMBNAIL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='none' stroke='%23ef4444' stroke-width='1'%3E%3Cpath d='M2 0H14C15.1 0 16 0.9 16 2V7C16 8.1 15.1 9 14 9H2C0.9 9 0 8.1 0 7V2C0 0.9 0.9 0 2 0Z' stroke='none' fill='%2323272d'/%3E%3Ccircle cx='8' cy='4.5' r='3'/%3E%3Cline x1='5.5' y1='2' x2='10.5' y2='7'/%3E%3C/svg%3E",
         youtubeQuotaExceeded: false,
+        twitchOk: null,
+        youtubeOk: null,
     },
     
     els: {
@@ -632,6 +662,21 @@ const App = {
         this.render();
     },
 
+    updateStatusBar() {
+        const total = this.state.streamers.length;
+        const allData = Array.from(this.state.data.values());
+        const liveCount = allData.filter(d => d.isLive).length;
+        
+        document.getElementById('status-total').textContent = `${total} streamer${total !== 1 ? 's' : ''}`;
+        document.getElementById('status-live').textContent = `${liveCount} live`;
+
+        const twDot = document.querySelector('#status-twitch .api-dot');
+        const ytDot = document.querySelector('#status-yt .api-dot');
+        
+        twDot.className = `api-dot ${this.state.twitchOk === true ? 'ok' : this.state.twitchOk === false ? 'err' : 'unknown'}`;
+        ytDot.className = `api-dot ${this.state.youtubeOk === true ? 'ok' : this.state.youtubeOk === false ? 'err' : 'unknown'}`;
+    },
+
     async fetchList() {
         try {
             const res = await fetch(`${this.state.workerUrl}?t=${Date.now()}`, {
@@ -687,7 +732,6 @@ const App = {
 
         try {
             if (s.platform === 'kick') {
-                // NEW: Route Kick traffic securely through our Cloudflare Worker proxy
                 const proxyUrl = `${this.state.workerUrl}?proxyTarget=${encodeURIComponent(`https://kick.com/api/v1/channels/${s.name}`)}`;
                 
                 const d = await this.fetchWithTimeout(proxyUrl, {
@@ -705,14 +749,22 @@ const App = {
                  return result;
             }
             if (s.platform === 'twitch') {
-                 if (!this.state.keys || !this.state.keys.twitchClientId) return { isLive: false, title: 'Config Error', url };
+                 if (!this.state.keys || !this.state.keys.twitchClientId) {
+                     this.state.twitchOk = false;
+                     return { isLive: false, title: 'Config Error', url };
+                 }
                  const t = Date.now();
                  const [streamRes, userRes] = await Promise.all([
                    this.fetchApi(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(s.name)}&t=${t}`, this.state.keys),
                    this.fetchApi(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(s.name)}&t=${t}`, this.state.keys)
                  ]).catch(() => [{}, {}]);
 
-                 if (!userRes.data || !userRes.data[0]) return { isLive: false, title: 'Not Found', url };
+                 if (!userRes.data || !userRes.data[0]) {
+                     this.state.twitchOk = false;
+                     return { isLive: false, title: 'Not Found', url };
+                 }
+                 
+                 this.state.twitchOk = true;
                  const userData = userRes.data[0];
                  const streamData = streamRes.data && streamRes.data[0];
                  const isLive = !!streamData && streamData.type === 'live';
@@ -728,14 +780,24 @@ const App = {
                  return result;
             }
             if (s.platform === 'youtube') {
-                 if (this.state.youtubeQuotaExceeded) return { isLive: false, title: 'Daily Limit Reached', url, viewers: 0 };
-                 if (!this.state.keys || !this.state.keys.youtubeApiKey) return { isLive: false, title: 'YouTube Key Missing', url };
+                 if (this.state.youtubeQuotaExceeded) {
+                     this.state.youtubeOk = false;
+                     return { isLive: false, title: 'Daily Limit Reached', url, viewers: 0 };
+                 }
+
+                 if (!this.state.keys || !this.state.keys.youtubeApiKey) {
+                     this.state.youtubeOk = false;
+                     return { isLive: false, title: 'YouTube Key Missing', url };
+                 }
                  
                  const apiKey = this.state.keys.youtubeApiKey;
                  const cb = force ? `&_=${Date.now()}` : '';
                  
                  const searchRes = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(s.name)}&type=channel&key=${apiKey}${cb}`, {}, timeout);
-                 if (!searchRes.items || !searchRes.items[0]) return { isLive: false, title: 'Channel Not Found', url };
+                 if (!searchRes.items || !searchRes.items[0]) {
+                     this.state.youtubeOk = false;
+                     return { isLive: false, title: 'Channel Not Found', url };
+                 }
                  
                  const channelId = searchRes.items[0].id.channelId;
                  const profilePic = searchRes.items[0].snippet.thumbnails.default.url;
@@ -743,6 +805,8 @@ const App = {
 
                  const liveRes = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}${cb}`, {}, timeout);
                  
+                 this.state.youtubeOk = true;
+
                  if (!liveRes.items || !liveRes.items[0]) {
                      const offlineRes = { isLive: false, title: 'Offline', url: channelUrl, thumb: profilePic };
                      streamCache.set(k, offlineRes);
@@ -751,11 +815,12 @@ const App = {
                  
                  const videoId = liveRes.items[0].id.videoId;
                  const videoDetails = await this.fetchWithTimeout(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails,snippet&id=${videoId}&key=${apiKey}${cb}`, {}, timeout);
-                 
+                 const details = videoDetails.items[0];
+
                  const result = {
-                    isLive: true, title: videoDetails.items[0].snippet.title,
-                    viewers: parseInt(videoDetails.items[0].liveStreamingDetails.concurrentViewers || 0),
-                    category: 'YouTube Live', thumb: videoDetails.items[0].snippet.thumbnails.medium.url, url: channelUrl
+                    isLive: true, title: details.snippet.title,
+                    viewers: parseInt(details.liveStreamingDetails.concurrentViewers || 0),
+                    category: 'YouTube Live', thumb: details.snippet.thumbnails.medium.url, url: channelUrl
                  };
                  streamCache.set(k, result);
                  return result;
@@ -763,6 +828,10 @@ const App = {
             return { isLive: false, title: 'Offline', url }; 
         } catch (e) {
              const is403 = e.message.includes('403');
+             
+             if (s.platform === 'twitch') this.state.twitchOk = false;
+             if (s.platform === 'youtube') this.state.youtubeOk = false;
+
              if (is403 && s.platform === 'youtube') {
                  this.state.youtubeQuotaExceeded = true;
                  return { isLive: false, title: 'Daily Limit Reached', url };
@@ -813,7 +882,7 @@ const App = {
         });
 
         this.els.grid.innerHTML = list.map(s => `
-            <div class="streamer ${s.platform} ${s.isLive?'live':''} ${this.state.viewMode === 'list' ? 'list-view-view' : ''} ${s.isError ? 'error-key' : ''}" onclick="App.handleCardClick(this, '${s.thumb}', '${s.url}')">
+            <div class="streamer ${s.platform} ${s.isLive?'live':''} ${this.state.viewMode === 'list' ? 'list-view-view' : ''} ${s.title.includes('Error') || s.title.includes('Limit') || s.title.includes('Denied') || s.title.includes('Failed') ? 'error-key' : ''}" onclick="App.handleCardClick(this, '${s.thumb}', '${s.url}')">
                 <div class="thumbnail-container">
                     <img class="streamer-img" src="${s.thumb || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiA5IiBmaWxsPSIjMTExIj48L3N2Zz4='}">
                     ${s.isLive ? '<div class="live-indicator">LIVE</div>' : ''}
@@ -841,8 +910,11 @@ const App = {
                 </div>
             </div>
         `).join('');
+
+        this.updateStatusBar();
     },
 
+    /* --- INTERACTIONS --- */
     handleCardClick(el, thumb, url) {
         if (window.innerWidth <= 768) {
             if (this.state.activeCard && this.state.activeCard !== el) {
@@ -890,10 +962,22 @@ const App = {
         if(e) e.stopPropagation();
         const pin = prompt(`Enter PIN to remove ${name}:`);
         if(!pin) return;
+        
         try {
-            const res = await fetch(this.state.workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.state.workerToken}` }, body: JSON.stringify({ action: 'remove', name, platform, pin }) });
-            if(res.ok) { this.toast(`${name} removed`); this.fetchList(); } 
-            else this.toast('Remove failed', 'error');
+            const res = await fetch(this.state.workerUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.state.workerToken}`
+                },
+                body: JSON.stringify({ action: 'remove', name, platform, pin })
+            });
+            if(res.ok) {
+                this.toast(`${name} removed`);
+                this.fetchList();
+            } else {
+                this.toast('Remove failed', 'error');
+            }
         } catch(err) { this.toast('Error connecting', 'error'); }
     },
 
@@ -901,10 +985,23 @@ const App = {
         const name = document.getElementById('add-name').value;
         const platform = document.getElementById('add-platform').value;
         if(!name) return;
+        
         try {
-            const res = await fetch(this.state.workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.state.workerToken}` }, body: JSON.stringify({ action: 'add', name, platform }) });
-            if(res.ok) { this.toast(`${name} added`); document.getElementById('add-name').value = ''; this.fetchList(); } 
-            else this.toast('Add failed', 'error');
+            const res = await fetch(this.state.workerUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.state.workerToken}`
+                },
+                body: JSON.stringify({ action: 'add', name, platform })
+            });
+            if(res.ok) {
+                this.toast(`${name} added`);
+                document.getElementById('add-name').value = '';
+                this.fetchList();
+            } else {
+                this.toast('Add failed', 'error');
+            }
         } catch(err) { this.toast('Error connecting', 'error'); }
     },
 
@@ -915,7 +1012,11 @@ const App = {
         reader.onload = async (ev) => {
             try {
                 const list = JSON.parse(ev.target.result);
-                const res = await fetch(this.state.workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.state.workerToken}` }, body: JSON.stringify({ action: 'bulkReplace', list }) });
+                const res = await fetch(this.state.workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.state.workerToken}` },
+                    body: JSON.stringify({ action: 'bulkReplace', list })
+                });
                 if(res.ok) { this.toast('Imported'); this.fetchList(); }
             } catch(err) { this.toast('Import Failed', 'error'); }
         };
