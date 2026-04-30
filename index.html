@@ -188,14 +188,23 @@
       width: 3px; z-index: 20;
       transition: box-shadow var(--transition), width var(--transition);
     }
-    .streamer.kick::before { background: linear-gradient(180deg, var(--kick), #2bc40a); }
-    .streamer.twitch::before { background: linear-gradient(180deg, var(--twitch), #6f33cc); }
-    .streamer.youtube::before { background: linear-gradient(180deg, var(--youtube), #c40026); }
+    .streamer.kick::before { background: linear-gradient(180deg, #b6ff5c, var(--kick) 40%, #2bc40a); }
+    .streamer.twitch::before { background: linear-gradient(180deg, #c8a2ff, var(--twitch) 40%, #6f33cc); }
+    .streamer.youtube::before { background: linear-gradient(180deg, #ff7488, var(--youtube) 40%, #c40026); }
     .streamer.offline::before { background: var(--offline); opacity: 0.45; }
     .streamer:hover::before { width: 5px; }
     .streamer.live.kick:hover::before { box-shadow: 4px 0 24px var(--kick-glow); }
     .streamer.live.twitch:hover::before { box-shadow: 4px 0 24px var(--twitch-glow); }
     .streamer.live.youtube:hover::before { box-shadow: 4px 0 24px var(--youtube-glow); }
+
+    .streamer.live::before {
+      background-size: 100% 200%;
+      animation: stripeShimmer 4s ease-in-out infinite alternate;
+    }
+    @keyframes stripeShimmer {
+      0%   { background-position: 0% 0%; }
+      100% { background-position: 0% 100%; }
+    }
 
     .name-tag {
       position: absolute; bottom: 0; left: 0; right: 0;
@@ -271,6 +280,14 @@
       opacity: 0; transition: opacity 0.22s ease;
       z-index: 25; pointer-events: none;
     }
+    .details-overlay::before {
+      content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+      pointer-events: none;
+    }
+    .streamer.kick .details-overlay::before { background: linear-gradient(90deg, transparent, rgba(83,252,24,0.45), transparent); }
+    .streamer.twitch .details-overlay::before { background: linear-gradient(90deg, transparent, rgba(169,112,255,0.5), transparent); }
+    .streamer.youtube .details-overlay::before { background: linear-gradient(90deg, transparent, rgba(255,45,85,0.45), transparent); }
     .streamer:hover .details-overlay,
     .streamer.active .details-overlay {
       opacity: 1; pointer-events: auto;
@@ -1139,6 +1156,118 @@ const App = {
     }
   },
 
+  PLACEHOLDER_THUMB: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiA5IiBmaWxsPSIjMTExMTE0Ij48L3N2Zz4=',
+
+  buildCardEl(s) {
+    const el = document.createElement('div');
+    el.className = 'streamer';
+    el.dataset.key = `${s.platform}::${s.name}`;
+    el.innerHTML = `
+      <div class="thumbnail-container">
+        <img class="streamer-img" alt="" loading="lazy" decoding="async">
+      </div>
+      <div class="name-tag">
+        <span class="streamer-name"></span>
+        <div class="marquee-wrapper" hidden><span class="stream-title-marquee"></span></div>
+      </div>
+      <div class="details-overlay">
+        <div class="overlay-header">
+          <div class="overlay-name"></div>
+          <span class="overlay-platform"></span>
+        </div>
+        <div class="overlay-title"></div>
+        <div class="overlay-stats"><span></span></div>
+        <div class="overlay-category"></div>
+        <div class="overlay-actions">
+          <button class="icon-action primary-action" title="Enlarge" data-act="enlarge">🔍</button>
+          <button class="icon-action" title="AI Summary" data-act="summarize">✨</button>
+          <button class="icon-action" title="Open Stream" data-act="open">↗</button>
+          <button class="icon-action danger" title="Remove" data-act="remove">🗑</button>
+        </div>
+      </div>`;
+
+    el.addEventListener('click', (e) => {
+      const act = e.target.closest('[data-act]')?.dataset.act;
+      const data = el._data || {};
+      if (act === 'enlarge')      { e.stopPropagation(); this.enlarge(null, data.thumb, data.url); return; }
+      if (act === 'summarize')    { e.stopPropagation(); this.summarize(null, data.name); return; }
+      if (act === 'open')         { e.stopPropagation(); this.openStream(null, data.url); return; }
+      if (act === 'remove')       { e.stopPropagation(); this.promptRemove(null, data.name, data.platform); return; }
+      this.handleCardClick(el, data.thumb, data.url);
+    });
+
+    return el;
+  },
+
+  updateCardEl(el, s, isListView) {
+    const liveCls = s.isLive ? 'live' : 'offline';
+    const targetClass = `streamer ${s.platform} ${liveCls}${isListView ? ' list-item' : ''}${s.isError ? ' error-key' : ''}`;
+    if (el.className !== targetClass) el.className = targetClass;
+
+    el._data = { name: s.name, platform: s.platform, thumb: s.thumb || '', url: s.url || '#' };
+
+    const img = el.querySelector('.streamer-img');
+    const desiredSrc = s.thumb || this.PLACEHOLDER_THUMB;
+    if (img.getAttribute('src') !== desiredSrc) img.setAttribute('src', desiredSrc);
+    if (img.alt !== s.name) img.alt = s.name;
+
+    const thumbContainer = el.querySelector('.thumbnail-container');
+    let liveInd = thumbContainer.querySelector('.live-indicator');
+    if (s.isLive && !liveInd) {
+      liveInd = document.createElement('div');
+      liveInd.className = 'live-indicator';
+      liveInd.innerHTML = '<div class="live-dot"></div>LIVE';
+      thumbContainer.appendChild(liveInd);
+    } else if (!s.isLive && liveInd) {
+      liveInd.remove();
+    }
+
+    let viewerBadge = thumbContainer.querySelector('.viewer-badge');
+    if (s.isLive && s.viewers) {
+      const viewerText = Utils.formatNumber(s.viewers);
+      if (!viewerBadge) {
+        viewerBadge = document.createElement('div');
+        viewerBadge.className = 'viewer-badge has-viewers';
+        thumbContainer.appendChild(viewerBadge);
+      }
+      if (viewerBadge.textContent !== viewerText) viewerBadge.textContent = viewerText;
+    } else if (viewerBadge) {
+      viewerBadge.remove();
+    }
+
+    const nameEl = el.querySelector('.streamer-name');
+    if (nameEl.textContent !== s.name) nameEl.textContent = s.name;
+
+    const marqueeWrapper = el.querySelector('.marquee-wrapper');
+    const marqueeText = el.querySelector('.stream-title-marquee');
+    if (s.isLive) {
+      marqueeWrapper.hidden = false;
+      if (marqueeText.textContent !== s.title) marqueeText.textContent = s.title;
+    } else {
+      marqueeWrapper.hidden = true;
+    }
+
+    const overlayName = el.querySelector('.overlay-name');
+    if (overlayName.textContent !== s.name) overlayName.textContent = s.name;
+
+    const overlayPlatform = el.querySelector('.overlay-platform');
+    if (overlayPlatform.textContent !== s.platform) overlayPlatform.textContent = s.platform;
+
+    const overlayTitle = el.querySelector('.overlay-title');
+    const titleText = s.title || '';
+    if (overlayTitle.textContent !== titleText) overlayTitle.textContent = titleText;
+
+    const statSpan = el.querySelector('.overlay-stats span');
+    const statText = s.isLive
+      ? (s.viewers ? s.viewers.toLocaleString() + ' viewers' : 'Live')
+      : (s.isError ? 'Connection Error' : 'Offline');
+    if (statSpan.textContent !== statText) statSpan.textContent = statText;
+
+    const overlayCat = el.querySelector('.overlay-category');
+    const catText = s.category || '';
+    if (overlayCat.textContent !== catText) overlayCat.textContent = catText;
+  },
+
   render() {
     const list = this.state.streamers.map(s => {
       const info = this.state.data.get(s.name) || { isLive: false, title: 'Loading...', isLoading: true, url: '#' };
@@ -1154,42 +1283,39 @@ const App = {
 
     if (list.length === 0 && this.state.data.size === 0) return;
     const isListView = this.state.viewMode === 'list';
+    const grid = this.els.grid;
 
-    this.els.grid.innerHTML = list.map(s => {
-      const thumbSafe = (s.thumb || '').replace(/'/g, '%27');
-      const urlSafe = (s.url || '#').replace(/'/g, '%27');
+    if (!grid.dataset.live) {
+      grid.innerHTML = '';
+      grid.dataset.live = '1';
+    }
 
-      return `
-        <div class="streamer ${s.platform} ${s.isLive ? 'live' : 'offline'} ${isListView ? 'list-item' : ''} ${s.isError ? 'error-key' : ''}"
-             onclick="App.handleCardClick(this, '${thumbSafe}', '${urlSafe}')">
-          <div class="thumbnail-container">
-            <img class="streamer-img" src="${s.thumb || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiA5IiBmaWxsPSIjMTExMTE0Ij48L3N2Zz4='}" alt="${Utils.sanitizeHTML(s.name)}" loading="lazy">
-            ${s.isLive ? '<div class="live-indicator"><div class="live-dot"></div>LIVE</div>' : ''}
-            ${s.isLive && s.viewers ? `<div class="viewer-badge has-viewers">${Utils.formatNumber(s.viewers)}</div>` : ''}
-          </div>
-          <div class="name-tag">
-            <span class="streamer-name">${Utils.sanitizeHTML(s.name)}</span>
-            ${s.isLive ? `<div class="marquee-wrapper"><span class="stream-title-marquee">${Utils.sanitizeHTML(s.title)}</span></div>` : ''}
-          </div>
-          <div class="details-overlay">
-            <div class="overlay-header">
-              <div class="overlay-name">${Utils.sanitizeHTML(s.name)}</div>
-              <span class="overlay-platform">${s.platform}</span>
-            </div>
-            <div class="overlay-title">${Utils.sanitizeHTML(s.title)}</div>
-            <div class="overlay-stats">
-              ${s.isLive ? `<span>${s.viewers ? s.viewers.toLocaleString() + ' viewers' : 'Live'}</span>` : `<span>${s.isError ? 'Connection Error' : 'Offline'}</span>`}
-            </div>
-            <div class="overlay-category">${Utils.sanitizeHTML(s.category || '')}</div>
-            <div class="overlay-actions">
-              <button class="icon-action primary-action" title="Enlarge" onclick="App.enlarge(event, '${thumbSafe}', '${urlSafe}')">🔍</button>
-              <button class="icon-action" title="AI Summary" onclick="App.summarize(event, '${s.name}')">✨</button>
-              <button class="icon-action" title="Open Stream" onclick="App.openStream(event, '${urlSafe}')">↗</button>
-              <button class="icon-action danger" title="Remove" onclick="App.promptRemove(event, '${s.name}', '${s.platform}')">🗑</button>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
+    const existing = new Map();
+    grid.querySelectorAll('.streamer').forEach(el => existing.set(el.dataset.key, el));
+
+    const seen = new Set();
+    let prev = null;
+    for (const s of list) {
+      const key = `${s.platform}::${s.name}`;
+      seen.add(key);
+      let el = existing.get(key);
+      if (!el) {
+        el = this.buildCardEl(s);
+        this.updateCardEl(el, s, isListView);
+        if (prev) prev.after(el); else grid.prepend(el);
+      } else {
+        this.updateCardEl(el, s, isListView);
+        const expectedNext = prev ? prev.nextSibling : grid.firstChild;
+        if (expectedNext !== el) {
+          el.classList.add('reordering');
+          if (prev) prev.after(el); else grid.prepend(el);
+          requestAnimationFrame(() => el.classList.remove('reordering'));
+        }
+      }
+      prev = el;
+    }
+
+    existing.forEach((el, key) => { if (!seen.has(key)) el.remove(); });
   },
 
   handleCardClick(el, thumb, url) {
