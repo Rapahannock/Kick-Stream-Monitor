@@ -15,40 +15,43 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #07070a;
-      --bg-card: #0f0f13;
-      --bg-glass: rgba(14, 14, 20, 0.72);
-      --bg-glass-hover: rgba(26, 26, 34, 0.88);
-      --bg-elevated: #17171c;
-      --text-primary: #f3f3f7;
-      --text-secondary: #a1a1ae;
-      --text-dim: #5a5a64;
-      --border-subtle: rgba(255, 255, 255, 0.05);
-      --border-mid: rgba(255, 255, 255, 0.09);
-      --border-hover: rgba(255, 255, 255, 0.2);
-      --accent: #22d3ee;
-      --accent-2: #6366f1;
-      --accent-dim: rgba(34, 211, 238, 0.16);
+      --bg-primary: #0a0a12;
+      --bg-secondary: #0f0f1a;
+      --bg-card: #14141f;
+      --bg-glass: rgba(20, 20, 30, 0.55);
+      --bg-glass-hover: rgba(32, 32, 44, 0.78);
+      --bg-elevated: #1c1c28;
+      --text-primary: #f5f5fa;
+      --text-secondary: #a8a8b8;
+      --text-dim: #5e5e6e;
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-mid: rgba(255, 255, 255, 0.1);
+      --border-hover: rgba(255, 255, 255, 0.22);
+      --accent: #a855f7;
+      --accent-2: #ec4899;
+      --accent-3: #22d3ee;
+      --accent-dim: rgba(168, 85, 247, 0.18);
       --live: #22c55e;
-      --live-glow: rgba(34, 197, 94, 0.28);
+      --live-glow: rgba(34, 197, 94, 0.35);
       --twitch: #a970ff;
-      --twitch-glow: rgba(145, 70, 255, 0.3);
+      --twitch-glow: rgba(145, 70, 255, 0.35);
       --youtube: #ff2d55;
-      --youtube-glow: rgba(255, 0, 51, 0.25);
+      --youtube-glow: rgba(255, 45, 85, 0.3);
       --kick: #53fc18;
-      --kick-glow: rgba(83, 252, 24, 0.25);
+      --kick-glow: rgba(83, 252, 24, 0.3);
       --offline: #3f3f46;
       --danger: #f43f5e;
       --warning: #facc15;
-      --radius: 16px;
-      --radius-sm: 10px;
-      --radius-xs: 7px;
-      --shadow-card: 0 6px 18px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35);
-      --shadow-hover: 0 28px 56px rgba(0,0,0,0.65), 0 10px 20px rgba(0,0,0,0.45);
-      --shadow-modal: 0 28px 90px rgba(0,0,0,0.85);
+      --radius: 18px;
+      --radius-sm: 11px;
+      --radius-xs: 8px;
+      --shadow-card: 0 8px 22px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4);
+      --shadow-hover: 0 32px 64px rgba(0,0,0,0.7), 0 12px 24px rgba(0,0,0,0.5);
+      --shadow-modal: 0 32px 100px rgba(0,0,0,0.85);
       --transition: 0.32s cubic-bezier(0.2, 0.7, 0.25, 1);
       --transition-fast: 0.16s ease;
       --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --header-height: 68px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -61,7 +64,7 @@
       background: var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
-      padding: 24px 24px 110px 24px;
+      padding: 0 0 40px 0;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       letter-spacing: -0.005em;
@@ -73,10 +76,10 @@
       position: fixed;
       inset: -10%;
       background:
-        radial-gradient(ellipse 70% 50% at 20% 0%, rgba(34, 211, 238, 0.07) 0%, transparent 55%),
-        radial-gradient(ellipse 60% 50% at 90% 10%, rgba(99, 102, 241, 0.06) 0%, transparent 55%),
-        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(169, 112, 255, 0.05) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 40% at 10% 95%, rgba(83, 252, 24, 0.035) 0%, transparent 55%);
+        radial-gradient(ellipse 70% 50% at 15% -5%, rgba(168, 85, 247, 0.13) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 95% 15%, rgba(236, 72, 153, 0.08) 0%, transparent 55%),
+        radial-gradient(ellipse 80% 60% at 80% 100%, rgba(34, 211, 238, 0.06) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 5% 90%, rgba(83, 252, 24, 0.03) 0%, transparent 55%);
       pointer-events: none;
       z-index: 0;
       animation: ambient 22s ease-in-out infinite alternate;
@@ -97,23 +100,101 @@
       opacity: 0.5;
     }
 
-    #app-container { max-width: 2400px; margin: 0 auto; position: relative; z-index: 1; }
+    #app-container { max-width: 2400px; margin: 0 auto; position: relative; z-index: 1; padding: 0 24px; }
+
+    /* Sticky bento dashboard header */
+    .app-header {
+      position: sticky; top: 0; z-index: 900;
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 0; margin: 0 -8px 22px;
+      background: linear-gradient(180deg, rgba(10,10,18,0.92) 0%, rgba(10,10,18,0.78) 80%, rgba(10,10,18,0) 100%);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+      padding: 0 4px;
+    }
+    .brand-mark {
+      width: 36px; height: 36px; border-radius: 11px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+      display: grid; place-items: center; color: #fff;
+      box-shadow: 0 6px 16px rgba(168, 85, 247, 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+      font-size: 18px; font-weight: 900;
+      position: relative; overflow: hidden;
+    }
+    .brand-mark::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4), transparent 60%);
+    }
+    .brand-name {
+      font-weight: 800; font-size: 1.05rem; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff, #b8b8c8);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .header-search {
+      flex: 1 1 240px; min-width: 200px; max-width: 420px;
+      position: relative;
+    }
+    .header-search svg {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--text-dim); pointer-events: none;
+    }
+    .header-search input {
+      width: 100%; height: 40px;
+      padding: 0 14px 0 40px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-subtle); border-radius: 12px;
+      color: var(--text-primary); font-family: inherit; font-size: 0.86rem;
+      outline: none; transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+    .header-search input::placeholder { color: var(--text-dim); }
+    .header-search input:hover { background: rgba(255,255,255,0.06); border-color: var(--border-mid); }
+    .header-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); background: rgba(255,255,255,0.06); }
+
+    .header-stats { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-left: auto; }
 
     #streamers {
       display: grid;
-      gap: 18px;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      grid-auto-rows: 178px;
+      grid-auto-flow: dense;
     }
     #streamers.list-view {
       grid-template-columns: 1fr;
+      grid-auto-rows: auto;
       max-width: 1100px;
       margin: 0 auto;
       gap: 10px;
     }
 
+    /* Bento sizing — large featured tiles for top live streams */
+    .streamer.bento-xl { grid-column: span 2; grid-row: span 2; }
+    .streamer.bento-lg { grid-column: span 2; grid-row: span 1; }
+    .streamer.bento-tall { grid-row: span 2; }
+
+    /* Featured tile: always-visible info bar at the bottom (no hover required) */
+    .streamer.bento-xl .name-tag {
+      padding: 60px 22px 22px;
+      gap: 8px;
+    }
+    .streamer.bento-xl .streamer-name { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.025em; }
+    .streamer.bento-xl .stream-title-marquee { font-size: 0.92rem; }
+    .streamer.bento-xl .marquee-wrapper { height: 22px; }
+    .streamer.bento-xl .live-indicator { padding: 6px 14px 6px 12px; font-size: 0.78rem; }
+    .streamer.bento-xl .viewer-badge { padding: 6px 14px; font-size: 0.82rem; font-weight: 800; }
+    .streamer.bento-xl .live-dot { width: 9px; height: 9px; }
+
+    .streamer.bento-lg .name-tag { padding: 48px 18px 16px; }
+    .streamer.bento-lg .streamer-name { font-size: 1.15rem; }
+    .streamer.bento-lg .stream-title-marquee { font-size: 0.85rem; }
+
     .streamer {
       position: relative;
-      aspect-ratio: 16 / 9;
       border-radius: var(--radius);
       overflow: hidden;
       background: var(--bg-card);
@@ -619,11 +700,25 @@
     .status-chip:hover { background: rgba(255,255,255,0.06); border-color: var(--border-mid); }
     .status-chip.live-count { color: var(--live); border-color: rgba(34,197,94,0.2); background: rgba(34,197,94,0.06); }
 
+    @media (max-width: 900px) {
+      .header-stats { order: 4; flex-basis: 100%; }
+      .header-actions { order: 3; }
+      .header-search { order: 2; flex-basis: 100%; max-width: none; }
+      .brand { order: 1; flex: 0 0 auto; }
+    }
+
     @media (max-width: 768px) {
-      body { padding: 12px 10px 100px; }
       body::before { animation: none; }
-      #streamers { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      #app-container { padding: 0 12px; }
+      .app-header { padding: 10px 0; gap: 8px; }
+      .brand-name { font-size: 0.95rem; }
+      .brand-mark { width: 32px; height: 32px; font-size: 14px; }
+      #streamers { grid-template-columns: repeat(2, 1fr); grid-auto-rows: auto; gap: 10px; }
       #streamers.list-view { grid-template-columns: 1fr; }
+      .streamer:not(.list-item) { aspect-ratio: 16/9; height: auto; }
+      .streamer.bento-xl, .streamer.bento-lg, .streamer.bento-tall { grid-column: span 2; grid-row: auto; }
+      .streamer.bento-xl .name-tag { padding: 32px 12px 10px 14px; }
+      .streamer.bento-xl .streamer-name { font-size: 0.95rem; }
       .streamer:hover { transform: none; box-shadow: var(--shadow-card); }
       .streamer:hover .name-tag { opacity: 1; transform: none; }
       .streamer:hover .details-overlay { opacity: 0; pointer-events: none; }
@@ -638,20 +733,21 @@
       .viewer-badge { top: 8px; left: 10px; padding: 3px 8px; font-size: 0.66rem; }
       .overlay-actions { grid-template-columns: repeat(4, 1fr); }
       .overlay-name { font-size: 1rem; }
-      .floating-bar { width: 96%; padding: 5px 8px; gap: 4px; border-radius: 16px; bottom: 12px; }
-      .app-logo { display: none; }
-      .bar-btn { padding: 8px 9px; font-size: 0.75rem; }
+      .bar-btn { padding: 8px 10px; font-size: 0.75rem; }
+      .bar-btn .btn-label { display: none; }
       .bar-divider { height: 18px; }
       .settings-panel { width: 100%; }
       .streamer.list-item { flex-direction: column; height: auto; }
       .streamer.list-item .thumbnail-container { width: 100%; height: 180px; min-width: auto; }
       .streamer.list-item .details-overlay { padding: 14px 16px; }
-      .status-bar { flex-wrap: wrap; gap: 6px; padding-bottom: 14px; }
-      #toast { bottom: 76px; max-width: 90vw; white-space: normal; text-align: center; }
+      .header-stats { gap: 4px; }
+      .header-stats .status-chip { font-size: 0.7rem; padding: 4px 10px; }
+      #toast { bottom: 20px; max-width: 90vw; white-space: normal; text-align: center; }
     }
 
-    @media (max-width: 400px) {
+    @media (max-width: 460px) {
       #streamers { grid-template-columns: 1fr; }
+      .streamer:not(.list-item) { aspect-ratio: 16/9; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -667,38 +763,44 @@
 <body>
 
 <div id="app-container">
-  <div class="status-bar" id="status-bar">
-    <span class="status-chip" id="status-total">0 streamers</span>
-    <span class="status-chip live-count" id="status-live">0 live</span>
-    <span class="status-chip" id="status-twitch">Twitch: <span class="api-dot unknown"></span></span>
-    <span class="status-chip" id="status-yt">YouTube: <span class="api-dot unknown"></span></span>
-  </div>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">▶</span>
+      <span class="brand-name">StreamMonitor</span>
+    </div>
+    <div class="header-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" type="text" placeholder="Search streamers or category…" autocomplete="off">
+    </div>
+    <div class="header-stats" id="status-bar">
+      <span class="status-chip" id="status-total">0 streamers</span>
+      <span class="status-chip live-count" id="status-live">0 live</span>
+      <span class="status-chip" id="status-twitch">TW <span class="api-dot unknown"></span></span>
+      <span class="status-chip" id="status-yt">YT <span class="api-dot unknown"></span></span>
+    </div>
+    <div class="header-actions">
+      <button class="bar-btn twitch-refresh" id="refresh-twitch-btn" title="Refresh Twitch Token & Data">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+        <span class="btn-label">Twitch</span>
+      </button>
+      <button class="bar-btn yt-refresh" id="refresh-yt-btn" title="Refresh YouTube Data">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+        <span class="btn-label">YT</span>
+      </button>
+      <button class="bar-btn accent" id="gemini-choice-btn" title="AI Pick">✨ <span class="btn-label">Pick</span></button>
+      <div class="bar-divider"></div>
+      <button class="bar-btn active" id="view-grid" title="Grid View">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <button class="bar-btn" id="view-list" title="List View">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+      <button class="bar-btn" id="settings-btn" title="Settings">⚙️</button>
+    </div>
+  </header>
   <main id="main-content">
     <div id="streamers" class="grid-view"></div>
   </main>
-</div>
-
-<div class="floating-bar">
-  <span class="app-logo">StreamMonitor</span>
-  <div class="bar-divider"></div>
-  <button class="bar-btn twitch-refresh" id="refresh-twitch-btn" title="Refresh Twitch Token & Data">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
-    Twitch
-  </button>
-  <button class="bar-btn yt-refresh" id="refresh-yt-btn" title="Refresh YouTube Data">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-    YT
-  </button>
-  <button class="bar-btn accent" id="gemini-choice-btn">✨ Pick</button>
-  <div class="bar-divider"></div>
-  <button class="bar-btn active" id="view-grid" title="Grid View">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-  </button>
-  <button class="bar-btn" id="view-list" title="List View">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-  </button>
-  <div class="bar-divider"></div>
-  <button class="bar-btn" id="settings-btn">⚙️</button>
 </div>
 
 <div id="settings-overlay" class="settings-overlay"></div>
@@ -710,10 +812,6 @@
   <div class="settings-body">
     <div class="setting-section">
       <div class="section-title">Streamers</div>
-      <div class="setting-row">
-        <label class="setting-label">Search</label>
-        <input type="text" id="search-input" class="setting-input" placeholder="Filter by name or category...">
-      </div>
       <div class="setting-row">
         <label class="setting-label">Sort By</label>
         <select id="sort-select" class="setting-input">
@@ -1199,9 +1297,9 @@ const App = {
     return el;
   },
 
-  updateCardEl(el, s, isListView) {
+  updateCardEl(el, s, isListView, bentoClass = '') {
     const liveCls = s.isLive ? 'live' : 'offline';
-    const targetClass = `streamer ${s.platform} ${liveCls}${isListView ? ' list-item' : ''}${s.isError ? ' error-key' : ''}`;
+    const targetClass = `streamer ${s.platform} ${liveCls}${isListView ? ' list-item' : ''}${s.isError ? ' error-key' : ''}${bentoClass ? ' ' + bentoClass : ''}`;
     if (el.className !== targetClass) el.className = targetClass;
 
     el._data = { name: s.name, platform: s.platform, thumb: s.thumb || '', url: s.url || '#' };
@@ -1293,18 +1391,30 @@ const App = {
     const existing = new Map();
     grid.querySelectorAll('.streamer').forEach(el => existing.set(el.dataset.key, el));
 
+    // Bento sizing: top live streamer gets XL tile, #2-3 get wide tiles.
+    // Disabled in list view to keep rows uniform.
+    let liveRank = 0;
+    const bentoSize = (s) => {
+      if (isListView || !s.isLive) return '';
+      liveRank++;
+      if (liveRank === 1) return 'bento-xl';
+      if (liveRank <= 3) return 'bento-lg';
+      return '';
+    };
+
     const seen = new Set();
     let prev = null;
     for (const s of list) {
       const key = `${s.platform}::${s.name}`;
       seen.add(key);
+      const sizeCls = bentoSize(s);
       let el = existing.get(key);
       if (!el) {
         el = this.buildCardEl(s);
-        this.updateCardEl(el, s, isListView);
+        this.updateCardEl(el, s, isListView, sizeCls);
         if (prev) prev.after(el); else grid.prepend(el);
       } else {
-        this.updateCardEl(el, s, isListView);
+        this.updateCardEl(el, s, isListView, sizeCls);
         const expectedNext = prev ? prev.nextSibling : grid.firstChild;
         if (expectedNext !== el) {
           el.classList.add('reordering');
