@@ -84,9 +84,8 @@
 
     #app-container { max-width: 2400px; margin: 0 auto; position: relative; z-index: 1; padding: 0 24px; }
 
-    /* Sticky bento dashboard header */
+    /* Bento dashboard header (static — sticky was costly on scroll) */
     .app-header {
-      position: sticky; top: 0; z-index: 900;
       display: flex; align-items: center; gap: 14px;
       padding: 14px 0; margin: 0 -8px 22px;
       background: var(--bg-primary);
@@ -143,7 +142,6 @@
       gap: 14px;
       grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
       grid-auto-rows: 178px;
-      grid-auto-flow: dense;
     }
     #streamers.list-view {
       grid-template-columns: 1fr;
@@ -183,6 +181,9 @@
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
       cursor: pointer;
       box-shadow: var(--shadow-card);
+      contain: layout paint style;
+      content-visibility: auto;
+      contain-intrinsic-size: auto 178px;
     }
 
     .streamer:hover {
@@ -869,7 +870,10 @@ const App = {
     this.bindEvents();
     this.renderSkeletons();
     await this.fetchList();
-    setInterval(() => this.fetchData('auto'), 300000);
+    setInterval(() => {
+      if (document.hidden) return;
+      this.fetchData('auto');
+    }, 300000);
   },
 
   bindEvents() {
@@ -949,23 +953,24 @@ const App = {
     else if (mode === 'youtube') { queue = queue.filter(s => s.platform === 'youtube'); this.toast('Refreshing YouTube...', 'info'); this.state.youtubeQuotaExceeded = false; }
     else if (mode === 'twitch') { queue = queue.filter(s => s.platform === 'twitch'); }
 
-    // THE HAMMER FIX: Throttle the requests to prevent Cloudflare ban
+    // Throttle requests to avoid Cloudflare bans, and render once per chunk
+    // (not per streamer) to avoid layout thrashing on large lists.
     const concurrencyLimit = 4;
     for (let i = 0; i < queue.length; i += concurrencyLimit) {
       const chunk = queue.slice(i, i + concurrencyLimit);
-      
+
       await Promise.allSettled(chunk.map(async s => {
         const data = await this.getStreamInfo(s, force);
         this.state.data.set(s.name, data);
-        this.render(); // Trickle in the UI updates
       }));
-      
-      // Pause slightly between chunks to let APIs breathe
+
+      this.render();
+
       if (i + concurrencyLimit < queue.length) {
         await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
-    
+
     this.render();
     this.updateStatusBar();
   },
