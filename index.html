@@ -881,6 +881,23 @@ const App = {
       if (document.hidden) return;
       this.fetchData('auto');
     }, 300000);
+
+    // Refresh immediately when the tab becomes visible after being hidden
+    // for more than a minute, bypassing the streamCache so thumbnails and
+    // live status reflect the current moment instead of pre-Alt-Tab state.
+    let hiddenAt = null;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+      } else if (hiddenAt) {
+        const awayMs = Date.now() - hiddenAt;
+        hiddenAt = null;
+        if (awayMs > 60000) {
+          streamCache.clear();
+          this.fetchData('auto', true);
+        }
+      }
+    });
   },
 
   bindEvents() {
