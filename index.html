@@ -6,7 +6,7 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>StreamMonitor v8.2.4</title>
+  <title>StreamMonitor v8.3.0</title>
   <meta name="theme-color" content="#08080a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -112,6 +112,12 @@
       font-weight: 800; font-size: 1.05rem; letter-spacing: -0.03em;
       background: linear-gradient(135deg, #fff, #b8b8c8);
       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .brand-version {
+      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em;
+      color: var(--text-dim); padding: 3px 8px; border-radius: 999px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle);
+      font-feature-settings: "tnum";
     }
 
     .header-search {
@@ -703,6 +709,7 @@
     <div class="brand">
       <span class="brand-mark">▶</span>
       <span class="brand-name">StreamMonitor</span>
+      <span class="brand-version" id="app-version">v8.3.0</span>
     </div>
     <div class="header-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -742,7 +749,10 @@
 <div id="settings-overlay" class="settings-overlay"></div>
 <div id="settings-panel" class="settings-panel">
   <div class="settings-header">
-    <h2>Settings</h2>
+    <div style="display:flex; align-items:baseline; gap:10px;">
+      <h2>Settings</h2>
+      <span class="brand-version">v8.3.0</span>
+    </div>
     <button class="settings-close" id="settings-close-btn">&times;</button>
   </div>
   <div class="settings-body">
