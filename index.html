@@ -6,7 +6,7 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>StreamMonitor v8.3.0</title>
+  <title>StreamMonitor v8.3.1</title>
   <meta name="theme-color" content="#08080a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -709,7 +709,7 @@
     <div class="brand">
       <span class="brand-mark">▶</span>
       <span class="brand-name">StreamMonitor</span>
-      <span class="brand-version" id="app-version">v8.3.0</span>
+      <span class="brand-version" id="app-version">v8.3.1</span>
     </div>
     <div class="header-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -751,7 +751,7 @@
   <div class="settings-header">
     <div style="display:flex; align-items:baseline; gap:10px;">
       <h2>Settings</h2>
-      <span class="brand-version">v8.3.0</span>
+      <span class="brand-version">v8.3.1</span>
     </div>
     <button class="settings-close" id="settings-close-btn">&times;</button>
   </div>
@@ -892,22 +892,32 @@ const App = {
       this.fetchData('auto');
     }, 300000);
 
-    // Refresh immediately when the tab becomes visible after being hidden
-    // for more than a minute, bypassing the streamCache so thumbnails and
-    // live status reflect the current moment instead of pre-Alt-Tab state.
-    let hiddenAt = null;
+    // Wake-up refresh: trigger an immediate fetch when the user returns to
+    // the tab. Listens to both visibilitychange and window.focus so it
+    // catches Alt-Tabbing back AND clicking back into a minimized window.
+    // Threshold of 30s avoids redundant fetches for quick switches.
+    let awayAt = null;
+    let lastWakeFetch = 0;
+    const wake = () => {
+      if (!awayAt) return;
+      const awayMs = Date.now() - awayAt;
+      awayAt = null;
+      if (awayMs < 30000) return;
+      if (Date.now() - lastWakeFetch < 15000) return; // dedupe rapid focus/visibility double-fires
+      lastWakeFetch = Date.now();
+      streamCache.clear();
+      const mins = Math.round(awayMs / 60000);
+      this.toast(`Refreshing — away ${mins < 1 ? '<1' : mins}m`, 'info');
+      // If away > 10 min, also refresh YouTube so long absences get fully fresh data.
+      const mode = awayMs > 600000 ? 'all' : 'auto';
+      this.fetchData(mode, true);
+    };
+    const sleep = () => { if (awayAt === null) awayAt = Date.now(); };
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        hiddenAt = Date.now();
-      } else if (hiddenAt) {
-        const awayMs = Date.now() - hiddenAt;
-        hiddenAt = null;
-        if (awayMs > 60000) {
-          streamCache.clear();
-          this.fetchData('auto', true);
-        }
-      }
+      document.hidden ? sleep() : wake();
     });
+    window.addEventListener('blur', sleep);
+    window.addEventListener('focus', wake);
   },
 
   bindEvents() {
