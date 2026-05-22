@@ -6,7 +6,7 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>StreamMonitor v8.3.1</title>
+  <title>StreamMonitor v8.3.2</title>
   <meta name="theme-color" content="#08080a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -709,7 +709,7 @@
     <div class="brand">
       <span class="brand-mark">▶</span>
       <span class="brand-name">StreamMonitor</span>
-      <span class="brand-version" id="app-version">v8.3.1</span>
+      <span class="brand-version" id="app-version">v8.3.2</span>
     </div>
     <div class="header-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -751,7 +751,7 @@
   <div class="settings-header">
     <div style="display:flex; align-items:baseline; gap:10px;">
       <h2>Settings</h2>
-      <span class="brand-version">v8.3.1</span>
+      <span class="brand-version">v8.3.2</span>
     </div>
     <button class="settings-close" id="settings-close-btn">&times;</button>
   </div>
@@ -997,23 +997,48 @@ const App = {
     else if (mode === 'youtube') { queue = queue.filter(s => s.platform === 'youtube'); this.toast('Refreshing YouTube...', 'info'); this.state.youtubeQuotaExceeded = false; }
     else if (mode === 'twitch') { queue = queue.filter(s => s.platform === 'twitch'); }
 
-    // Throttle requests to avoid Cloudflare bans, and render once per chunk
-    // (not per streamer) to avoid layout thrashing on large lists.
-    const concurrencyLimit = 4;
-    for (let i = 0; i < queue.length; i += concurrencyLimit) {
-      const chunk = queue.slice(i, i + concurrencyLimit);
+    // Split by platform — Twitch/YouTube hit direct APIs and can go faster
+    // than Kick, which routes through a multi-proxy cascade and needs to
+    // stay gentle to avoid Cloudflare. Each platform runs its own parallel
+    // pool, so Twitch tiles snap in instantly instead of waiting on Kick.
+    const byPlatform = { twitch: [], kick: [], youtube: [] };
+    for (const s of queue) (byPlatform[s.platform] || (byPlatform[s.platform] = [])).push(s);
 
-      await Promise.allSettled(chunk.map(async s => {
-        const data = await this.getStreamInfo(s, force);
-        this.state.data.set(s.name, data);
-      }));
+    // Render batching via requestAnimationFrame: many tile updates in the
+    // same frame coalesce into one paint, so faster pools don't increase
+    // layout work.
+    let renderScheduled = false;
+    const scheduleRender = () => {
+      if (renderScheduled) return;
+      renderScheduled = true;
+      requestAnimationFrame(() => {
+        renderScheduled = false;
+        this.render();
+      });
+    };
 
-      this.render();
+    const runPool = async (items, concurrency) => {
+      let idx = 0;
+      const worker = async () => {
+        while (idx < items.length) {
+          const s = items[idx++];
+          try {
+            const data = await this.getStreamInfo(s, force);
+            this.state.data.set(s.name, data);
+            scheduleRender();
+          } catch (e) { /* per-card error already returned as data */ }
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(concurrency, items.length) }, worker)
+      );
+    };
 
-      if (i + concurrencyLimit < queue.length) {
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-    }
+    await Promise.all([
+      runPool(byPlatform.twitch || [], 8),
+      runPool(byPlatform.youtube || [], 4),
+      runPool(byPlatform.kick || [], 4),
+    ]);
 
     this.render();
     this.updateStatusBar();
