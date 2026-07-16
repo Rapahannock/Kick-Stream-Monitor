@@ -6,7 +6,7 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>StreamMonitor v8.3.2</title>
+  <title>StreamMonitor v8.3.3</title>
   <meta name="theme-color" content="#08080a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -621,7 +621,7 @@
       opacity: 0; pointer-events: none;
       transition: opacity 0.25s ease, transform 0.25s ease;
       z-index: 1500; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-      white-space: nowrap;
+      max-width: min(90vw, 620px); text-align: center;
     }
     #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
     #toast.warning { border-color: rgba(250,204,21,0.35); color: var(--warning); box-shadow: 0 12px 32px rgba(250,204,21,0.15), 0 0 0 1px rgba(250,204,21,0.15); }
@@ -709,7 +709,7 @@
     <div class="brand">
       <span class="brand-mark">▶</span>
       <span class="brand-name">StreamMonitor</span>
-      <span class="brand-version" id="app-version">v8.3.2</span>
+      <span class="brand-version" id="app-version">v8.3.3</span>
     </div>
     <div class="header-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -751,7 +751,7 @@
   <div class="settings-header">
     <div style="display:flex; align-items:baseline; gap:10px;">
       <h2>Settings</h2>
-      <span class="brand-version">v8.3.2</span>
+      <span class="brand-version">v8.3.3</span>
     </div>
     <button class="settings-close" id="settings-close-btn">&times;</button>
   </div>
@@ -1082,14 +1082,22 @@ const App = {
             const isWorker = proxyUrl.includes('workers.dev');
             const headers = isWorker ? { 'Authorization': `Bearer ${this.state.workerToken}` } : { 'Accept': 'application/json' };
             const r = await this.fetchWithTimeout(proxyUrl, { headers }, 6000);
-            
-            if (r && (r.livestream !== undefined || r.user !== undefined)) { 
-                d = r; 
-                break; 
+
+            if (r && (r.livestream !== undefined || r.user !== undefined)) {
+                d = r;
+                break;
             }
-          } catch (e) { /* Try next proxy silently */ }
+          } catch (e) {
+            // A 404 through our own worker proxy is Kick itself saying the
+            // channel doesn't exist (banned/renamed/deleted). Don't waste two
+            // more proxy attempts on it — bail with a distinct error.
+            if (proxyUrl.includes('workers.dev') && String(e.message) === '404') {
+              throw new Error('KICK_404');
+            }
+            /* Otherwise try next proxy silently */
+          }
         }
-        
+
         if (!d) throw new Error('403_CLOUDFLARE_BLOCK');
         
         const result = d.livestream
@@ -1178,6 +1186,12 @@ const App = {
     } catch (e) {
       const msg = String(e.message);
       
+      if (msg.includes('KICK_404')) {
+          const r = { isLive: false, title: 'Channel not found (banned/renamed?)', url, isError: true };
+          streamCache.set(k, r); // cache it — no point re-asking every cycle
+          return r;
+      }
+
       if (msg.includes('403_CLOUDFLARE_BLOCK')) {
           return { isLive: false, title: 'Cloudflare Protected (Click to view)', url, isError: true };
       }
@@ -1494,6 +1508,21 @@ const App = {
     setTimeout(() => document.getElementById('pin-input').focus(), 100);
   },
 
+  // Pull the real error out of a failed worker response so toasts can show
+  // the actual cause (e.g. expired GitHub token) instead of a generic label.
+  async workerError(res) {
+    let detail = '';
+    try {
+      const text = await res.text();
+      try {
+        const j = JSON.parse(text);
+        detail = j.error || j.message || j.details?.message || text;
+      } catch { detail = text; }
+    } catch { /* body unreadable */ }
+    detail = String(detail).slice(0, 140);
+    return `${res.status}${detail ? ': ' + detail : ''}`;
+  },
+
   async confirmRemove() {
     const { name, platform } = this.state.pendingRemove || {};
     const pin = document.getElementById('pin-input').value;
@@ -1506,7 +1535,7 @@ const App = {
         body: JSON.stringify({ action: 'remove', name, platform, pin })
       });
       if (res.ok) { this.toast(`${name} removed`, 'success'); this.fetchList(); }
-      else this.toast('Remove failed — wrong PIN?', 'error');
+      else this.toast(`Remove failed (${await this.workerError(res)})`, 'error');
     } catch (err) { this.toast('Connection error', 'error'); }
     this.state.pendingRemove = null;
   },
@@ -1522,7 +1551,7 @@ const App = {
         body: JSON.stringify({ action: 'add', name, platform })
       });
       if (res.ok) { this.toast(`${name} added`, 'success'); document.getElementById('add-name').value = ''; this.fetchList(); }
-      else this.toast('Add failed', 'error');
+      else this.toast(`Add failed (${await this.workerError(res)})`, 'error');
     } catch (err) { this.toast('Connection error', 'error'); }
   },
 
@@ -1556,7 +1585,8 @@ const App = {
     this.els.toast.textContent = msg;
     this.els.toast.className = `visible ${type}`;
     clearTimeout(this._toastTimer);
-    this._toastTimer = setTimeout(() => this.els.toast.className = '', 3500);
+    // Errors carry diagnostic detail now — keep them up long enough to read.
+    this._toastTimer = setTimeout(() => this.els.toast.className = '', type === 'error' ? 8000 : 3500);
   }
 };
 
