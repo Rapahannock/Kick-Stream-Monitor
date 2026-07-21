@@ -6,7 +6,7 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>StreamMonitor v8.3.3</title>
+  <title>StreamMonitor v8.3.4</title>
   <meta name="theme-color" content="#08080a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -139,6 +139,18 @@
     .header-search input::placeholder { color: var(--text-dim); }
     .header-search input:hover { background: rgba(255,255,255,0.06); border-color: var(--border-mid); }
     .header-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); background: rgba(255,255,255,0.06); }
+
+    .header-search.has-text input { padding-right: 38px; }
+    .search-clear {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(255,255,255,0.07); border: none;
+      color: var(--text-secondary); font-size: 17px; line-height: 1;
+      cursor: pointer; display: none; place-items: center;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .header-search.has-text .search-clear { display: grid; }
+    .search-clear:hover { background: rgba(255,255,255,0.14); color: #fff; }
 
     .header-stats { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-left: auto; }
@@ -709,11 +721,12 @@
     <div class="brand">
       <span class="brand-mark">▶</span>
       <span class="brand-name">StreamMonitor</span>
-      <span class="brand-version" id="app-version">v8.3.3</span>
+      <span class="brand-version" id="app-version">v8.3.4</span>
     </div>
     <div class="header-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="search-input" type="text" placeholder="Search streamers or category…" autocomplete="off">
+      <button id="search-clear" class="search-clear" title="Clear search" aria-label="Clear search">&times;</button>
     </div>
     <div class="header-stats" id="status-bar">
       <span class="status-chip" id="status-total">0 streamers</span>
@@ -751,7 +764,7 @@
   <div class="settings-header">
     <div style="display:flex; align-items:baseline; gap:10px;">
       <h2>Settings</h2>
-      <span class="brand-version">v8.3.3</span>
+      <span class="brand-version">v8.3.4</span>
     </div>
     <button class="settings-close" id="settings-close-btn">&times;</button>
   </div>
@@ -931,7 +944,22 @@ const App = {
     document.getElementById('settings-close-btn').onclick = toggleSettings;
     overlay.onclick = toggleSettings;
 
-    document.getElementById('search-input').oninput = (e) => { this.state.filter = e.target.value.toLowerCase(); this.render(); };
+    const searchInput = document.getElementById('search-input');
+    const searchWrap = searchInput.closest('.header-search');
+    const applyFilter = (value) => {
+      this.state.filter = value.toLowerCase();
+      searchWrap.classList.toggle('has-text', value.length > 0);
+      this.render();
+    };
+    searchInput.oninput = (e) => applyFilter(e.target.value);
+    searchInput.onkeydown = (e) => {
+      if (e.key === 'Escape') { searchInput.value = ''; applyFilter(''); }
+    };
+    document.getElementById('search-clear').onclick = () => {
+      searchInput.value = '';
+      applyFilter('');
+      searchInput.focus();
+    };
     document.getElementById('sort-select').onchange = (e) => { this.state.sort = e.target.value; this.render(); };
     document.getElementById('add-btn').onclick = () => this.addStreamer();
     document.getElementById('refresh-yt-btn').onclick = () => this.fetchData('youtube', true);
