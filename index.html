@@ -6,7 +6,7 @@
   <!-- Hides referrer to help bypass simple blocking -->
   <meta name="referrer" content="no-referrer">
   
-  <title>StreamMonitor v8.3.4</title>
+  <title>StreamMonitor v8.3.5</title>
   <meta name="theme-color" content="#08080a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -137,7 +137,6 @@
       outline: none; transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
     }
     .header-search input::placeholder { color: var(--text-dim); }
-    .header-search input:hover { background: rgba(255,255,255,0.06); border-color: var(--border-mid); }
     .header-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); background: rgba(255,255,255,0.06); }
 
     .header-search.has-text input { padding-right: 38px; }
@@ -150,7 +149,10 @@
       transition: background 0.15s ease, color 0.15s ease;
     }
     .header-search.has-text .search-clear { display: grid; }
-    .search-clear:hover { background: rgba(255,255,255,0.14); color: #fff; }
+    @media (hover: hover) and (pointer: fine) {
+      .header-search input:hover { background: rgba(255,255,255,0.06); border-color: var(--border-mid); }
+      .search-clear:hover { background: rgba(255,255,255,0.14); color: #fff; }
+    }
 
     .header-stats { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-left: auto; }
@@ -204,20 +206,27 @@
       contain-intrinsic-size: auto 178px;
     }
 
-    .streamer:hover {
-      box-shadow: 0 8px 18px rgba(0,0,0,0.5);
-      border-color: var(--border-hover);
-      z-index: 100;
-    }
-
     .streamer.live { border-color: rgba(34, 197, 94, 0.18); }
-    .streamer.live:hover { border-color: rgba(34, 197, 94, 0.4); }
     .streamer.live.kick { border-color: rgba(83, 252, 24, 0.15); }
-    .streamer.live.kick:hover { border-color: rgba(83, 252, 24, 0.4); }
     .streamer.live.twitch { border-color: rgba(145, 70, 255, 0.15); }
-    .streamer.live.twitch:hover { border-color: rgba(145, 70, 255, 0.4); }
     .streamer.live.youtube { border-color: rgba(255, 0, 51, 0.15); }
-    .streamer.live.youtube:hover { border-color: rgba(255, 0, 51, 0.4); }
+
+    /* Hover-only styling, gated to real pointing devices (mouse/trackpad).
+       Touch devices never match :hover — WebKit and some Android browsers
+       otherwise treat the first tap on a hoverable+clickable element as
+       "simulate hover" and require a second tap to actually click, which
+       made the bento tiles and their buttons feel unresponsive on mobile. */
+    @media (hover: hover) and (pointer: fine) {
+      .streamer:hover {
+        box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+        border-color: var(--border-hover);
+        z-index: 100;
+      }
+      .streamer.live:hover { border-color: rgba(34, 197, 94, 0.4); }
+      .streamer.live.kick:hover { border-color: rgba(83, 252, 24, 0.4); }
+      .streamer.live.twitch:hover { border-color: rgba(145, 70, 255, 0.4); }
+      .streamer.live.youtube:hover { border-color: rgba(255, 0, 51, 0.4); }
+    }
 
     .streamer.list-item {
       aspect-ratio: auto;
@@ -225,7 +234,9 @@
       display: flex;
       flex-direction: row;
     }
-    .streamer.list-item:hover { box-shadow: 0 6px 14px rgba(0,0,0,0.5); }
+    @media (hover: hover) and (pointer: fine) {
+      .streamer.list-item:hover { box-shadow: 0 6px 14px rgba(0,0,0,0.5); }
+    }
     .streamer.list-item .thumbnail-container { width: 250px; min-width: 250px; height: 100%; border-radius: 0; }
     .streamer.list-item .name-tag { display: none; }
     .streamer.list-item .details-overlay {
@@ -250,7 +261,9 @@
     .streamer.twitch::before { background: linear-gradient(180deg, #c8a2ff, var(--twitch) 40%, #6f33cc); }
     .streamer.youtube::before { background: linear-gradient(180deg, #ff7488, var(--youtube) 40%, #c40026); }
     .streamer.offline::before { background: var(--offline); opacity: 0.45; }
-    .streamer:hover::before { width: 4px; }
+    @media (hover: hover) and (pointer: fine) {
+      .streamer:hover::before { width: 4px; }
+    }
 
     .name-tag {
       position: absolute; bottom: 0; left: 0; right: 0;
@@ -260,7 +273,9 @@
       z-index: 15;
       transition: opacity 0.28s ease, transform 0.28s ease;
     }
-    .streamer:hover .name-tag { opacity: 0; transform: translateY(10px); pointer-events: none; }
+    @media (hover: hover) and (pointer: fine) {
+      .streamer:hover .name-tag { opacity: 0; transform: translateY(10px); pointer-events: none; }
+    }
 
     .streamer-name {
       font-weight: 700; font-size: 1rem; letter-spacing: -0.015em;
@@ -280,7 +295,9 @@
       animation: marquee 32s linear infinite;
       will-change: transform;
     }
-    .streamer:hover .stream-title-marquee { animation-play-state: paused; }
+    @media (hover: hover) and (pointer: fine) {
+      .streamer:hover .stream-title-marquee { animation-play-state: paused; }
+    }
     @keyframes marquee {
       0%   { transform: translateX(0); }
       100% { transform: translateX(-100%); }
@@ -331,9 +348,11 @@
     .streamer.kick .details-overlay::before { background: linear-gradient(90deg, transparent, rgba(83,252,24,0.45), transparent); }
     .streamer.twitch .details-overlay::before { background: linear-gradient(90deg, transparent, rgba(169,112,255,0.5), transparent); }
     .streamer.youtube .details-overlay::before { background: linear-gradient(90deg, transparent, rgba(255,45,85,0.45), transparent); }
-    .streamer:hover .details-overlay,
     .streamer.active .details-overlay {
       opacity: 1; pointer-events: auto;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .streamer:hover .details-overlay { opacity: 1; pointer-events: auto; }
     }
 
     .overlay-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
@@ -379,15 +398,17 @@
       transition: background 0.18s ease, color 0.18s ease;
       font-size: 15px; outline: none;
     }
-    .icon-action:hover { background: rgba(255,255,255,0.13); color: #fff; }
     .icon-action:focus-visible { box-shadow: 0 0 0 2px var(--accent-dim), 0 0 0 1px var(--accent); }
     .icon-action.primary-action {
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       color: #03061a; border-color: transparent; font-weight: 800;
       box-shadow: 0 4px 12px rgba(34,211,238,0.25);
     }
-    .icon-action.primary-action:hover { filter: brightness(1.12); box-shadow: 0 6px 18px rgba(34,211,238,0.4); }
-    .icon-action.danger:hover { background: rgba(244,63,94,0.18); color: var(--danger); border-color: rgba(244,63,94,0.3); }
+    @media (hover: hover) and (pointer: fine) {
+      .icon-action:hover { background: rgba(255,255,255,0.13); color: #fff; }
+      .icon-action.primary-action:hover { filter: brightness(1.12); box-shadow: 0 6px 18px rgba(34,211,238,0.4); }
+      .icon-action.danger:hover { background: rgba(244,63,94,0.18); color: var(--danger); border-color: rgba(244,63,94,0.3); }
+    }
 
     .streamer.error-key { border-color: rgba(234, 179, 8, 0.3); }
     .streamer.error-key .streamer-name { color: var(--warning); }
@@ -444,7 +465,6 @@
       white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
       outline: none;
     }
-    .bar-btn:hover { background: rgba(255,255,255,0.09); color: #fff; transform: translateY(-1px); }
     .bar-btn:active { transform: translateY(0); }
     .bar-btn:focus-visible { box-shadow: 0 0 0 2px var(--accent-dim); }
     .bar-btn.active {
@@ -456,12 +476,16 @@
       color: #03061a; font-weight: 800;
       box-shadow: 0 4px 12px rgba(34,211,238,0.3);
     }
-    .bar-btn.accent:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(34,211,238,0.45); }
     .bar-btn svg { flex-shrink: 0; }
     .bar-btn.twitch-refresh { background: rgba(145,70,255,0.13); color: var(--twitch); border-color: rgba(145,70,255,0.18); }
-    .bar-btn.twitch-refresh:hover { background: rgba(145,70,255,0.22); color: #d4b8ff; box-shadow: 0 4px 14px rgba(145,70,255,0.25); }
     .bar-btn.yt-refresh { background: rgba(255,45,85,0.1); color: var(--youtube); border-color: rgba(255,45,85,0.15); }
-    .bar-btn.yt-refresh:hover { background: rgba(255,45,85,0.18); color: #ff8fa3; box-shadow: 0 4px 14px rgba(255,45,85,0.25); }
+
+    @media (hover: hover) and (pointer: fine) {
+      .bar-btn:hover { background: rgba(255,255,255,0.09); color: #fff; transform: translateY(-1px); }
+      .bar-btn.accent:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(34,211,238,0.45); }
+      .bar-btn.twitch-refresh:hover { background: rgba(145,70,255,0.22); color: #d4b8ff; box-shadow: 0 4px 14px rgba(145,70,255,0.25); }
+      .bar-btn.yt-refresh:hover { background: rgba(255,45,85,0.18); color: #ff8fa3; box-shadow: 0 4px 14px rgba(255,45,85,0.25); }
+    }
 
     .api-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; transition: background 0.3s, box-shadow 0.3s; }
     .api-dot.ok { background: var(--live); box-shadow: 0 0 6px var(--live); }
@@ -504,7 +528,9 @@
       width: 34px; height: 34px; border-radius: 10px; cursor: pointer;
       font-size: 18px; display: grid; place-items: center; transition: 0.18s;
     }
-    .settings-close:hover { background: rgba(255,255,255,0.12); color: #fff; transform: rotate(90deg); }
+    @media (hover: hover) and (pointer: fine) {
+      .settings-close:hover { background: rgba(255,255,255,0.12); color: #fff; transform: rotate(90deg); }
+    }
 
     .settings-body {
       padding: 22px 24px; overflow-y: auto; flex: 1;
@@ -535,7 +561,9 @@
       font-family: inherit; transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
       outline: none;
     }
-    .setting-input:hover { background: rgba(255,255,255,0.05); border-color: var(--border-mid); }
+    @media (hover: hover) and (pointer: fine) {
+      .setting-input:hover { background: rgba(255,255,255,0.05); border-color: var(--border-mid); }
+    }
     .setting-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); background: rgba(255,255,255,0.05); }
     .setting-input::placeholder { color: var(--text-dim); }
 
@@ -552,14 +580,16 @@
       border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
       transition: 0.18s; font-size: 0.82rem; font-family: inherit; text-align: center;
     }
-    .btn:hover { background: rgba(255,255,255,0.1); color: #fff; transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
     .btn.primary {
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       color: #03061a; border-color: transparent; font-weight: 800;
       box-shadow: 0 4px 12px rgba(34,211,238,0.25);
     }
-    .btn.primary:hover { filter: brightness(1.12); box-shadow: 0 6px 16px rgba(34,211,238,0.4); }
+    @media (hover: hover) and (pointer: fine) {
+      .btn:hover { background: rgba(255,255,255,0.1); color: #fff; transform: translateY(-1px); }
+      .btn.primary:hover { filter: brightness(1.12); box-shadow: 0 6px 16px rgba(34,211,238,0.4); }
+    }
 
     .modal {
       position: fixed; inset: 0; z-index: 2000;
@@ -582,7 +612,9 @@
       font-size: 20px; cursor: pointer; display: grid; place-items: center;
       transition: background 0.18s ease, color 0.18s ease;
     }
-    .modal-close:hover { background: rgba(255,255,255,0.18); color: #fff; }
+    @media (hover: hover) and (pointer: fine) {
+      .modal-close:hover { background: rgba(255,255,255,0.18); color: #fff; }
+    }
 
     #enlarged-img {
       max-width: 94vw; max-height: 88vh;
@@ -651,8 +683,10 @@
       padding: 5px 12px; border-radius: 999px; font-weight: 600;
       transition: background 0.2s ease, border-color 0.2s ease;
     }
-    .status-chip:hover { background: rgba(255,255,255,0.06); border-color: var(--border-mid); }
     .status-chip.live-count { color: var(--live); border-color: rgba(34,197,94,0.2); background: rgba(34,197,94,0.06); }
+    @media (hover: hover) and (pointer: fine) {
+      .status-chip:hover { background: rgba(255,255,255,0.06); border-color: var(--border-mid); }
+    }
 
     @media (max-width: 900px) {
       .header-stats { order: 4; flex-basis: 100%; }
@@ -673,10 +707,6 @@
       .streamer.bento-xl, .streamer.bento-lg, .streamer.bento-tall { grid-column: span 2; grid-row: auto; }
       .streamer.bento-xl .name-tag { padding: 32px 12px 10px 14px; }
       .streamer.bento-xl .streamer-name { font-size: 0.95rem; }
-      .streamer:hover { transform: none; box-shadow: var(--shadow-card); }
-      .streamer:hover .name-tag { opacity: 1; transform: none; }
-      .streamer:hover .details-overlay { opacity: 0; pointer-events: none; }
-      .streamer:hover .streamer-img { transform: none; }
       .streamer.active .details-overlay { opacity: 1; pointer-events: auto; }
       .streamer.active .name-tag { opacity: 0; }
       .streamer.active { box-shadow: var(--shadow-hover); border-color: var(--border-hover); }
@@ -685,7 +715,8 @@
       .stream-title-marquee { font-size: 0.7rem; }
       .live-indicator { top: 8px; right: 8px; padding: 3px 8px 3px 7px; font-size: 0.62rem; }
       .viewer-badge { top: 8px; left: 10px; padding: 3px 8px; font-size: 0.66rem; }
-      .overlay-actions { grid-template-columns: repeat(4, 1fr); }
+      .overlay-actions { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .icon-action { height: 44px; font-size: 17px; }
       .overlay-name { font-size: 1rem; }
       .bar-btn { padding: 8px 10px; font-size: 0.75rem; }
       .bar-btn .btn-label { display: none; }
@@ -721,7 +752,7 @@
     <div class="brand">
       <span class="brand-mark">▶</span>
       <span class="brand-name">StreamMonitor</span>
-      <span class="brand-version" id="app-version">v8.3.4</span>
+      <span class="brand-version" id="app-version">v8.3.5</span>
     </div>
     <div class="header-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -764,7 +795,7 @@
   <div class="settings-header">
     <div style="display:flex; align-items:baseline; gap:10px;">
       <h2>Settings</h2>
-      <span class="brand-version">v8.3.4</span>
+      <span class="brand-version">v8.3.5</span>
     </div>
     <button class="settings-close" id="settings-close-btn">&times;</button>
   </div>
@@ -936,6 +967,16 @@ const App = {
   bindEvents() {
     document.getElementById('view-grid').onclick = () => this.setView('grid');
     document.getElementById('view-list').onclick = () => this.setView('list');
+
+    // Mobile: tapping anywhere outside the active card's overlay closes it,
+    // so users aren't stuck with a revealed tile blocking the grid.
+    document.addEventListener('click', (e) => {
+      if (!this.state.activeCard) return;
+      if (!this.state.activeCard.contains(e.target)) {
+        this.state.activeCard.classList.remove('active');
+        this.state.activeCard = null;
+      }
+    });
 
     const panel = document.getElementById('settings-panel');
     const overlay = document.getElementById('settings-overlay');
